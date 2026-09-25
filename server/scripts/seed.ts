@@ -9,7 +9,7 @@
  *   SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD            → SUPER_ADMIN
  *   SEED_DEMO_CUSTOMER_EMAIL / SEED_DEMO_CUSTOMER_PASSWORD → CUSTOMER
  */
-import 'dotenv/config';
+import '../src/config/bootEnv.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

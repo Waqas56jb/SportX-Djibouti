@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './bootEnv.js';
 import { z } from 'zod';
 
 const bool = (def: boolean) =>
@@ -16,6 +16,7 @@ const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(4000),
+    HOST: z.string().default('0.0.0.0'),
     API_BASE_URL: z.string().url().default('http://localhost:4000'),
     FRONTEND_URL: z.string().url().default('http://localhost:5173'),
     ADMIN_FRONTEND_URL: z.string().url().default('http://localhost:5174'),

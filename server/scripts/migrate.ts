@@ -6,7 +6,7 @@
  *   npm run db:migrate           apply pending migrations
  *   npm run db:migrate -- --reset   drop and recreate the public schema first (NEVER in production)
  */
-import 'dotenv/config';
+import '../src/config/bootEnv.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,7 +72,9 @@ if (isMain) {
     console.error('DATABASE_URL is not set.');
     process.exit(1);
   }
-  migrate(url, { reset: process.argv.includes('--reset'), ssl: process.env.DATABASE_SSL === 'true' }).catch((err) => {
+  const sslFlag = (process.env.DATABASE_SSL ?? '').toLowerCase();
+  const ssl = sslFlag === 'true' || sslFlag === '1' || /supabase\.com|pooler\.supabase/i.test(url);
+  migrate(url, { reset: process.argv.includes('--reset'), ssl }).catch((err) => {
     console.error(err.message);
     process.exit(1);
   });

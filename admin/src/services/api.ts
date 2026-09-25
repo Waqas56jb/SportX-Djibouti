@@ -7,7 +7,9 @@
  * - Envelope { success, data, pagination? } — `request` unwraps `data`, `requestPage` keeps pagination.
  */
 
-const RAW = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+import { resolveApiUrl } from '@/constants/api';
+
+const RAW = resolveApiUrl(import.meta.env.VITE_API_URL);
 export const API_BASE = `${RAW}/api/v1`;
 
 export class ApiError extends Error {

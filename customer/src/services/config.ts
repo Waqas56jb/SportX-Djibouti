@@ -5,5 +5,5 @@
 export { API_BASE, API_ORIGIN } from './api';
 
 /** @deprecated Use API_BASE from './api'. Kept for older imports. */
-export const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+export { API_ORIGIN as API_URL } from './api';
 

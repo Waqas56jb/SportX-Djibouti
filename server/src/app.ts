@@ -28,7 +28,7 @@ export function createApp(): Express {
         req: (req) => ({ id: req.id, method: req.method, url: req.url }),
         res: (res) => ({ statusCode: res.statusCode }),
       },
-      autoLogging: { ignore: (req) => req.url === '/health' },
+      autoLogging: { ignore: (req) => req.url === '/health' || req.url === '/health/ready' },
     }),
   );
 
@@ -61,7 +61,18 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
+  // Liveness: always 200 once the process is listening so Railway/Docker health checks pass
+  // even if the first database handshake is still in progress.
   app.get('/health', async (_req, res) => {
+    const database = await checkDatabase();
+    res.status(200).json({
+      status: database ? 'ok' : 'degraded',
+      environment: env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+      checks: { database: database ? 'up' : 'down' },
+    });
+  });
+  app.get('/health/ready', async (_req, res) => {
     const database = await checkDatabase();
     res.status(database ? 200 : 503).json({
       status: database ? 'ok' : 'degraded',

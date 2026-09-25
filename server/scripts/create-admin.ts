@@ -6,7 +6,7 @@
  *
  * Roles: SUPER_ADMIN, ADMIN, PRODUCT_MANAGER, ORDER_MANAGER, INVENTORY_MANAGER, SUPPORT_MANAGER.
  */
-import 'dotenv/config';
+import '../src/config/bootEnv.js';
 import { pool } from '../src/config/database.js';
 import { provisionUser } from '../src/modules/auth/provisioning.js';
 import { PASSWORD_RULE } from '../src/modules/auth/password.js';

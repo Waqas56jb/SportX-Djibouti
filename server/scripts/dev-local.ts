@@ -8,7 +8,7 @@
  * Demo accounts are created only if SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD (and optionally
  * SEED_DEMO_CUSTOMER_*) are set in .env. For the full Supabase stack use the Supabase CLI instead.
  */
-import 'dotenv/config';
+import '../src/config/bootEnv.js';
 import { spawn } from 'node:child_process';
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';

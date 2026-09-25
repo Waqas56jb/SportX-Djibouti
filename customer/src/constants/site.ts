@@ -1,3 +1,5 @@
+import { resolveSiteUrl } from './api';
+
 /**
  * Brand and business information. Only facts confirmed by the business are
  * listed here — do not add addresses, emails or hours until they are provided.
@@ -10,7 +12,7 @@ export const SITE = {
   logo: '/brand/wolf-logo-full@2x.png',
   /** Header lockup (wolf + wordmark, no strapline) — legible at small sizes. */
   logoMark: '/brand/wolf-mark-gold@2x.png',
-  url: (import.meta.env.VITE_SITE_URL as string | undefined) ?? 'http://localhost:5173',
+  url: resolveSiteUrl(import.meta.env.VITE_SITE_URL),
   announcement: 'FREE DELIVERY ON SELECTED ORDERS | SHOP SPORTX',
   contact: {
     addressLines: ['PLACE MENELIK', 'RUE DE RAS MAKONNEN', 'DJIBOUTI'],

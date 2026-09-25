@@ -10,8 +10,9 @@
  */
 
 import { currentLang, t, tDynamic, type TKey } from '@/i18n';
+import { resolveApiUrl } from '@/constants/api';
 
-const RAW = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+const RAW = resolveApiUrl(import.meta.env.VITE_API_URL);
 export const API_ORIGIN = RAW;
 export const API_BASE = `${RAW}/api/v1`;
 

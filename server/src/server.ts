@@ -6,8 +6,13 @@ import { jobs } from './services/jobs.js';
 import { registerScheduledJobs } from './jobs/index.js';
 
 const app = createApp();
-const server = app.listen(env.PORT, () => {
-  logger.info({ port: env.PORT, env: env.NODE_ENV, auth: env.AUTH_PROVIDER, storage: env.STORAGE_PROVIDER, payments: env.PAYMENT_PROVIDERS }, 'SPORTX API listening');
+const bindHost = /^(0\.0\.0\.0|::|127\.0\.0\.1|localhost)$/i.test(env.HOST) ? env.HOST : '0.0.0.0';
+const server = app.listen(env.PORT, bindHost, () => {
+  logger.info({ host: bindHost, port: env.PORT, env: env.NODE_ENV, auth: env.AUTH_PROVIDER, storage: env.STORAGE_PROVIDER, payments: env.PAYMENT_PROVIDERS }, 'SPORTX API listening');
+});
+server.on('error', (err) => {
+  logger.error({ err, host: bindHost, port: env.PORT }, 'failed to bind HTTP server');
+  process.exit(1);
 });
 
 void warmPool().catch((err) => logger.warn({ err }, 'database warm-up failed'));
