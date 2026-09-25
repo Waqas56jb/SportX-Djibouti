@@ -61,15 +61,12 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
-  // Liveness: always 200 once the process is listening so Railway/Docker health checks pass
-  // even if the first database handshake is still in progress.
-  app.get('/health', async (_req, res) => {
-    const database = await checkDatabase();
+  // Liveness must not wait on Postgres — Railway health checks fail if this blocks.
+  app.get('/health', (_req, res) => {
     res.status(200).json({
-      status: database ? 'ok' : 'degraded',
+      status: 'ok',
       environment: env.NODE_ENV,
       timestamp: new Date().toISOString(),
-      checks: { database: database ? 'up' : 'down' },
     });
   });
   app.get('/health/ready', async (_req, res) => {

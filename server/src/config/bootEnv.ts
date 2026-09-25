@@ -15,15 +15,13 @@ export function bootEnv(): void {
 
   for (const [key, value] of Object.entries(process.env)) {
     if (value === undefined) continue;
-    let next = value.trim();
-    if (
-      (next.startsWith('"') && next.endsWith('"') && next.length >= 2) ||
-      (next.startsWith("'") && next.endsWith("'") && next.length >= 2)
-    ) {
-      next = next.slice(1, -1).trim();
-    }
+    let next = value.replace(/^\uFEFF/, '').trim();
+    next = next.replace(/^["'`\u201c\u201d]+|["'`\u201c\u201d]+$/g, '').trim();
     process.env[key] = next;
   }
+
+  const nodeEnv = process.env.NODE_ENV?.toLowerCase();
+  if (nodeEnv === 'production' || nodeEnv === 'development' || nodeEnv === 'test') process.env.NODE_ENV = nodeEnv;
 }
 
 bootEnv();
