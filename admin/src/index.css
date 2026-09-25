@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas font-sans text-sm text-zinc-900;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-zinc-900 ring-offset-2 ring-offset-white;
+  }
+  .dark-surface :focus-visible {
+    @apply ring-volt ring-offset-ink-950;
+  }
+  ::selection {
+    @apply bg-volt text-ink-950;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    @apply text-2xs font-semibold uppercase tracking-[0.12em] text-zinc-500;
+  }
+  .panel {
+    @apply rounded-xl border border-zinc-200/80 bg-white shadow-card;
+  }
+  .panel-header {
+    @apply flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-4;
+  }
+  .panel-title {
+    @apply text-[0.9375rem] font-semibold tracking-tight text-zinc-900;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(212 212 216) transparent;
+  }
+  .scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: #2a3038 transparent;
+  }
+  .skeleton {
+    @apply animate-pulse rounded bg-zinc-200/70;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

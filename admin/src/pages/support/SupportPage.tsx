@@ -1,0 +1,130 @@
+import { useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LifeBuoy } from 'lucide-react';
+import type { SupportTicket, TicketCategory, TicketPriority, TicketStatus } from '@/types';
+import { Button, EmptyState, PageHeader, Tabs } from '@/components/common';
+import { FilterSelect, SearchInput } from '@/components/forms';
+import { ClearFiltersButton, DataTable } from '@/components/tables';
+import { TicketSummaryStrip, countSummary, type SummaryKey } from '@/components/support/TicketSummaryStrip';
+import { ticketColumns } from '@/components/support/ticketColumns';
+import { TICKET_CATEGORIES } from '@/constants/catalog';
+import { TICKET_PRIORITY, TICKET_STATUS } from '@/constants/status';
+import { supportService } from '@/services/supportService';
+import { useAsync } from '@/hooks/useAsync';
+import { useDebounce } from '@/hooks/misc';
+import { useUrlFilters } from '@/hooks/useUrlFilters';
+
+type TabValue = 'all' | TicketStatus;
+const STATUSES = Object.keys(TICKET_STATUS) as TicketStatus[];
+const PRIORITY_OPTIONS = (Object.keys(TICKET_PRIORITY) as TicketPriority[]).map((p) => ({ value: p, label: TICKET_PRIORITY[p].label }));
+const CATEGORY_OPTIONS = TICKET_CATEGORIES.map((c) => ({ value: c.value, label: c.label }));
+
+export default function SupportPage() {
+  const navigate = useNavigate();
+  const [, setParams] = useSearchParams();
+  const { filters, setFilter, activeCount } = useUrlFilters({ status: '', priority: '', assignee: '', category: '', search: '' });
+  const search = useDebounce(filters.search, 250);
+
+  // Status is applied client-side so tabs and summary can show counts for the remaining filters.
+  const { data, loading, error, reload } = useAsync(
+    () =>
+      supportService.getTickets({
+        search,
+        priority: filters.priority as TicketPriority | '',
+        assignedToId: filters.assignee || undefined,
+        category: filters.category as TicketCategory | '',
+      }),
+    [search, filters.priority, filters.assignee, filters.category],
+  );
+  const assignees = useAsync(() => supportService.getAssignees(), []);
+  const assigneeOptions = useMemo(() => [{ value: 'unassigned', label: 'Unassigned' }, ...(assignees.data ?? []).map((a) => ({ value: a.id, label: a.name }))], [assignees.data]);
+
+  const tab: TabValue = STATUSES.includes(filters.status as TicketStatus) ? (filters.status as TicketStatus) : 'all';
+  const counts = useMemo(() => {
+    const c = { all: data?.length ?? 0 } as Record<TabValue, number>;
+    for (const s of STATUSES) c[s] = data?.filter((t) => t.status === s).length ?? 0;
+    return c;
+  }, [data]);
+  const summary = useMemo(() => (data ? countSummary(data) : undefined), [data]);
+  const rows = useMemo(() => (tab === 'all' ? data : data?.filter((t) => t.status === tab)), [data, tab]);
+
+  const activeTile: SummaryKey | null = tab === 'open' || tab === 'in_progress' || tab === 'waiting_customer' ? tab : !filters.status && filters.priority === 'urgent' ? 'urgent' : null;
+
+  const patchParams = (fn: (p: URLSearchParams) => void) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        fn(next);
+        return next;
+      },
+      { replace: true },
+    );
+
+  const onTile = (k: SummaryKey) => {
+    if (k === 'urgent')
+      patchParams((p) => {
+        const on = activeTile === 'urgent';
+        p.delete('status');
+        if (on) p.delete('priority');
+        else p.set('priority', 'urgent');
+      });
+    else setFilter('status', activeTile === k ? '' : k);
+  };
+
+  const filterCount = activeCount - (filters.status ? 1 : 0);
+  const clearFilters = () => patchParams((p) => ['priority', 'assignee', 'category', 'search'].forEach((k) => p.delete(k)));
+  const hasFilters = filterCount > 0 || Boolean(filters.search);
+
+  return (
+    <div>
+      <PageHeader title="Support" description="Customer conversations, assignments and service levels." />
+
+      <TicketSummaryStrip counts={loading ? undefined : summary} active={activeTile} onSelect={onTile} />
+
+      <Tabs<TabValue>
+        ariaLabel="Ticket status"
+        className="mb-4"
+        value={tab}
+        onChange={(v) => setFilter('status', v === 'all' ? '' : v)}
+        items={[{ value: 'all', label: 'All', count: loading ? undefined : counts.all }, ...STATUSES.map((s) => ({ value: s, label: TICKET_STATUS[s].label, count: loading ? undefined : counts[s] }))]}
+      />
+
+      <DataTable
+        caption="Support tickets"
+        storageKey="support-tickets"
+        data={rows}
+        columns={ticketColumns}
+        getRowId={(t: SupportTicket) => t.id}
+        loading={loading}
+        error={error}
+        onRetry={() => void reload()}
+        initialSort={{ id: 'created', dir: 'desc' }}
+        onRowClick={(t) => navigate(`/support/${t.id}`)}
+        rowClassName={(t) => (t.priority === 'urgent' && t.status !== 'resolved' && t.status !== 'closed' ? 'shadow-[inset_3px_0_0_#dc2626]' : undefined)}
+        toolbar={
+          <>
+            <SearchInput value={filters.search} onChange={(v) => setFilter('search', v)} placeholder="Search ticket, customer, order…" label="Search tickets" className="w-full sm:w-72" />
+            <FilterSelect label="Priority" value={filters.priority} onChange={(v) => setFilter('priority', v)} options={PRIORITY_OPTIONS} />
+            <FilterSelect label="Assignee" value={filters.assignee} onChange={(v) => setFilter('assignee', v)} options={assigneeOptions} allLabel="Anyone" />
+            <FilterSelect label="Category" value={filters.category} onChange={(v) => setFilter('category', v)} options={CATEGORY_OPTIONS} />
+            <ClearFiltersButton count={filterCount} onClear={clearFilters} />
+          </>
+        }
+        empty={
+          <EmptyState
+            icon={LifeBuoy}
+            title="No support tickets."
+            description={hasFilters || tab !== 'all' ? 'No ticket matches this view. Try another status or clear the filters.' : 'When customers contact support, their tickets will appear here.'}
+            action={
+              hasFilters ? (
+                <Button size="sm" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      />
+    </div>
+  );
+}
