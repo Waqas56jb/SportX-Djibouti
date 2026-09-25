@@ -32,7 +32,7 @@ export function Footer() {
         Footer
       </h2>
 
-      <div className="container-site grid gap-12 border-b border-white/10 py-14 lg:grid-cols-[1.2fr_2fr] lg:gap-16 lg:py-20">
+      <div className="container-site grid grid-cols-1 gap-12 border-b border-white/10 py-14 lg:grid-cols-[1.2fr_2fr] lg:gap-16 lg:py-20">
         <div className="max-w-sm">
           <Logo tone="light" size="lg" />
           <p className="mt-6 font-display text-2xl font-bold uppercase tracking-wide text-white">{SITE.tagline}</p>

@@ -1,6 +1,5 @@
 import { Pencil, Power, PowerOff, Timer, Trash2, Zap } from 'lucide-react';
-import type { FlashSale, ProductListItem } from '@/types';
-import type { FlashSaleStatus } from '@/services/discountService';
+import type { FlashSale, FlashSaleStatus, MarketingProduct } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatDateTime, formatMoney, formatNumber, formatShortDate, formatTime } from '@/utils/format';
 import { Menu, StatusBadge } from '@/components/common';
@@ -11,7 +10,7 @@ export interface FlashSaleCardProps {
   sale: FlashSale;
   status: FlashSaleStatus;
   now: number;
-  products: ProductListItem[];
+  products: MarketingProduct[];
   onEdit?: () => void;
   onToggle?: () => void;
   onDelete?: () => void;

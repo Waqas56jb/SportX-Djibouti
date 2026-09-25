@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Lock, ShieldCheck, Users } from 'lucide-react';
 import type { Role } from '@/types';
-import type { RoleInput } from '@/services/settingsService';
+import type { RoleInput } from '@/services/roleService';
+import type { FieldErrors } from './formErrors';
 import { cn } from '@/utils/cn';
 import { ALL_PERMISSIONS } from '@/constants/permissions';
 import { Button } from '@/components/common/Button';
@@ -53,7 +54,7 @@ export function RoleList({ roles, selectedId, onSelect }: { roles: Role[]; selec
   );
 }
 
-export function CreateRoleModal({ open, roles, onClose, onCreate }: { open: boolean; roles: Role[]; onClose: () => void; onCreate: (input: RoleInput) => Promise<boolean> }) {
+export function CreateRoleModal({ open, roles, onClose, onCreate }: { open: boolean; roles: Role[]; onClose: () => void; onCreate: (input: RoleInput) => Promise<boolean | FieldErrors> }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [copyFrom, setCopyFrom] = useState('');
@@ -77,9 +78,10 @@ export function CreateRoleModal({ open, roles, onClose, onCreate }: { open: bool
     setErrors(errs);
     if (errs.name) return;
     setSaving(true);
-    const ok = await onCreate({ name: name.trim(), description: description.trim(), permissions: source ? [...source.permissions] : ['dashboard:view'] });
+    const res = await onCreate({ name: name.trim(), description: description.trim(), permissions: source ? [...source.permissions] : ['dashboard:view'] });
     setSaving(false);
-    if (ok) onClose();
+    if (res === true) onClose();
+    else if (res) setErrors({ name: res.name });
   };
 
   return (

@@ -40,7 +40,7 @@ export function couponToForm(c: Coupon | undefined, duplicate = false): CouponFo
     };
   }
   return {
-    code: duplicate ? `${c.code}-COPY`.slice(0, 20) : c.code,
+    code: duplicate ? `${c.code}-COPY`.slice(0, 32) : c.code,
     description: c.description,
     type: c.type,
     value: c.value,
@@ -84,7 +84,7 @@ export function validateCoupon(f: CouponFormState, usageCount = 0): CouponFormEr
   const e: CouponFormErrors = {};
   const code = f.code.trim();
   if (!code) e.code = 'Coupon code is required.';
-  else if (!COUPON_CODE_RE.test(code)) e.code = 'Use 3–20 characters: A–Z, 0–9, dash or underscore.';
+  else if (!COUPON_CODE_RE.test(code)) e.code = 'Use 3–32 characters: A–Z, 0–9, dash or underscore.';
 
   if (f.value === '' || f.value <= 0) e.value = 'Enter a discount value greater than zero.';
   else if (f.type === 'percentage' && f.value > 100) e.value = 'A percentage can’t exceed 100%.';

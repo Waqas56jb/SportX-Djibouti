@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, LifeBuoy, LogIn, ShieldAlert, ShoppingBag, Star, UserPlus, type LucideIcon } from 'lucide-react';
+import { Heart, LifeBuoy, LogIn, ShieldAlert, ShoppingBag, Star, Truck, UserPlus, type LucideIcon } from 'lucide-react';
 import type { CustomerActivity } from '@/types';
 import { EmptyState, ErrorState, Panel, SkeletonText } from '@/components/common';
 import { customerService } from '@/services/customerService';
@@ -10,6 +10,7 @@ import { formatDateTime, formatRelative } from '@/utils/format';
 const ICON: Record<CustomerActivity['type'], { icon: LucideIcon; cls: string }> = {
   account_created: { icon: UserPlus, cls: 'bg-emerald-50 text-emerald-600' },
   order_placed: { icon: ShoppingBag, cls: 'bg-ink-950 text-volt' },
+  order_status: { icon: Truck, cls: 'bg-sky-50 text-sky-600' },
   review_posted: { icon: Star, cls: 'bg-amber-50 text-amber-600' },
   ticket_opened: { icon: LifeBuoy, cls: 'bg-violet-50 text-violet-600' },
   wishlist_added: { icon: Heart, cls: 'bg-rose-50 text-rose-600' },
@@ -32,7 +33,7 @@ export function CustomerTimeline({ customerId, refreshKey = 0 }: { customerId: s
       ) : (
         <ol className="relative">
           {items.map((ev, i) => {
-            const meta = ICON[ev.type];
+            const meta = ICON[ev.type] ?? ICON.status_changed;
             const last = i === items.length - 1;
             const body = (
               <>

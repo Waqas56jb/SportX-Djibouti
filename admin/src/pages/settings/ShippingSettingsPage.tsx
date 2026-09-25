@@ -9,9 +9,8 @@ import { Button } from '@/components/common/Button';
 import { EmptyState, ErrorState, SkeletonPanel } from '@/components/common/States';
 import { Callout, ReadOnlyBanner, SettingsLayout, StatTile, useCanEditSettings } from '@/components/settings/SettingsKit';
 import { ShippingZoneCard } from '@/components/settings/ShippingZoneCard';
-import { MethodDrawer, ZoneModal, type ZoneInput } from '@/components/settings/ShippingDialogs';
-
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : undefined);
+import { MethodDrawer, ZoneModal, type SubmitResult, type ZoneInput } from '@/components/settings/ShippingDialogs';
+import { errorMessage, handleFormError } from '@/components/settings/formErrors';
 
 export default function ShippingSettingsPage() {
   const canEdit = useCanEditSettings();
@@ -21,35 +20,40 @@ export default function ShippingSettingsPage() {
 
   const refresh = () => reload(true);
 
-  const run = async (fn: () => Promise<unknown>, success: string, failure: string) => {
+  const run = async (fn: () => Promise<unknown>, success: string, failure: string, fields?: readonly string[]): Promise<SubmitResult> => {
     try {
       await fn();
       toast.success(success);
       await refresh();
       return true;
     } catch (e) {
-      toast.error(failure, { description: errMsg(e) });
-      return false;
+      if (!fields) {
+        toast.error(failure, { description: errorMessage(e) });
+        return false;
+      }
+      const errs = handleFormError(e, failure, { fields });
+      return Object.keys(errs).length ? errs : false;
     }
   };
 
+  const ZONE_FIELDS = ['name', 'regions'] as const;
+  const METHOD_FIELDS = ['zoneId', 'name', 'description', 'price', 'freeShippingThreshold', 'estimatedDelivery', 'minDays', 'maxDays'] as const;
+
   const submitZone = (input: ZoneInput) =>
     zoneModal.zone
-      ? run(() => settingsService.updateZone(zoneModal.zone!.id, input), 'Shipping zone updated.', 'Couldn’t update zone')
-      : run(() => settingsService.createZone(input), 'Shipping zone created.', 'Couldn’t create zone');
+      ? run(() => settingsService.updateZone(zoneModal.zone!.id, input), 'Shipping zone updated.', 'Couldn’t update zone', ZONE_FIELDS)
+      : run(() => settingsService.createZone(input), 'Shipping zone created.', 'Couldn’t create zone', ZONE_FIELDS);
 
   const submitMethod = (input: ShippingMethodInput) =>
     methodDrawer.method
-      ? run(() => settingsService.updateMethod(methodDrawer.method!.id, input), 'Shipping method updated.', 'Couldn’t update method')
-      : run(() => settingsService.createMethod(input), 'Shipping method created.', 'Couldn’t create method');
+      ? run(() => settingsService.updateMethod(methodDrawer.method!.id, input), 'Shipping method updated.', 'Couldn’t update method', METHOD_FIELDS)
+      : run(() => settingsService.createMethod(input), 'Shipping method created.', 'Couldn’t create method', METHOD_FIELDS);
 
   const toggleZone = (z: ShippingZone, enabled: boolean) =>
     run(() => settingsService.updateZone(z.id, { enabled }), enabled ? `${z.name} enabled.` : `${z.name} disabled — hidden at checkout.`, 'Couldn’t update zone');
 
-  const toggleMethod = (m: ShippingMethod, enabled: boolean) => {
-    const { id: _id, ...input } = m;
-    return run(() => settingsService.updateMethod(m.id, { ...input, enabled }), enabled ? `${m.name} enabled.` : `${m.name} disabled.`, 'Couldn’t update method');
-  };
+  const toggleMethod = (m: ShippingMethod, enabled: boolean) =>
+    run(() => settingsService.updateMethod(m.id, { enabled }), enabled ? `${m.name} enabled.` : `${m.name} disabled.`, 'Couldn’t update method');
 
   const deleteZone = async (z: ShippingZone) => {
     const ok = await confirm({
@@ -85,7 +89,7 @@ export default function ShippingSettingsPage() {
 
       {error ? (
         <div className="panel">
-          <ErrorState onRetry={() => void reload()} description="We couldn’t load shipping zones. Please try again." />
+          <ErrorState onRetry={() => void reload()} description={error.message || 'We couldn’t load shipping zones. Please try again.'} />
         </div>
       ) : loading ? (
         <div className="space-y-5" aria-busy="true" aria-label="Loading shipping zones">
@@ -124,8 +128,8 @@ export default function ShippingSettingsPage() {
             </div>
           )}
 
-          <Callout icon={PlugZap} tone="neutral" className="mt-6" title="Carrier integrations arrive with the backend">
-            Rates here are flat prices set by SPORTX. Live carrier quotes, label printing and tracking webhooks will be connected when the Node.js API is in place.
+          <Callout icon={PlugZap} tone="neutral" className="mt-6" title="Flat rates">
+            Rates here are flat prices set by SPORTX and apply at checkout immediately. Customers only see enabled methods of enabled zones. The store-wide free-shipping threshold is set in Store settings.
           </Callout>
         </>
       )}

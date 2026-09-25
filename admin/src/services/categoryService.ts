@@ -1,69 +1,57 @@
 import type { Category, CategoryInput } from '@/types';
-import { appConfig } from '@/constants/config';
-import { uid } from '@/utils/id';
-import { api, ApiError } from './http';
-import { audit, db, delay, NotFoundError, now } from './mock/db';
+import { adminApi } from './api';
+import { isRemoteUrl, toCategory, type ApiCategory } from './catalogMappers';
+
+function toBody(input: Partial<CategoryInput>) {
+  const { imageFile: _f, imageUrl, ...rest } = input;
+  return {
+    ...rest,
+    // Local previews (blob:) are uploaded separately; `undefined` in the form means "no image".
+    ...(imageUrl === undefined || imageUrl === '' ? { imageUrl: null } : isRemoteUrl(imageUrl) ? { imageUrl } : {}),
+  };
+}
+
+async function withImage(saved: ApiCategory, file?: File): Promise<Category> {
+  if (!file) return toCategory(saved);
+  return toCategory(await adminApi.upload<ApiCategory>(`/categories/${saved.id}/image`, file));
+}
 
 export const categoryService = {
-  /** GET /categories */
+  /** GET /admin/categories — flat list (tree order) with depth and product counts. */
   async getCategories(): Promise<Category[]> {
-    if (!appConfig.useMocks) return api.get<Category[]>('/categories');
-    return delay([...db.categories].sort((a, b) => a.position - b.position));
+    const list = await adminApi.get<ApiCategory[]>('/categories');
+    return list.map(toCategory);
   },
 
-  /** POST /categories */
+  /** POST /admin/categories (+ POST /:id/image when a new image was picked). */
   async createCategory(input: CategoryInput): Promise<Category> {
-    if (!appConfig.useMocks) return api.post<Category>('/categories', input);
-    if (db.categories.some((c) => c.slug === input.slug)) throw new ApiError('A category with this slug already exists.', 409, 'slug_taken');
-    const cat: Category = { ...input, id: uid('cat'), productCount: 0, position: db.categories.length, createdAt: now(), updatedAt: now() };
-    db.categories.push(cat);
-    audit('Category created', 'Catalog', cat.name, '/categories');
-    return delay(cat);
+    const saved = await adminApi.post<ApiCategory>('/categories', toBody(input));
+    return withImage(saved, input.imageFile);
   },
 
-  /** PUT /categories/:id */
+  /** PATCH /admin/categories/:id (+ image upload). */
   async updateCategory(id: string, input: CategoryInput): Promise<Category> {
-    if (!appConfig.useMocks) return api.put<Category>(`/categories/${id}`, input);
-    const cat = db.categories.find((c) => c.id === id);
-    if (!cat) throw new NotFoundError('Category');
-    if (db.categories.some((c) => c.id !== id && c.slug === input.slug)) throw new ApiError('A category with this slug already exists.', 409, 'slug_taken');
-    if (input.parentId === id) throw new ApiError('A category cannot be its own parent.', 400);
-    Object.assign(cat, input, { updatedAt: now() });
-    audit('Category updated', 'Catalog', cat.name, '/categories');
-    return delay(cat);
+    const saved = await adminApi.patch<ApiCategory>(`/categories/${id}`, toBody(input));
+    return withImage(saved, input.imageFile);
   },
 
-  /** PATCH /categories/:id/status */
+  /** POST /admin/categories/:id/image (multipart). */
+  async uploadImage(id: string, file: File): Promise<Category> {
+    return toCategory(await adminApi.upload<ApiCategory>(`/categories/${id}/image`, file));
+  },
+
+  /** PATCH /admin/categories/:id/status */
   async setStatus(id: string, status: Category['status']): Promise<Category> {
-    if (!appConfig.useMocks) return api.patch<Category>(`/categories/${id}/status`, { status });
-    const cat = db.categories.find((c) => c.id === id);
-    if (!cat) throw new NotFoundError('Category');
-    cat.status = status;
-    cat.updatedAt = now();
-    audit(status === 'active' ? 'Category enabled' : 'Category disabled', 'Catalog', cat.name, '/categories');
-    return delay(cat);
+    return toCategory(await adminApi.patch<ApiCategory>(`/categories/${id}/status`, { status }));
   },
 
-  /** PUT /categories/order — ids in their new display order (siblings only). */
+  /** PUT /admin/categories/order — sibling ids in their new display order. */
   async reorder(orderedIds: string[]): Promise<void> {
-    if (!appConfig.useMocks) return api.put('/categories/order', { ids: orderedIds });
-    orderedIds.forEach((id, i) => {
-      const c = db.categories.find((x) => x.id === id);
-      if (c) c.position = i;
-    });
-    audit('Categories reordered', 'Catalog', `${orderedIds.length} categories`, '/categories');
-    await delay(null, 200);
+    await adminApi.put('/categories/order', { ids: orderedIds });
   },
 
-  /** DELETE /categories/:id — refuses when products or children still reference it. */
+  /** DELETE /admin/categories/:id — 409 when it still has sub-categories or products. */
   async deleteCategory(id: string): Promise<void> {
-    if (!appConfig.useMocks) return api.delete(`/categories/${id}`);
-    const cat = db.categories.find((c) => c.id === id);
-    if (!cat) throw new NotFoundError('Category');
-    if (db.categories.some((c) => c.parentId === id)) throw new ApiError('Move or delete the sub-categories first.', 409, 'has_children');
-    if (db.products.some((p) => p.categoryId === id)) throw new ApiError('This category still contains products. Reassign them first.', 409, 'has_products');
-    db.categories = db.categories.filter((c) => c.id !== id);
-    audit('Category deleted', 'Catalog', cat.name);
-    await delay(null);
+    await adminApi.delete(`/categories/${id}`);
   },
 };

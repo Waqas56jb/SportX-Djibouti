@@ -8,6 +8,10 @@ import { CurrencyInput, Input, Select, Textarea } from '@/components/forms/Input
 import { Toggle } from '@/components/forms/Choice';
 import { compact, required } from '@/utils/validation';
 import { formatMoney } from '@/utils/format';
+import type { FieldErrors } from './formErrors';
+
+/** true = saved, false = failed (already toasted), object = server field errors to show inline. */
+export type SubmitResult = boolean | FieldErrors;
 
 // ─── Zone ───────────────────────────────────────────────────────────────────
 export type ZoneInput = Pick<ShippingZone, 'name' | 'regions'>;
@@ -48,7 +52,7 @@ function RegionsInput({ value, onChange, error }: { value: string[]; onChange: (
   );
 }
 
-export function ZoneModal({ open, zone, onClose, onSubmit }: { open: boolean; zone?: ShippingZone; onClose: () => void; onSubmit: (input: ZoneInput) => Promise<boolean> }) {
+export function ZoneModal({ open, zone, onClose, onSubmit }: { open: boolean; zone?: ShippingZone; onClose: () => void; onSubmit: (input: ZoneInput) => Promise<SubmitResult> }) {
   const [name, setName] = useState('');
   const [regions, setRegions] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ name?: string; regions?: string }>({});
@@ -66,9 +70,10 @@ export function ZoneModal({ open, zone, onClose, onSubmit }: { open: boolean; zo
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setSaving(true);
-    const ok = await onSubmit({ name: name.trim(), regions });
+    const res = await onSubmit({ name: name.trim(), regions });
     setSaving(false);
-    if (ok) onClose();
+    if (res === true) onClose();
+    else if (res) setErrors({ name: res.name, regions: res.regions });
   };
 
   return (
@@ -109,14 +114,24 @@ type MethodForm = Omit<ShippingMethodInput, 'price' | 'freeShippingThreshold'> &
 
 const emptyMethod = (zoneId: string): MethodForm => ({ zoneId, name: '', description: '', price: '', freeShippingThreshold: '', estimatedDelivery: '', enabled: true });
 
-export function MethodDrawer({ open, zones, zoneId, method, onClose, onSubmit }: { open: boolean; zones: ShippingZone[]; zoneId: string; method?: ShippingMethod; onClose: () => void; onSubmit: (input: ShippingMethodInput) => Promise<boolean> }) {
+const fromMethod = (m: ShippingMethod): MethodForm => ({
+  zoneId: m.zoneId,
+  name: m.name,
+  description: m.description,
+  price: m.price,
+  freeShippingThreshold: m.freeShippingThreshold ?? '',
+  estimatedDelivery: m.estimatedDelivery,
+  enabled: m.enabled,
+});
+
+export function MethodDrawer({ open, zones, zoneId, method, onClose, onSubmit }: { open: boolean; zones: ShippingZone[]; zoneId: string; method?: ShippingMethod; onClose: () => void; onSubmit: (input: ShippingMethodInput) => Promise<SubmitResult> }) {
   const [f, setF] = useState<MethodForm>(emptyMethod(zoneId));
   const [errors, setErrors] = useState<Partial<Record<keyof MethodForm, string>>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setF(method ? { ...method, freeShippingThreshold: method.freeShippingThreshold ?? '' } : emptyMethod(zoneId));
+    setF(method ? fromMethod(method) : emptyMethod(zoneId));
     setErrors({});
   }, [open, method, zoneId]);
 
@@ -128,12 +143,12 @@ export function MethodDrawer({ open, zones, zoneId, method, onClose, onSubmit }:
       name: required(f.name, 'Method name'),
       price: f.price === '' ? 'Price is required (use 0 for free).' : f.price < 0 ? 'Price cannot be negative.' : undefined,
       freeShippingThreshold: f.freeShippingThreshold !== '' && f.freeShippingThreshold <= 0 ? 'Enter an amount above 0, or leave empty.' : undefined,
-      estimatedDelivery: required(f.estimatedDelivery, 'Estimated delivery'),
+      estimatedDelivery: required(f.estimatedDelivery, 'Estimated delivery') ?? (/\d/.test(f.estimatedDelivery) ? undefined : 'Include the number of days, e.g. “2–4 days”.'),
     });
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setSaving(true);
-    const ok = await onSubmit({
+    const res = await onSubmit({
       zoneId: f.zoneId,
       name: f.name.trim(),
       description: f.description.trim(),
@@ -143,7 +158,8 @@ export function MethodDrawer({ open, zones, zoneId, method, onClose, onSubmit }:
       enabled: f.enabled,
     });
     setSaving(false);
-    if (ok) onClose();
+    if (res === true) onClose();
+    else if (res) setErrors({ ...res, estimatedDelivery: res.estimatedDelivery ?? res.minDays ?? res.maxDays } as typeof errors);
   };
 
   return (
@@ -180,7 +196,7 @@ export function MethodDrawer({ open, zones, zoneId, method, onClose, onSubmit }:
           <CurrencyInput label="Price" required value={f.price} onValueChange={(v) => set('price', v)} error={errors.price} />
           <CurrencyInput label="Free shipping over" optional value={f.freeShippingThreshold} onValueChange={(v) => set('freeShippingThreshold', v)} error={errors.freeShippingThreshold} help={f.freeShippingThreshold ? `Free for orders of ${formatMoney(Number(f.freeShippingThreshold))} or more.` : 'Leave empty to always charge.'} />
         </FormGrid>
-        <Input label="Estimated delivery" required value={f.estimatedDelivery} onChange={(e) => set('estimatedDelivery', e.target.value)} error={errors.estimatedDelivery} placeholder="e.g. 1–2 business days" maxLength={40} />
+        <Input label="Estimated delivery" required value={f.estimatedDelivery} onChange={(e) => set('estimatedDelivery', e.target.value)} error={errors.estimatedDelivery} placeholder="e.g. 2–4 days" maxLength={40} help="Write a day range such as “1–2 days” or “3 days” — checkout shows it as a day range." />
         <div className="rounded-xl border border-zinc-200 px-4 py-3">
           <Toggle label="Available at checkout" description="Disabled methods stay configured but are hidden from customers." checked={f.enabled} onChange={(v) => set('enabled', v)} />
         </div>

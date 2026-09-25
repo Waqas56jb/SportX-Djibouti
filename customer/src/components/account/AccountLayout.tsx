@@ -1,9 +1,10 @@
-import { CreditCard, Heart, LayoutDashboard, LifeBuoy, LogOut, MapPin, Package, Settings, Star } from 'lucide-react';
+import { Bell, CreditCard, Heart, LayoutDashboard, LifeBuoy, LogOut, MapPin, Package, Settings, Star } from 'lucide-react';
 import { Suspense, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { PageLoader } from '@/components/common';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 import { initials } from '@/utils/format';
@@ -15,12 +16,14 @@ export const ACCOUNT_NAV = [
   { label: 'Addresses', href: ROUTES.accountAddresses, icon: MapPin },
   { label: 'Reviews', href: ROUTES.accountReviews, icon: Star },
   { label: 'Payment History', href: ROUTES.accountPayments, icon: CreditCard },
+  { label: 'Notifications', href: '/account/notifications', icon: Bell },
   { label: 'Support', href: ROUTES.accountSupport, icon: LifeBuoy },
   { label: 'Profile Settings', href: ROUTES.accountSettings, icon: Settings },
 ];
 
 export function AccountLayout() {
   const { user, logout } = useAuth();
+  const unread = useAuthStore((s) => s.unreadNotifications);
   const navigate = useNavigate();
 
   const signOut = async () => {
@@ -35,9 +38,13 @@ export function AccountLayout() {
     <div className="bg-paper-50">
       <div className="border-b border-paper-200 bg-white">
         <div className="container-site flex items-center gap-4 py-8 sm:py-10">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink font-display text-xl font-bold text-white sm:h-16 sm:w-16 sm:text-2xl">
-            {initials(user.firstName, user.lastName)}
-          </span>
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover sm:h-16 sm:w-16" />
+          ) : (
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink font-display text-xl font-bold text-white sm:h-16 sm:w-16 sm:text-2xl">
+              {initials(user.firstName, user.lastName)}
+            </span>
+          )}
           <div className="min-w-0">
             <p className="eyebrow">My account</p>
             <p className="truncate font-display text-3xl font-bold uppercase leading-none sm:text-4xl">
@@ -61,6 +68,7 @@ export function AccountLayout() {
                   }
                 >
                   {item.label}
+                  {item.href === '/account/notifications' && <UnreadDot count={unread} />}
                 </NavLink>
               </li>
             ))}
@@ -68,7 +76,7 @@ export function AccountLayout() {
         </nav>
       </div>
 
-      <div className="container-site grid gap-10 py-8 sm:py-12 lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr] xl:gap-14">
+      <div className="container-site grid grid-cols-1 gap-10 py-8 sm:py-12 lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr] xl:gap-14">
         <aside className="hidden lg:block">
           <nav aria-label="Account" className="sticky top-24">
             <ul className="space-y-0.5">
@@ -86,6 +94,7 @@ export function AccountLayout() {
                   >
                     <Icon className="h-4 w-4" aria-hidden />
                     {label}
+                    {href === '/account/notifications' && <UnreadDot count={unread} className="ml-auto" />}
                   </NavLink>
                 </li>
               ))}
@@ -105,6 +114,16 @@ export function AccountLayout() {
         </div>
       </div>
     </div>
+  );
+}
+
+function UnreadDot({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span className={cn('ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-ink', className)}>
+      {count > 99 ? '99+' : count}
+      <span className="sr-only"> unread</span>
+    </span>
   );
 }
 

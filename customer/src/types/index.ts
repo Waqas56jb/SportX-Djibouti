@@ -6,3 +6,4 @@ export * from './review';
 export * from './support';
 export * from './checkout';
 export * from './common';
+export * from './notification';

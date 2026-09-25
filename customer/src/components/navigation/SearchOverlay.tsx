@@ -3,11 +3,11 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { Price, SmartImage, Spinner } from '@/components/common';
-import { CATEGORY_LABELS } from '@/constants/labels';
 import { productPath, searchPath } from '@/constants/routes';
 import { IMG, type ImageKey } from '@/data/images';
 import { POPULAR_SEARCHES } from '@/data/navigation';
 import { useSearch } from '@/hooks/useSearch';
+import { categoryLabel } from '@/services/productService';
 import { useEscape, useFocusTrap, useLockBodyScroll } from '@/hooks/useUi';
 import { useUiStore } from '@/store/uiStore';
 
@@ -133,7 +133,7 @@ export function SearchOverlay() {
                             <div className="relative aspect-[4/5] overflow-hidden bg-paper-100">
                               <SmartImage src={p.images[0].url} alt={p.images[0].alt} sizes="200px" maxWidth={480} wrapperClassName="absolute inset-0" className="transition-transform duration-500 group-hover:scale-105" />
                             </div>
-                            <p className="mt-2 text-2xs font-semibold uppercase tracking-[0.12em] text-ink-500">{CATEGORY_LABELS[p.category]}</p>
+                            <p className="mt-2 text-2xs font-semibold uppercase tracking-[0.12em] text-ink-500">{categoryLabel(p)}</p>
                             <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug">{p.name}</p>
                             <Price price={p.price} compareAtPrice={p.compareAtPrice} size="sm" className="mt-1" />
                           </Link>

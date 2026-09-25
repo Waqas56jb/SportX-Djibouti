@@ -7,8 +7,11 @@ import { formatDateTime, formatRelative } from '@/utils/format';
 
 const PRIORITY_RANK = { urgent: 4, high: 3, normal: 2, low: 1 } as const;
 
-/** Latest message that the customer could see (skips internal notes). */
-export const lastPublicMessage = (t: SupportTicket) => [...t.messages].reverse().find((m) => !m.internal);
+/** Who wrote last: from the thread on detail views, from the list summary otherwise. Internal notes are skipped. */
+export const lastAuthor = (t: SupportTicket): 'customer' | 'admin' | undefined => {
+  const m = [...t.messages].reverse().find((x) => !x.internal);
+  return m ? m.authorType : t.lastMessage?.author;
+};
 
 export const ticketColumns: Column<SupportTicket>[] = [
   {
@@ -16,10 +19,8 @@ export const ticketColumns: Column<SupportTicket>[] = [
     header: 'Ticket',
     hideable: false,
     mobile: 'title',
-    sortValue: (t) => t.number,
     cell: (t) => {
-      const last = lastPublicMessage(t);
-      const awaiting = last?.authorType === 'customer' && t.status !== 'closed' && t.status !== 'resolved';
+      const awaiting = lastAuthor(t) === 'customer' && t.status !== 'closed' && t.status !== 'resolved';
       return (
         <span className="flex min-w-0 max-w-[22rem] items-start gap-2">
           <span className={awaiting ? 'mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-500' : 'mt-1.5 h-2 w-2 shrink-0'} aria-hidden title={awaiting ? 'Customer replied last' : undefined} />
@@ -37,7 +38,6 @@ export const ticketColumns: Column<SupportTicket>[] = [
     id: 'customer',
     header: 'Customer',
     mobile: 'subtitle',
-    sortValue: (t) => t.customerName,
     cell: (t) => (
       <span className="block min-w-0">
         <span className="block truncate text-zinc-800">{t.customerName}</span>
@@ -50,7 +50,6 @@ export const ticketColumns: Column<SupportTicket>[] = [
     header: 'Subject',
     defaultHidden: true,
     mobile: 'hidden',
-    sortValue: (t) => t.subject,
     cell: (t) => <span className="line-clamp-2 max-w-xs text-zinc-700">{t.subject}</span>,
   },
   { id: 'priority', header: 'Priority', mobile: 'aside', sortValue: (t) => PRIORITY_RANK[t.priority], cell: (t) => <StatusBadge map={TICKET_PRIORITY} value={t.priority} /> },
@@ -66,9 +65,18 @@ export const ticketColumns: Column<SupportTicket>[] = [
     ),
   },
   {
+    id: 'updated',
+    header: 'Updated',
+    sortValue: (t) => t.updatedAt,
+    cell: (t) => (
+      <span className="whitespace-nowrap text-zinc-600" title={formatDateTime(t.updatedAt)}>
+        {formatRelative(t.updatedAt)}
+      </span>
+    ),
+  },
+  {
     id: 'assigned',
     header: 'Assigned',
-    sortValue: (t) => t.assignedToName ?? '',
     cell: (t) =>
       t.assignedToName ? (
         <span className="flex items-center gap-2 whitespace-nowrap">

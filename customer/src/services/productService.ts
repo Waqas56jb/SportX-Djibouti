@@ -1,164 +1,378 @@
-import { CATEGORY_LABELS, GENDER_LABELS, SPORT_LABELS } from '@/constants/labels';
+import { CATEGORY_LABELS } from '@/constants/labels';
 import { PRODUCTS_PAGE_SIZE } from '@/constants/commerce';
-import { getCollection } from '@/data/collections';
-import { PRODUCTS } from '@/data/products';
-import type { FacetOption, Product, ProductFacets, ProductListResult, ProductQuery, SortKey } from '@/types';
-import { apiClient } from './api/client';
-import { USE_MOCK_API } from './config';
-import { delay } from './mock/db';
+import type {
+  CatalogCategory,
+  Department,
+  FacetOption,
+  Gender,
+  Product,
+  ProductBadge,
+  ProductCategory,
+  ProductColor,
+  ProductFacets,
+  ProductImage,
+  ProductListResult,
+  ProductQuery,
+  ProductShippingInfo,
+  SizeGuideType,
+  Sport,
+  StockStatus,
+} from '@/types';
+import { ApiError, api, requestPage } from './api';
 
-// ───────────────────────── Mock query engine ─────────────────────────
+// ───────────────────────── API shapes ─────────────────────────
 
-const normalise = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^\w\s]/g, '');
-
-function matchesText(p: Product, q: string) {
-  const terms = normalise(q).split(/\s+/).filter(Boolean);
-  const haystack = normalise(
-    [p.name, p.brand, p.category, CATEGORY_LABELS[p.category], p.sport, p.department, ...p.tags, ...p.gender].join(' '),
-  );
-  // Every term must match; allow simple plural stripping ("boots" → "boot").
-  return terms.every((t) => haystack.includes(t) || (t.endsWith('s') && haystack.includes(t.slice(0, -1))));
+interface ApiColor {
+  name: string;
+  hex: string;
 }
 
-function baseSet(query: ProductQuery) {
-  const collection = query.collection ? getCollection(query.collection) : undefined;
-  let list = collection ? PRODUCTS.filter(collection.match) : PRODUCTS;
-  if (query.q?.trim()) list = list.filter((p) => matchesText(p, query.q as string));
-  return list;
+/** `GET /products`, `/search`, `/featured`, `/batch`, related & complete-the-look items. */
+export interface ApiProductSummary {
+  id: string;
+  slug: string;
+  name: string;
+  brand: { name: string; slug: string };
+  category: { slug: string; name: string };
+  department: string;
+  sport: string;
+  gender: string[];
+  shortDescription: string;
+  price: number;
+  originalPrice: number;
+  compareAtPrice: number | null;
+  isSale: boolean;
+  discountPercent: number;
+  image: string | null;
+  hoverImage: string | null;
+  colors: ApiColor[];
+  sizes: string[];
+  rating: number;
+  reviewCount: number;
+  badge: string | null;
+  isNew: boolean;
+  isFeatured: boolean;
+  isBestSeller: boolean;
+  popularity: number;
+  stockStatus: StockStatus;
+  available: number;
+  createdAt: string | null;
 }
 
-function applyFilters(list: Product[], q: ProductQuery) {
-  return list.filter((p) => {
-    if (q.categories?.length && !q.categories.includes(p.category)) return false;
-    if (q.brands?.length && !q.brands.includes(p.brand)) return false;
-    if (q.sports?.length && !q.sports.includes(p.sport)) return false;
-    if (q.genders?.length && !q.genders.some((g) => p.gender.includes(g))) return false;
-    if (q.colors?.length && !p.colors.some((c) => q.colors?.includes(c.name))) return false;
-    if (q.sizes?.length && !p.variants.some((v) => q.sizes?.includes(v.size) && v.stock > 0)) return false;
-    if (q.minPrice !== undefined && p.price < q.minPrice) return false;
-    if (q.maxPrice !== undefined && p.price > q.maxPrice) return false;
-    if (q.minRating !== undefined && p.rating < q.minRating) return false;
-    if (q.inStockOnly && p.stock <= 0) return false;
-    return true;
-  });
+interface ApiVariant {
+  id: string;
+  sku: string;
+  color: string;
+  colorHex: string;
+  size: string;
+  price: number;
+  originalPrice: number;
+  compareAtPrice: number | null;
+  available: number;
+  stock: number;
+  stockStatus: StockStatus;
 }
 
-const SORTERS: Record<SortKey, (a: Product, b: Product) => number> = {
-  featured: (a, b) => Number(b.stock > 0) - Number(a.stock > 0) || b.popularity * 0.6 + b.rating * 8 - (a.popularity * 0.6 + a.rating * 8),
-  newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
-  'price-asc': (a, b) => a.price - b.price,
-  'price-desc': (a, b) => b.price - a.price,
-  rating: (a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount,
-  popular: (a, b) => b.popularity - a.popularity,
-};
-
-function count(list: Product[], pick: (p: Product) => string[], label: (v: string) => string, hex?: (v: string) => string): FacetOption[] {
-  const map = new Map<string, number>();
-  list.forEach((p) => new Set(pick(p)).forEach((v) => map.set(v, (map.get(v) ?? 0) + 1)));
-  return [...map.entries()].map(([value, n]) => ({ value, label: label(value), count: n, hex: hex?.(value) }));
+interface ApiImage {
+  id: string;
+  url: string;
+  alt: string;
+  role: 'MAIN' | 'GALLERY' | 'HOVER';
+  color: string | null;
+  position: number;
 }
 
-const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-const sizeRank = (s: string) => {
-  const i = SIZE_ORDER.indexOf(s);
-  if (i >= 0) return i;
-  const n = parseFloat(s.replace(/[^\d.]/g, ''));
-  return Number.isNaN(n) ? 999 : 100 + n;
-};
+/** `GET /products/:idOrSlug`. */
+export interface ApiProductDetail {
+  id: string;
+  slug: string;
+  name: string;
+  sku: string;
+  brand: { id: string; name: string; slug: string };
+  category: { id: string; name: string; slug: string; parent: { id: string; name: string; slug: string } | null };
+  department: string;
+  sport: string;
+  gender: string[];
+  productType: string;
+  shortDescription: string;
+  description: string;
+  images: ApiImage[];
+  colors: ApiColor[];
+  sizes: string[];
+  variants: ApiVariant[];
+  stock: number;
+  available: number;
+  stockStatus: StockStatus;
+  price: number;
+  originalPrice: number;
+  compareAtPrice: number | null;
+  salePrice: number | null;
+  isSale: boolean;
+  discountPercent: number;
+  rating: number;
+  reviewCount: number;
+  ratingDistribution: Record<string, number>;
+  features: string[];
+  specifications: { label: string; value: string }[];
+  badge: string | null;
+  isNew: boolean;
+  isFeatured: boolean;
+  isBestSeller: boolean;
+  popularity: number;
+  sizeGuide: string;
+  tags: string[];
+  shipping: ProductShippingInfo | null;
+  completeTheLook: ApiProductSummary[];
+  related: ApiProductSummary[];
+  createdAt: string;
+}
 
-function buildFacets(list: Product[]): ProductFacets {
-  const hexByColor = new Map<string, string>();
-  list.forEach((p) => p.colors.forEach((c) => hexByColor.set(c.name, c.hex)));
-  const prices = list.map((p) => p.price);
+type ApiFacets = Partial<ProductFacets>;
+
+// ───────────────────────── Adapters (API → UI types) ─────────────────────────
+
+const BADGES: ProductBadge[] = ['new', 'bestseller', 'limited', 'exclusive'];
+const SIZE_GUIDES: SizeGuideType[] = ['footwear', 'apparel', 'gloves', 'ball', 'none'];
+
+const toBadge = (b: string | null | undefined): ProductBadge | undefined => (b && BADGES.includes(b as ProductBadge) ? (b as ProductBadge) : undefined);
+const toSizeGuide = (g: string | null | undefined): SizeGuideType => (g && SIZE_GUIDES.includes(g as SizeGuideType) ? (g as SizeGuideType) : 'none');
+const toGenders = (g: string[] | undefined): Gender[] => (g ?? []).map((x) => x.toLowerCase() as Gender);
+const compareAt = (price: number, compare: number | null | undefined) => (compare && compare > price ? compare : undefined);
+
+/** Category display name: API name first, then the static label, then the slug. */
+export const categoryLabel = (p: Pick<Product, 'category' | 'categoryName'>) =>
+  p.categoryName ?? CATEGORY_LABELS[p.category as ProductCategory] ?? p.category;
+
+/** List/summary product → UI Product. No variants: open the detail (or Quick View) before adding to the bag. */
+export function toProductFromSummary(s: ApiProductSummary): Product {
+  const images: ProductImage[] = [];
+  if (s.image) images.push({ url: s.image, alt: s.name });
+  if (s.hoverImage && s.hoverImage !== s.image) images.push({ url: s.hoverImage, alt: '' });
   return {
-    categories: count(list, (p) => [p.category], (v) => CATEGORY_LABELS[v as Product['category']] ?? v).sort((a, b) => b.count - a.count),
-    brands: count(list, (p) => [p.brand], (v) => v).sort((a, b) => a.label.localeCompare(b.label)),
-    sizes: count(list, (p) => p.sizes, (v) => v)
-      .filter((o) => o.value !== 'One Size')
-      .sort((a, b) => sizeRank(a.value) - sizeRank(b.value)),
-    colors: count(list, (p) => p.colors.map((c) => c.name), (v) => v, (v) => hexByColor.get(v) ?? '#ccc').sort((a, b) => b.count - a.count),
-    genders: count(list, (p) => p.gender, (v) => GENDER_LABELS[v as Product['gender'][number]] ?? v),
-    sports: count(list, (p) => [p.sport], (v) => SPORT_LABELS[v as Product['sport']] ?? v),
-    priceRange: { min: prices.length ? Math.min(...prices) : 0, max: prices.length ? Math.max(...prices) : 0 },
+    id: s.id,
+    slug: s.slug,
+    name: s.name,
+    brand: s.brand?.name ?? '',
+    brandSlug: s.brand?.slug,
+    department: s.department as Department,
+    category: s.category?.slug ?? '',
+    categoryName: s.category?.name,
+    sport: s.sport as Sport,
+    gender: toGenders(s.gender),
+    shortDescription: s.shortDescription ?? '',
+    description: '',
+    price: s.price,
+    compareAtPrice: compareAt(s.price, s.compareAtPrice),
+    rating: Number(s.rating) || 0,
+    reviewCount: s.reviewCount ?? 0,
+    images: images.length ? images : [{ url: '', alt: s.name }],
+    colors: (s.colors ?? []).map((c) => ({ name: c.name, hex: c.hex })),
+    sizes: s.sizes ?? [],
+    variants: [],
+    stock: s.available ?? 0,
+    stockStatus: s.stockStatus,
+    features: [],
+    specifications: [],
+    badge: toBadge(s.badge),
+    isNew: Boolean(s.isNew),
+    isBestSeller: Boolean(s.isBestSeller),
+    popularity: s.popularity ?? 0,
+    createdAt: s.createdAt ?? '',
+    sizeGuide: 'none',
+    tags: [],
+    isSummary: true,
   };
 }
+
+/** Full product detail → UI Product (variants, gallery, colour → image mapping, extras). */
+export function toProductFromDetail(d: ApiProductDetail): Product {
+  const sorted = [...(d.images ?? [])].sort((a, b) => a.position - b.position);
+  // Main image first, hover image last, gallery in between.
+  const rank = (r: ApiImage['role']) => (r === 'MAIN' ? 0 : r === 'GALLERY' ? 1 : 2);
+  const ordered = sorted.sort((a, b) => rank(a.role) - rank(b.role) || a.position - b.position);
+  const images: ProductImage[] = ordered.map((i) => ({ url: i.url, alt: i.alt || d.name, color: i.color }));
+  const colors: ProductColor[] = (d.colors ?? []).map((c) => {
+    const idx = images.findIndex((i) => i.color && i.color.toLowerCase() === c.name.toLowerCase());
+    return { name: c.name, hex: c.hex, imageIndex: idx >= 0 ? idx : undefined };
+  });
+  const dist = d.ratingDistribution ?? {};
+  return {
+    id: d.id,
+    slug: d.slug,
+    name: d.name,
+    brand: d.brand?.name ?? '',
+    brandSlug: d.brand?.slug,
+    department: d.department as Department,
+    category: d.category?.slug ?? '',
+    categoryName: d.category?.name,
+    sport: d.sport as Sport,
+    gender: toGenders(d.gender),
+    shortDescription: d.shortDescription ?? '',
+    description: d.description ?? '',
+    price: d.price,
+    compareAtPrice: compareAt(d.price, d.compareAtPrice),
+    rating: Number(d.rating) || 0,
+    reviewCount: d.reviewCount ?? 0,
+    images: images.length ? images : [{ url: '', alt: d.name }],
+    colors,
+    sizes: d.sizes ?? [],
+    variants: (d.variants ?? []).map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      color: v.color,
+      size: v.size,
+      stock: v.available ?? 0,
+      stockStatus: v.stockStatus,
+      price: v.price,
+      compareAtPrice: compareAt(v.price, v.compareAtPrice),
+    })),
+    stock: d.available ?? 0,
+    stockStatus: d.stockStatus,
+    features: d.features ?? [],
+    specifications: d.specifications ?? [],
+    badge: toBadge(d.badge),
+    isNew: Boolean(d.isNew),
+    isBestSeller: Boolean(d.isBestSeller),
+    popularity: d.popularity ?? 0,
+    createdAt: d.createdAt ?? '',
+    sizeGuide: toSizeGuide(d.sizeGuide),
+    tags: d.tags ?? [],
+    ratingDistribution: { 1: dist['1'] ?? 0, 2: dist['2'] ?? 0, 3: dist['3'] ?? 0, 4: dist['4'] ?? 0, 5: dist['5'] ?? 0 },
+    relatedProducts: (d.related ?? []).map(toProductFromSummary),
+    lookProducts: (d.completeTheLook ?? []).map(toProductFromSummary),
+    shipping: d.shipping ?? undefined,
+  };
+}
+
+const EMPTY_FACETS: ProductFacets = { categories: [], brands: [], sizes: [], colors: [], genders: [], sports: [], priceRange: { min: 0, max: 0 } };
+
+function toFacets(f: ApiFacets | undefined): ProductFacets {
+  const list = (x: FacetOption[] | undefined) => x ?? [];
+  return {
+    categories: list(f?.categories),
+    brands: list(f?.brands),
+    sizes: list(f?.sizes),
+    colors: list(f?.colors),
+    genders: list(f?.genders),
+    sports: list(f?.sports),
+    priceRange: f?.priceRange ?? EMPTY_FACETS.priceRange,
+  };
+}
+
+/** ProductQuery → API query string params (plural keys; empty values are dropped by the client). */
+function toApiQuery(q: ProductQuery) {
+  return {
+    page: q.page ?? 1,
+    limit: q.pageSize ?? PRODUCTS_PAGE_SIZE,
+    q: q.q?.trim() || undefined,
+    collection: q.collection,
+    categories: q.categories?.length ? q.categories.join(',') : undefined,
+    brands: q.brands?.length ? q.brands.join(',') : undefined,
+    sizes: q.sizes?.length ? q.sizes.join(',') : undefined,
+    colors: q.colors?.length ? q.colors.join(',') : undefined,
+    genders: q.genders?.length ? q.genders.join(',') : undefined,
+    sports: q.sports?.length ? q.sports.join(',') : undefined,
+    minPrice: q.minPrice,
+    maxPrice: q.maxPrice,
+    minRating: q.minRating,
+    inStock: q.inStockOnly ? 'true' : undefined,
+    sort: q.sort && q.sort !== 'featured' ? q.sort : undefined,
+  };
+}
+
+const notFound = (err: unknown) => err instanceof ApiError && err.status === 404;
+
+export type FeaturedKind = 'new' | 'bestseller' | 'sale' | 'training' | 'football' | 'basketball' | 'running' | 'featured';
 
 // ───────────────────────── Public API ─────────────────────────
 
 export const productService = {
+  /**
+   * One page of the catalogue (`GET /products`, or `/products/search` when `q` is set).
+   * The API returns a single page — callers append pages for "load more".
+   */
   async list(query: ProductQuery, signal?: AbortSignal): Promise<ProductListResult> {
-    if (!USE_MOCK_API) return apiClient.get<ProductListResult>('/products', { ...query }, signal);
-    await delay();
-    const base = baseSet(query);
-    const filtered = applyFilters(base, query).sort(SORTERS[query.sort ?? 'featured']);
-    const page = Math.max(1, query.page ?? 1);
-    const pageSize = query.pageSize ?? PRODUCTS_PAGE_SIZE;
-    // "Load more" pagination: return everything up to the requested page.
-    const items = filtered.slice(0, page * pageSize);
-    return { items, total: filtered.length, page, pageSize, hasMore: items.length < filtered.length, facets: buildFacets(base) };
-  },
-
-  async getBySlug(slug: string): Promise<Product | null> {
-    if (!USE_MOCK_API) return apiClient.get<Product | null>(`/products/${slug}`);
-    await delay(200, 450);
-    return PRODUCTS.find((p) => p.slug === slug) ?? null;
-  },
-
-  async getByIds(ids: string[]): Promise<Product[]> {
-    if (!ids.length) return [];
-    if (!USE_MOCK_API) return apiClient.get<Product[]>('/products/batch', { ids });
-    await delay(150, 350);
-    return ids.map((id) => PRODUCTS.find((p) => p.id === id)).filter((p): p is Product => Boolean(p));
-  },
-
-  async getBySlugs(slugs: string[]): Promise<Product[]> {
-    if (!slugs.length) return [];
-    if (!USE_MOCK_API) return apiClient.get<Product[]>('/products/batch', { slugs });
-    await delay(150, 350);
-    return slugs.map((s) => PRODUCTS.find((p) => p.slug === s)).filter((p): p is Product => Boolean(p));
-  },
-
-  async getFeatured(kind: 'new' | 'bestseller' | 'sale' | 'training' | 'football' | 'basketball', limit = 8): Promise<Product[]> {
-    if (!USE_MOCK_API) return apiClient.get<Product[]>('/products/featured', { kind, limit });
-    await delay(200, 500);
-    const pick: Record<typeof kind, (p: Product) => boolean> = {
-      new: (p) => p.isNew,
-      bestseller: (p) => p.isBestSeller,
-      sale: (p) => (p.compareAtPrice ?? 0) > p.price,
-      training: (p) => p.sport === 'training',
-      football: (p) => p.sport === 'football',
-      basketball: (p) => p.sport === 'basketball',
+    const path = query.q?.trim() ? '/products/search' : '/products';
+    const res = await requestPage<ApiProductSummary, { facets?: ApiFacets }>(path, { query: toApiQuery(query), signal });
+    return {
+      items: res.data.map(toProductFromSummary),
+      total: res.pagination.total,
+      page: res.pagination.page,
+      pageSize: res.pagination.limit,
+      hasMore: res.pagination.hasNext,
+      facets: toFacets(res.facets),
     };
-    const sorter = kind === 'new' ? SORTERS.newest : SORTERS.popular;
-    return PRODUCTS.filter(pick[kind]).sort(sorter).slice(0, limit);
   },
 
+  /** Full product (variants, images, related, complete-the-look, shipping info). Null when not found. */
+  async getBySlug(slug: string): Promise<Product | null> {
+    if (!slug) return null;
+    try {
+      return toProductFromDetail(await api.get<ApiProductDetail>(`/products/${encodeURIComponent(slug)}`));
+    } catch (err) {
+      if (notFound(err)) return null;
+      throw err;
+    }
+  },
+
+  /** Summaries by id, in the requested order (`GET /products/batch?ids=`). */
+  async getByIds(ids: string[]): Promise<Product[]> {
+    const unique = [...new Set(ids.filter(Boolean))].slice(0, 60);
+    if (!unique.length) return [];
+    const rows = await api.get<ApiProductSummary[]>('/products/batch', { ids: unique.join(',') });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    return unique.map((id) => byId.get(id)).filter((r): r is ApiProductSummary => Boolean(r)).map(toProductFromSummary);
+  },
+
+  /** Summaries by slug, in the requested order (`GET /products/batch?slugs=`) — recently viewed. */
+  async getBySlugs(slugs: string[]): Promise<Product[]> {
+    const unique = [...new Set(slugs.filter(Boolean))].slice(0, 60);
+    if (!unique.length) return [];
+    const rows = await api.get<ApiProductSummary[]>('/products/batch', { slugs: unique.join(',') });
+    const bySlug = new Map(rows.map((r) => [r.slug, r]));
+    return unique.map((s) => bySlug.get(s)).filter((r): r is ApiProductSummary => Boolean(r)).map(toProductFromSummary);
+  },
+
+  /** Home / merchandising shelves (`GET /products/featured?kind=`). */
+  async getFeatured(kind: FeaturedKind, limit = 8): Promise<Product[]> {
+    const rows = await api.get<ApiProductSummary[]>('/products/featured', { kind, limit });
+    return rows.map(toProductFromSummary);
+  },
+
+  /** Related products — uses the detail payload when present, otherwise `GET /products/:slug/related`. */
   async getRelated(product: Product, limit = 8): Promise<Product[]> {
-    if (!USE_MOCK_API) return apiClient.get<Product[]>(`/products/${product.slug}/related`, { limit });
-    await delay(200, 450);
-    const score = (p: Product) =>
-      (p.category === product.category ? 3 : 0) + (p.sport === product.sport ? 2 : 0) + (p.department === product.department ? 1 : 0);
-    return PRODUCTS.filter((p) => p.id !== product.id && score(p) > 0)
-      .sort((a, b) => score(b) - score(a) || b.popularity - a.popularity)
-      .slice(0, limit);
+    if (product.relatedProducts) return product.relatedProducts.slice(0, limit);
+    const rows = await api.get<ApiProductSummary[]>(`/products/${encodeURIComponent(product.slug)}/related`, { limit: Math.min(limit, 24) });
+    return rows.map(toProductFromSummary);
   },
 
+  /** "Complete the look" — from the detail payload when present, otherwise the dedicated endpoint. */
   async getCompleteTheLook(product: Product, limit = 4): Promise<Product[]> {
-    if (!USE_MOCK_API) return apiClient.get<Product[]>(`/products/${product.slug}/complete-the-look`, { limit });
-    await delay(200, 450);
-    const curated = (product.completeTheLook ?? []).map((id) => PRODUCTS.find((p) => p.id === id)).filter((p): p is Product => Boolean(p));
-    if (curated.length >= limit) return curated.slice(0, limit);
-    // Fill with complementary departments from the same sport.
-    const fill = PRODUCTS.filter(
-      (p) => p.id !== product.id && p.sport === product.sport && p.department !== product.department && !curated.includes(p),
-    ).sort(SORTERS.popular);
-    return [...curated, ...fill].slice(0, limit);
+    if (product.lookProducts) return product.lookProducts.slice(0, limit);
+    const rows = await api.get<ApiProductSummary[]>(`/products/${encodeURIComponent(product.slug)}/complete-the-look`, { limit: Math.min(limit, 24) });
+    return rows.map(toProductFromSummary);
   },
 
-  async search(q: string, limit = 6): Promise<Product[]> {
-    if (!q.trim()) return [];
-    if (!USE_MOCK_API) return apiClient.get<Product[]>('/products/search', { q, limit });
-    await delay(120, 280);
-    return PRODUCTS.filter((p) => matchesText(p, q)).sort(SORTERS.popular).slice(0, limit);
+  /** Instant search for the header overlay (`GET /products/search`). */
+  async search(q: string, limit = 6, signal?: AbortSignal): Promise<{ items: Product[]; total: number }> {
+    const term = q.trim();
+    if (!term) return { items: [], total: 0 };
+    const res = await requestPage<ApiProductSummary>('/products/search', { query: { q: term, limit, sort: 'relevance' }, signal });
+    return { items: res.data.map(toProductFromSummary), total: res.pagination.total };
+  },
+
+  /** Category tree (`GET /categories`). */
+  categories(): Promise<CatalogCategory[]> {
+    return api.get<CatalogCategory[]>('/categories');
+  },
+
+  /** One category with children and breadcrumb (`GET /categories/:slug`). Null when not found. */
+  async category(slug: string): Promise<CatalogCategory | null> {
+    try {
+      return await api.get<CatalogCategory>(`/categories/${encodeURIComponent(slug)}`);
+    } catch (err) {
+      if (notFound(err)) return null;
+      throw err;
+    }
   },
 };

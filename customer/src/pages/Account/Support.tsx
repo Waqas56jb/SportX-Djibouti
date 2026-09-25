@@ -9,14 +9,16 @@ import { SITE } from '@/constants/site';
 import { useAsync } from '@/hooks/useAsync';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { errorMessage, orderService, supportService } from '@/services';
+import { apiFieldErrors, friendlyError } from '@/services/authService';
+import { orderService } from '@/services/orderService';
+import { supportService } from '@/services/supportService';
 import { toast } from '@/store/toastStore';
 import type { TicketCategory, TicketStatus } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatDateTime, formatRelative } from '@/utils/format';
 import { minLength, required, validate } from '@/utils/validation';
 
-const STATUS_TONE: Record<TicketStatus, BadgeTone> = { open: 'accent', 'in-progress': 'warning', resolved: 'success', closed: 'neutral' };
+const STATUS_TONE: Record<TicketStatus, BadgeTone> = { open: 'accent', 'in-progress': 'warning', 'waiting-customer': 'dark', resolved: 'success', closed: 'neutral' };
 
 export function TicketStatusBadge({ status }: { status: TicketStatus }) {
   return (
@@ -35,7 +37,7 @@ function NewTicketForm({ defaultOrder, onCreated, onCancel }: { defaultOrder?: s
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const errs = validate(values, { subject: required('Add a subject'), category: required('Choose a topic'), message: minLength(10, 'Message') });
+    const errs = validate(values, { subject: (v) => (!v.trim() ? 'Add a subject' : v.trim().length < 3 ? 'Use at least 3 characters' : undefined), category: required('Choose a topic'), message: minLength(10, 'Message') });
     setErrors(errs);
     if (Object.keys(errs).length || !user) return;
     setSaving(true);
@@ -44,7 +46,9 @@ function NewTicketForm({ defaultOrder, onCreated, onCancel }: { defaultOrder?: s
       toast.success('Ticket created', { description: `${ticket.number} — our team will respond shortly.` });
       onCreated(ticket.id);
     } catch (err) {
-      toast.error('Could not create ticket', { description: errorMessage(err) });
+      const fields = apiFieldErrors(err);
+      setErrors({ subject: fields.subject, category: fields.category, orderNumber: fields.orderNumber, message: fields.message });
+      if (!Object.keys(fields).length) toast.error('Could not create ticket', { description: friendlyError(err) });
       setSaving(false);
     }
   };
@@ -67,6 +71,7 @@ function NewTicketForm({ defaultOrder, onCreated, onCancel }: { defaultOrder?: s
             optional
             value={values.orderNumber}
             onChange={(e) => setValues((v) => ({ ...v, orderNumber: e.target.value }))}
+            error={errors.orderNumber}
             options={[{ value: '', label: 'None' }, ...(orders.data ?? []).map((o) => ({ value: o.number, label: o.number }))]}
           />
         </div>
@@ -145,7 +150,7 @@ export function SupportPage() {
                   <p className="mt-1.5 truncate text-[15px] font-semibold">{t.subject}</p>
                   <p className="mt-0.5 text-xs text-ink-500">
                     {TICKET_CATEGORY_LABELS[t.category]}
-                    {t.orderNumber && ` · ${t.orderNumber}`} · Updated {formatRelative(t.updatedAt)} · {t.messages.length} messages
+                    {t.orderNumber && ` · ${t.orderNumber}`} · Updated {formatRelative(t.updatedAt)} · {t.messageCount} {t.messageCount === 1 ? 'message' : 'messages'}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-ink-500" aria-hidden />
@@ -189,7 +194,7 @@ export function TicketDetailPage() {
       setData(updated);
       setReply('');
     } catch (err) {
-      setReplyError(errorMessage(err));
+      setReplyError(friendlyError(err));
     } finally {
       setSending(false);
     }
@@ -262,7 +267,7 @@ export function TicketDetailPage() {
                 maxLength={2000}
               />
               <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-xs text-ink-500">{ticket.status === 'resolved' ? 'Replying will reopen this ticket.' : 'Our team typically replies within one business day.'}</p>
+                <p className="text-xs text-ink-500">{ticket.status === 'resolved' ? 'Replying will reopen this ticket.' : ticket.status === 'waiting-customer' ? 'Our team is waiting for your reply.' : 'Our team typically replies within one business day.'}</p>
                 <Button type="submit" variant="primary" loading={sending} leftIcon={<Send className="h-4 w-4" />}>
                   Send
                 </Button>

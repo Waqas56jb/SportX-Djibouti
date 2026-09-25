@@ -21,8 +21,12 @@ export interface ProductImage {
   alt: string;
   role: 'main' | 'gallery' | 'hover';
   position: number;
-  /** Storage key for future S3 / Supabase Storage objects. */
+  /** Storage path of an uploaded object (null for URL-based images). */
   storageKey?: string;
+  /** Colour the image belongs to (optional, used by the storefront gallery). */
+  color?: string;
+  /** Local file waiting to be uploaded on save (object-URL preview in `url`). */
+  file?: File;
 }
 
 export interface ProductVariant {
@@ -93,7 +97,15 @@ export interface ProductListItem extends Product {
   categoryName: string;
   totalStock: number;
   stockStatus: StockStatus;
+  /** Main image URL (list rows do not carry the full image set). */
+  image?: string;
+  /** Variant count (list rows do not carry the variants themselves). */
+  variantsCount: number;
+  /** Σ (stock − reserved) across variants. */
+  available?: number;
 }
+
+export type ProductSortKey = 'newest' | 'oldest' | 'price' | 'stock' | 'sales' | 'name' | 'updated';
 
 export type ProductInput = Omit<
   Product,
@@ -110,6 +122,10 @@ export interface ProductFilters {
   gender?: Gender | '';
   minPrice?: number;
   maxPrice?: number;
+  page?: number;
+  pageSize?: number;
+  sort?: ProductSortKey;
+  order?: 'asc' | 'desc';
 }
 
 export interface Category {
@@ -124,11 +140,19 @@ export interface Category {
   productCount: number;
   seoTitle: string;
   seoDescription: string;
+  /** Depth in the tree (0 = root). */
+  depth?: number;
+  /** Products in this category and all of its descendants. */
+  totalProductCount?: number;
+  childrenCount?: number;
   createdAt: ISODate;
   updatedAt: ISODate;
 }
 
-export type CategoryInput = Omit<Category, 'id' | 'productCount' | 'createdAt' | 'updatedAt'>;
+export type CategoryInput = Omit<Category, 'id' | 'productCount' | 'createdAt' | 'updatedAt' | 'depth' | 'totalProductCount' | 'childrenCount'> & {
+  /** New image picked in the form — uploaded after the category is saved. */
+  imageFile?: File;
+};
 
 export interface Brand {
   id: ID;
@@ -143,4 +167,7 @@ export interface Brand {
   updatedAt: ISODate;
 }
 
-export type BrandInput = Omit<Brand, 'id' | 'productCount' | 'createdAt' | 'updatedAt'>;
+export type BrandInput = Omit<Brand, 'id' | 'productCount' | 'createdAt' | 'updatedAt'> & {
+  /** New logo picked in the form — uploaded after the brand is saved. */
+  logoFile?: File;
+};

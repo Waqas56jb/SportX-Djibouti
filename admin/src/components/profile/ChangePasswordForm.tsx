@@ -2,9 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Check, Eye, EyeOff, KeyRound, Lock, X } from 'lucide-react';
 import { Button } from '@/components/common';
 import { FormSection, Input } from '@/components/forms';
-import { authService } from '@/services/authService';
-import { ApiError } from '@/services/http';
-import { appConfig } from '@/constants/config';
+import { profileService } from '@/services/profileService';
+import { handleFormError } from '@/components/settings/formErrors';
 import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 
@@ -27,12 +26,12 @@ const LEVELS = [
 export function passwordScore(pw: string): number {
   if (!pw) return 0;
   let s = 0;
-  if (pw.length >= 10) s++;
+  if (pw.length >= 8) s++;
   if (pw.length >= 14) s++;
   if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
   if (/\d/.test(pw) && /[a-z]/i.test(pw)) s++;
   if (/[^a-z0-9]/i.test(pw)) s++;
-  if (pw.length < 10) s = Math.min(s, 1);
+  if (pw.length < 8) s = Math.min(s, 1);
   return Math.min(4, s);
 }
 
@@ -73,7 +72,7 @@ export function ChangePasswordForm() {
   const [saving, setSaving] = useState(false);
 
   const rules = {
-    length: form.next.length >= 10,
+    length: form.next.length >= 8 && form.next.length <= 128,
     letter: /[a-z]/i.test(form.next),
     number: /\d/.test(form.next),
     differs: Boolean(form.next) && form.next !== form.current,
@@ -97,13 +96,12 @@ export function ChangePasswordForm() {
     if (Object.keys(errs).length) return;
     setSaving(true);
     try {
-      await authService.changePassword(form.current, form.next);
+      await profileService.changePassword(form.current, form.next);
       setForm(EMPTY);
       setShow(false);
-      toast.success('Password updated.', { description: 'Use your new password next time you sign in.' });
+      toast.success('Password updated.', { description: 'Other devices have been signed out. This one stays signed in.' });
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'invalid_password') setErrors({ current: 'Current password is incorrect.' });
-      else toast.error('Couldn’t change your password.', { description: err instanceof Error ? err.message : undefined });
+      setErrors(handleFormError(err, 'Couldn’t change your password.', { alias: { currentPassword: 'current', newPassword: 'next' }, fields: ['current', 'next'] }) as Errors);
     } finally {
       setSaving(false);
     }
@@ -117,7 +115,7 @@ export function ChangePasswordForm() {
   );
 
   return (
-    <FormSection id="password" title="Change password" description="At least 10 characters with a letter and a number. You stay signed in on this device.">
+    <FormSection id="password" title="Change password" description="At least 8 characters with a letter and a number. Other devices are signed out; this one stays signed in.">
       <form onSubmit={submit} noValidate className="space-y-4">
         <Input
           label="Current password"
@@ -129,7 +127,6 @@ export function ChangePasswordForm() {
           error={errors.current}
           autoComplete="current-password"
           aside={toggle}
-          help={appConfig.useMocks ? 'Demo mode: the current password is sportx2026.' : undefined}
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -139,7 +136,7 @@ export function ChangePasswordForm() {
           <Input label="Confirm new password" required type={type} icon={KeyRound} value={form.confirm} onChange={(e) => set('confirm', e.target.value)} error={errors.confirm} autoComplete="new-password" />
         </div>
         <ul className="grid gap-1.5 rounded-lg bg-zinc-50 px-3.5 py-3 sm:grid-cols-2" aria-label="Password rules">
-          <Rule ok={rules.length}>At least 10 characters</Rule>
+          <Rule ok={rules.length}>At least 8 characters</Rule>
           <Rule ok={rules.letter}>Contains a letter</Rule>
           <Rule ok={rules.number}>Contains a number</Rule>
           <Rule ok={rules.differs}>Different from current password</Rule>

@@ -4,6 +4,8 @@ import type { PermissionKey } from '@/types';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { GuestRoute, ProtectedRoute, RequirePermission } from './guards';
 import LoginPage from '@/pages/auth/LoginPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 type Page = LazyExoticComponent<ComponentType>;
@@ -103,6 +105,16 @@ export const router = createBrowserRouter([
       </GuestRoute>
     ),
   },
+  {
+    path: '/forgot-password',
+    element: (
+      <GuestRoute>
+        <ForgotPasswordPage />
+      </GuestRoute>
+    ),
+  },
+  // Public: staff arrive here from the emailed link (ADMIN_FRONTEND_URL/reset-password?token=…).
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   {
     element: <ProtectedRoute />,
     children: [{ path: '/', element: <AdminLayout />, children: adminRoutes }],

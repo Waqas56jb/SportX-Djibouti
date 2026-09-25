@@ -6,8 +6,8 @@ import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 
 /**
- * Single-image picker with preview. Frontend phase: returns a local object URL.
- * Backend phase: upload through a presigned URL and store the public URL instead.
+ * Single-image picker with preview. Picking a file returns a local object-URL preview plus the
+ * File itself; the owner uploads the file to the API when the form is saved.
  */
 export function ImageUploadField({
   label,
@@ -19,7 +19,7 @@ export function ImageUploadField({
 }: {
   label: string;
   value?: string;
-  onChange: (url: string | undefined) => void;
+  onChange: (url: string | undefined, file?: File) => void;
   hint?: ReactNode;
   /** Rendered in the preview when no image is set (e.g. a monogram). */
   fallback?: ReactNode;
@@ -27,7 +27,7 @@ export function ImageUploadField({
 }) {
   const pick = (files: File[]) => {
     const f = files[0];
-    if (f) onChange(URL.createObjectURL(f));
+    if (f) onChange(URL.createObjectURL(f), f);
   };
   return (
     <div>
@@ -38,7 +38,7 @@ export function ImageUploadField({
             <img src={value} alt={`${label} preview`} className={cn('h-full w-full', aspect === 'wide' ? 'object-cover' : 'object-contain p-2')} />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <p className="text-xs text-zinc-500">Local preview — the file is uploaded once storage is connected.</p>
+            <p className="text-xs text-zinc-500">{value.startsWith('blob:') ? 'New image — uploaded when you save.' : 'Current image.'}</p>
             <div className="flex flex-wrap gap-2">
               <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-[0.8125rem] font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 focus-within:ring-2 focus-within:ring-zinc-900">
                 <RefreshCw size={14} aria-hidden /> Replace

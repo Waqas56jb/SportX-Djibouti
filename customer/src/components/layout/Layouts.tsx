@@ -9,6 +9,7 @@ import { QuickViewModal } from '@/components/product';
 import { ROUTES } from '@/constants/routes';
 import { SITE } from '@/constants/site';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
 import { AnnouncementBar, Header } from './Header';
 import { Footer } from './Footer';
@@ -116,7 +117,10 @@ export function CheckoutLayout() {
 /** Guards account routes; returns the visitor to the page they wanted after sign-in. */
 export function RequireAuth() {
   const { isAuthenticated } = useAuth();
+  const restoring = useAuthStore((s) => s.status === 'restoring');
   const location = useLocation();
+  // Wait for the refresh-cookie exchange on load instead of bouncing a signed-in visitor to /login.
+  if (restoring) return <PageLoader />;
   if (!isAuthenticated) {
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`${ROUTES.login}?redirect=${redirect}`} replace />;
@@ -127,7 +131,9 @@ export function RequireAuth() {
 /** Signed-in users skip login/register. */
 export function GuestOnly() {
   const { isAuthenticated } = useAuth();
+  const restoring = useAuthStore((s) => s.status === 'restoring');
   const location = useLocation();
+  if (restoring) return <PageLoader />;
   if (isAuthenticated) {
     const redirect = new URLSearchParams(location.search).get('redirect');
     return <Navigate to={redirect && redirect.startsWith('/') ? redirect : ROUTES.account} replace />;

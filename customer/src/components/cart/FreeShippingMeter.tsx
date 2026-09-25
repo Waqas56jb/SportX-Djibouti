@@ -1,9 +1,10 @@
 import { Truck } from 'lucide-react';
-import { FREE_SHIPPING_THRESHOLD } from '@/constants/commerce';
 import { formatPrice } from '@/utils/format';
 
-export function FreeShippingMeter({ remaining }: { remaining: number }) {
-  const progress = Math.min(100, ((FREE_SHIPPING_THRESHOLD - remaining) / FREE_SHIPPING_THRESHOLD) * 100);
+/** Free-delivery progress. Threshold and remaining come from the server cart (or `/store` for guests). */
+export function FreeShippingMeter({ remaining, threshold }: { remaining: number; threshold: number | null | undefined }) {
+  if (!threshold || threshold <= 0) return null;
+  const progress = Math.max(0, Math.min(100, ((threshold - remaining) / threshold) * 100));
   const done = remaining <= 0;
   return (
     <div>

@@ -1,39 +1,50 @@
-import { Clock, Mail, MapPin, Phone, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Loader2, Mail, MapPin, Phone } from 'lucide-react';
 import type { StoreSettings } from '@/types';
 import { Wordmark } from '@/components/common/Misc';
-import { Button } from '@/components/common/Button';
 import { FileDropzone } from '@/components/forms/FileUpload';
 import { toast } from '@/store/toastStore';
 
-/** Logo picker: preview of the uploaded file (object URL) with a wordmark fallback. */
-export function StoreLogoField({ value, onChange, disabled }: { value?: string; onChange: (url: string | undefined) => void; disabled?: boolean }) {
+/**
+ * Logo picker. The file is uploaded immediately (POST /admin/settings/logo) — logos are not part of
+ * the unsaved-changes form. The API has no "remove logo" endpoint, so a logo can only be replaced.
+ */
+export function StoreLogoField({ value, onUpload, disabled }: { value?: string; onUpload: (file: File) => Promise<void>; disabled?: boolean }) {
+  const [uploading, setUploading] = useState(false);
+  const upload = async (file: File) => {
+    setUploading(true);
+    try {
+      await onUpload(file);
+    } finally {
+      setUploading(false);
+    }
+  };
   return (
     <div>
       <p className="mb-1.5 text-[0.8125rem] font-medium text-zinc-800">Logo</p>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
-        <div className="flex h-[132px] w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-ink-950 p-4 sm:w-[200px]">
-          {value ? <img src={value} alt="Store logo preview" className="max-h-full max-w-full object-contain" /> : <Wordmark />}
+        <div className="relative flex h-[132px] w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-ink-950 p-4 sm:w-[200px]" aria-busy={uploading}>
+          {value ? <img src={value} alt="Store logo" className="max-h-full max-w-full object-contain" /> : <Wordmark />}
+          {uploading && (
+            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-ink-950/70 text-white">
+              <Loader2 size={20} className="animate-spin" aria-label="Uploading logo" />
+            </span>
+          )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <FileDropzone
             compact
             multiple={false}
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            maxSizeMb={2}
-            disabled={disabled}
-            title={value ? 'Replace logo' : 'Upload logo'}
-            hint="PNG, JPG, WEBP or SVG · up to 2 MB · transparent background recommended"
+            accept="image/png,image/jpeg,image/webp,image/avif"
+            maxSizeMb={5}
+            disabled={disabled || uploading}
+            title={uploading ? 'Uploading…' : value ? 'Replace logo' : 'Upload logo'}
+            hint="PNG, JPG, WEBP or AVIF · up to 5 MB · uploaded and published immediately"
             onReject={(m) => toast.error('Logo not accepted', { description: m })}
-            onFiles={([file]) => file && onChange(URL.createObjectURL(file))}
+            onFiles={([file]) => file && void upload(file)}
             className="flex-1"
           />
-          {value ? (
-            <Button variant="danger-ghost" size="xs" icon={Trash2} disabled={disabled} onClick={() => onChange(undefined)} className="self-start">
-              Remove logo
-            </Button>
-          ) : (
-            <p className="text-xs text-zinc-500">No logo uploaded — the SPORTX wordmark is used across the admin and storefront.</p>
-          )}
+          {!value && <p className="text-xs text-zinc-500">No logo uploaded — the SPORTX wordmark is used across the admin and storefront.</p>}
         </div>
       </div>
     </div>

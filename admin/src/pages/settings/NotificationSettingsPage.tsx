@@ -8,6 +8,7 @@ import { Panel } from '@/components/common/Panel';
 import { ErrorState, SkeletonPanel } from '@/components/common/States';
 import { Callout, isSame, ReadOnlyBanner, SaveBar, SettingsLayout, useCanEditSettings } from '@/components/settings/SettingsKit';
 import { CHANNELS, NotificationMatrix } from '@/components/settings/NotificationMatrix';
+import { errorMessage } from '@/components/settings/formErrors';
 
 export default function NotificationSettingsPage() {
   const canEdit = useCanEditSettings();
@@ -36,7 +37,7 @@ export default function NotificationSettingsPage() {
       setDraft(saved);
       toast.success('Notification settings saved.');
     } catch (e) {
-      toast.error('Couldn’t save notification settings', { description: e instanceof Error ? e.message : undefined });
+      toast.error('Couldn’t save notification settings', { description: errorMessage(e) });
     } finally {
       setSaving(false);
     }
@@ -47,7 +48,7 @@ export default function NotificationSettingsPage() {
       {!canEdit && <ReadOnlyBanner />}
       {error ? (
         <div className="panel">
-          <ErrorState onRetry={() => void reload()} description="We couldn’t load notification settings. Please try again." />
+          <ErrorState onRetry={() => void reload()} description={error.message || 'We couldn’t load notification settings. Please try again.'} />
         </div>
       ) : loading || !draft ? (
         <SkeletonPanel rows={10} />
@@ -57,8 +58,8 @@ export default function NotificationSettingsPage() {
             <NotificationMatrix prefs={draft} onChange={setDraft} disabled={!canEdit || saving} />
           </Panel>
 
-          <Callout icon={Server} tone="neutral" className="mt-5" title="Delivery is handled by the backend">
-            These preferences are stored now; email and SMS delivery start once the API’s mail and SMS providers are connected. Recipients are resolved from each admin’s role permissions at send time.
+          <Callout icon={Server} tone="neutral" className="mt-5" title="Saved as store-wide preferences">
+            These choices are stored on the server for the whole team. Automatic email and SMS alerts are not sent yet — the API does not read these preferences when events happen, and no SMS provider is connected.
           </Callout>
 
           {canEdit && (

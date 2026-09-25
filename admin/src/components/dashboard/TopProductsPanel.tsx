@@ -1,19 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, PackageSearch, Pencil } from 'lucide-react';
-import type { DateRange } from '@/types';
-import { reportService } from '@/services';
-import { useAsync } from '@/hooks/useAsync';
+import type { TopProduct } from '@/types';
 import { usePermission } from '@/hooks/usePermission';
-import { Delta, EmptyState, ErrorState, IconButton, Panel, ProductThumb, Skeleton } from '@/components/common';
-import { useProductIndex } from '@/components/reports/useProductIndex';
+import { EmptyState, ErrorState, IconButton, Panel, ProductThumb, Skeleton } from '@/components/common';
 import { formatMoney, formatNumber } from '@/utils/format';
 import { cn } from '@/utils/cn';
 
 const TH = 'px-3 py-2.5 text-2xs font-semibold uppercase tracking-[0.08em] text-zinc-500 whitespace-nowrap';
 
-export function TopProductsPanel({ range, rangeKey, periodLabel }: { range: DateRange; rangeKey: string; periodLabel: string }) {
-  const { data, loading, error, reload } = useAsync(() => reportService.getTopProducts(range, 6), [rangeKey]);
-  const { map } = useProductIndex();
+export function TopProductsPanel({ data, loading, error, onRetry, periodLabel, className }: { data: TopProduct[] | undefined; loading: boolean; error: Error | null; onRetry: () => void; periodLabel: string; className?: string }) {
   const canEdit = usePermission('products:edit');
   const navigate = useNavigate();
 
@@ -27,10 +22,10 @@ export function TopProductsPanel({ range, rangeKey, periodLabel }: { range: Date
           Product report
         </Link>
       }
-      className="xl:col-span-3"
+      className={className ?? 'xl:col-span-3'}
     >
       {error ? (
-        <ErrorState compact onRetry={() => void reload()} description="We couldn’t load top products. Please try again." />
+        <ErrorState compact onRetry={onRetry} description="We couldn’t load top products. Please try again." />
       ) : !loading && (data?.length ?? 0) === 0 ? (
         <EmptyState compact icon={PackageSearch} title="No sales in this period" description="Top sellers will appear here once orders come in." />
       ) : (
@@ -44,7 +39,7 @@ export function TopProductsPanel({ range, rangeKey, periodLabel }: { range: Date
                 <th scope="col" className={cn(TH, 'text-right')}>Units</th>
                 <th scope="col" className={cn(TH, 'text-right')}>Revenue</th>
                 <th scope="col" className={cn(TH, 'hidden text-right md:table-cell')}>Stock</th>
-                <th scope="col" className={cn(TH, 'text-right')}>Trend</th>
+                <th scope="col" className={cn(TH, 'hidden text-right sm:table-cell')}>Avg. price</th>
                 <th scope="col" className={cn(TH, 'pr-4')}>
                   <span className="sr-only">Actions</span>
                 </th>
@@ -73,7 +68,7 @@ export function TopProductsPanel({ range, rangeKey, periodLabel }: { range: Date
                       <td className="py-2.5 pl-5 pr-3">
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="w-4 shrink-0 text-right text-xs font-semibold text-zinc-400 tabular">{idx + 1}</span>
-                          <ProductThumb src={map.get(p.productId)?.image} alt={p.name} size={40} />
+                          <ProductThumb src={p.image} alt={p.name} size={40} />
                           <div className="min-w-0">
                             <Link to={`/products/${p.productId}`} className="block max-w-[260px] truncate text-[0.8125rem] font-semibold text-zinc-900 hover:underline">
                               {p.name}
@@ -88,9 +83,7 @@ export function TopProductsPanel({ range, rangeKey, periodLabel }: { range: Date
                       <td className={cn('hidden px-3 text-right text-[0.8125rem] tabular md:table-cell', p.stock === 0 ? 'font-semibold text-red-600' : p.stock < 15 ? 'font-semibold text-amber-700' : 'text-zinc-600')}>
                         {p.stock === 0 ? 'Out' : formatNumber(p.stock)}
                       </td>
-                      <td className="px-3 text-right">
-                        <Delta value={p.trend} />
-                      </td>
+                      <td className="hidden px-3 text-right text-[0.8125rem] text-zinc-600 tabular sm:table-cell">{p.unitsSold ? formatMoney(Math.round(p.revenue / p.unitsSold)) : '—'}</td>
                       <td className="py-2 pr-4">
                         <div className="flex justify-end gap-0.5">
                           <IconButton size="sm" icon={Eye} label={`View ${p.name}`} onClick={() => navigate(`/products/${p.productId}`)} />

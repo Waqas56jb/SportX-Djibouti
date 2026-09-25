@@ -8,10 +8,11 @@ import { toast } from '@/store/toastStore';
 import { usePermission } from '@/hooks/usePermission';
 import { Badge, Button, Panel } from '@/components/common';
 import { Textarea } from '@/components/forms';
-import { cloneOrder } from './useOrderActions';
 
 const KIND_ICON: Record<TimelineEventKind, { icon: LucideIcon; cls: string }> = {
   created: { icon: ShoppingBag, cls: 'bg-zinc-100 text-zinc-700' },
+  payment: { icon: CreditCard, cls: 'bg-emerald-50 text-emerald-600' },
+  payment_pending: { icon: CreditCard, cls: 'bg-amber-50 text-amber-600' },
   payment_confirmed: { icon: CreditCard, cls: 'bg-emerald-50 text-emerald-600' },
   payment_failed: { icon: XCircle, cls: 'bg-red-50 text-red-600' },
   pending: { icon: Timer, cls: 'bg-amber-50 text-amber-600' },
@@ -42,7 +43,7 @@ export function OrderActivityPanel({ order, onChange }: { order: Order; onChange
     if (!text) return;
     setSaving(true);
     try {
-      onChange(cloneOrder(await orderService.addNote(order.id, text)));
+      onChange(await orderService.addNote(order.id, text));
       setNote('');
       toast.success('Note added.');
     } catch (e) {
@@ -59,7 +60,7 @@ export function OrderActivityPanel({ order, onChange }: { order: Order; onChange
           <Textarea
             label="Internal note"
             rows={2}
-            maxLength={500}
+            maxLength={1000}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Only visible to admins — e.g. “Customer asked to deliver after 5pm.”"

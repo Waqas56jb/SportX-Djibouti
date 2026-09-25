@@ -7,12 +7,12 @@ import { toast } from '@/store/toastStore';
 import { usePermission } from '@/hooks/usePermission';
 import { Button, DescriptionList, IconButton, Panel, StatusBadge } from '@/components/common';
 import { canTransition } from './orderMeta';
-import { ShippingStatusModal, TrackingModal } from './ShippingModals';
+import { TrackingModal } from './ShippingModals';
 
 export function OrderShippingPanel({ order, onChange, onStatus, busy }: { order: Order; onChange: (o: Order) => void; onStatus: (s: OrderStatus) => void; busy?: boolean }) {
   const s = order.shipping;
   const canEdit = usePermission('orders:edit');
-  const [modal, setModal] = useState<'tracking' | 'status' | null>(null);
+  const [modal, setModal] = useState<'tracking' | null>(null);
   const closed = order.status === 'cancelled' || order.status === 'refunded';
 
   const copy = async () => {
@@ -28,12 +28,13 @@ export function OrderShippingPanel({ order, onChange, onStatus, busy }: { order:
     <Panel
       title="Shipping"
       actions={<StatusBadge map={SHIPPING_STATUS} value={s.status} size="md" />}
-      footer={<p className="text-xs text-zinc-500">Carrier integration (labels, live tracking) will be connected in the backend phase.</p>}
+      footer={<p className="text-xs text-zinc-500">Shipping status follows the order status (packed, shipped, out for delivery, delivered).</p>}
     >
       <DescriptionList
         columns={2}
         items={[
           { label: 'Method', value: s.method },
+          { label: 'Delivery', value: s.address ? s.address.city : 'Pickup / no address' },
           { label: 'Cost', value: s.cost ? formatMoney(s.cost) : 'Free' },
           { label: 'Carrier', value: s.carrier ?? <span className="text-zinc-400">Not assigned</span> },
           {
@@ -58,9 +59,6 @@ export function OrderShippingPanel({ order, onChange, onStatus, busy }: { order:
           <Button size="sm" variant="secondary" icon={s.trackingNumber ? PencilLine : Waypoints} onClick={() => setModal('tracking')}>
             {s.trackingNumber ? 'Edit tracking' : 'Add tracking number'}
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => setModal('status')}>
-            Update shipping status
-          </Button>
           {canTransition(order, 'shipped') && (
             <Button size="sm" variant="primary" icon={Truck} loading={busy} onClick={() => onStatus('shipped')}>
               Mark shipped
@@ -70,7 +68,6 @@ export function OrderShippingPanel({ order, onChange, onStatus, busy }: { order:
       )}
 
       <TrackingModal open={modal === 'tracking'} order={order} onClose={() => setModal(null)} onDone={onChange} />
-      <ShippingStatusModal open={modal === 'status'} order={order} onClose={() => setModal(null)} onDone={onChange} />
     </Panel>
   );
 }

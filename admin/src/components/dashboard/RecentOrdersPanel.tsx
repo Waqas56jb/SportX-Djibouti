@@ -1,14 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
-import type { Order } from '@/types';
-import { orderService } from '@/services';
-import { useAsync } from '@/hooks/useAsync';
+import type { RecentOrder } from '@/types';
 import { DataTable, type Column } from '@/components/tables';
 import { EmptyState, StatusBadge } from '@/components/common';
 import { ORDER_STATUS, PAYMENT_STATUS } from '@/constants/status';
 import { formatMoney, formatRelative, formatDateTime } from '@/utils/format';
 
-const columns: Column<Order>[] = [
+const columns: Column<RecentOrder>[] = [
   { id: 'number', header: 'Order', hideable: false, mobile: 'title', cell: (o) => <span className="font-semibold text-zinc-900 tabular">{o.number}</span> },
   { id: 'customer', header: 'Customer', hideable: false, mobile: 'subtitle', cell: (o) => <span className="block max-w-[180px] truncate text-zinc-800">{o.customerName}</span> },
   {
@@ -23,13 +21,12 @@ const columns: Column<Order>[] = [
   },
   { id: 'items', header: 'Items', label: 'Items', hideable: false, align: 'right', cell: (o) => <span className="tabular">{o.itemsCount}</span> },
   { id: 'total', header: 'Total', hideable: false, align: 'right', mobile: 'aside', cell: (o) => <span className="whitespace-nowrap font-semibold text-zinc-900 tabular">{formatMoney(o.total)}</span> },
-  { id: 'payment', header: 'Payment', hideable: false, cell: (o) => <StatusBadge map={PAYMENT_STATUS} value={o.payment.status} /> },
+  { id: 'payment', header: 'Payment', hideable: false, cell: (o) => <StatusBadge map={PAYMENT_STATUS} value={o.paymentStatus} /> },
   { id: 'status', header: 'Status', hideable: false, cell: (o) => <StatusBadge map={ORDER_STATUS} value={o.status} /> },
 ];
 
-export function RecentOrdersPanel() {
+export function RecentOrdersPanel({ data, loading, error, onRetry }: { data: RecentOrder[] | undefined; loading: boolean; error: Error | null; onRetry: () => void }) {
   const navigate = useNavigate();
-  const { data, loading, error, reload } = useAsync(async () => (await orderService.getOrders()).slice(0, 6), []);
 
   return (
     <DataTable
@@ -39,10 +36,10 @@ export function RecentOrdersPanel() {
       getRowId={(o) => o.id}
       loading={loading}
       error={error}
-      onRetry={() => void reload()}
+      onRetry={onRetry}
       onRowClick={(o) => navigate(`/orders/${o.id}`)}
       hidePagination
-      pageSize={6}
+      pageSize={8}
       toolbar={
         <div>
           <h2 className="panel-title">Recent orders</h2>

@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from 'react';
-import { selectCartCount, useCartStore } from '@/store/cartStore';
+import { selectCartCount, selectCartItems, useCartStore } from '@/store/cartStore';
 import { toast } from '@/store/toastStore';
 import { useUiStore } from '@/store/uiStore';
 import type { CartItem, Product } from '@/types';
-import { calculateTotals } from '@/utils/cart';
+import { estimateTotals } from '@/utils/cart';
 import { findVariant, imageForColor, requiresSizeSelection } from '@/utils/product';
+import { useStoreSettings } from './useStoreSettings';
 
 export interface AddToCartOptions {
   color?: string;
@@ -15,23 +16,40 @@ export interface AddToCartOptions {
   silent?: boolean;
 }
 
-export type AddToCartError = 'color' | 'size' | 'stock' | 'limit';
+export type AddToCartError = 'color' | 'size' | 'stock' | 'limit' | 'details';
 
+/**
+ * Bag facade for components. Signed-in: lines/issues/totals come from the server cart.
+ * Guest: the on-device bag with an estimated subtotal (shipping, coupons and tax at checkout).
+ */
 export function useCart() {
-  const items = useCartStore((s) => s.items);
-  const coupon = useCartStore((s) => s.coupon);
+  const mode = useCartStore((s) => s.mode);
+  const server = useCartStore((s) => s.server);
+  const local = useCartStore((s) => s.local);
+  const items = useCartStore(selectCartItems);
   const count = useCartStore(selectCartCount);
+  const syncing = useCartStore((s) => s.syncing);
+  const pending = useCartStore((s) => s.pending);
+  const issues = useCartStore((s) => s.issues);
+  const syncError = useCartStore((s) => s.syncError);
   const store = useCartStore;
   const openOverlay = useUiStore((s) => s.open);
+  const settings = useStoreSettings();
 
-  const totals = useMemo(() => calculateTotals(items, coupon), [items, coupon]);
+  const isAccount = mode === 'account';
+  const totals = useMemo(
+    () => (isAccount && server ? server.totals : estimateTotals(local, settings?.freeShippingThreshold)),
+    [isAccount, server, local, settings?.freeShippingThreshold],
+  );
+  const coupon = isAccount ? (server?.coupon ?? null) : null;
 
   /**
-   * Validates colour, size and stock before adding. Returns the failing
-   * field so the caller can highlight it, or null on success.
+   * Validates colour, size and stock, then adds. Resolves with the failing field so the caller
+   * can highlight it, or null on success. Summary products (no variants) must be opened first.
    */
   const addProduct = useCallback(
-    (product: Product, { color, size, quantity = 1, openDrawer = true, silent = false }: AddToCartOptions = {}): AddToCartError | null => {
+    async (product: Product, { color, size, quantity = 1, openDrawer = true, silent = false }: AddToCartOptions = {}): Promise<AddToCartError | null> => {
+      if (!product.variants.length) return 'details';
       const chosenColor = color ?? (product.colors.length === 1 ? product.colors[0].name : undefined);
       const chosenSize = size ?? (!requiresSizeSelection(product) ? product.sizes[0] : undefined);
 
@@ -49,6 +67,7 @@ export function useCart() {
         return 'stock';
       }
 
+      const unitPrice = variant.price ?? product.price;
       const line: CartItem = {
         id: variant.id,
         productId: product.id,
@@ -56,17 +75,17 @@ export function useCart() {
         slug: product.slug,
         name: product.name,
         brand: product.brand,
-        image: imageForColor(product, chosenColor).url,
+        image: imageForColor(product, chosenColor)?.url ?? '',
         color: chosenColor,
         size: chosenSize,
-        unitPrice: product.price,
-        compareAtPrice: product.compareAtPrice,
+        unitPrice,
+        compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice,
         quantity,
         maxStock: variant.stock,
       };
-      const result = store.getState().add(line);
+      const result = await store.getState().add(line);
       if (!result.ok) {
-        toast.error('Quantity limit reached', { description: result.reason });
+        toast.error('Couldn’t add to bag', { description: result.reason });
         return 'limit';
       }
       if (!silent) {
@@ -86,24 +105,27 @@ export function useCart() {
 
   const setQuantity = useCallback(
     (id: string, quantity: number) => {
-      const item = store.getState().items.find((i) => i.id === id);
+      const item = selectCartItems(store.getState()).find((i) => i.id === id);
       if (!item) return;
       if (quantity > item.maxStock) {
         toast.info(`Only ${item.maxStock} available`, { description: `We have ${item.maxStock} of this size in stock.` });
       }
-      store.getState().setQuantity(id, quantity);
+      void store.getState().setQuantity(id, Math.min(quantity, Math.max(item.maxStock, 1)));
     },
     [store],
   );
 
   const remove = useCallback(
     (id: string) => {
-      const item = store.getState().items.find((i) => i.id === id);
+      const item = selectCartItems(store.getState()).find((i) => i.id === id);
       if (!item) return;
-      store.getState().remove(id);
+      void store.getState().remove(id);
       toast.info('Removed from bag', {
         description: item.name,
-        action: { label: 'Undo', onClick: () => store.getState().add(item) },
+        action: {
+          label: 'Undo',
+          onClick: () => void store.getState().add({ ...item, id: item.variantId }),
+        },
       });
     },
     [store],
@@ -114,12 +136,21 @@ export function useCart() {
     coupon,
     count,
     totals,
+    issues,
+    isAccount,
+    /** Loading / merging the account bag. */
+    syncing,
+    pending,
+    syncError,
     isEmpty: items.length === 0,
     addProduct,
     setQuantity,
     remove,
     clear: store.getState().clear,
-    setCoupon: store.getState().setCoupon,
-    reconcile: store.getState().reconcile,
+    clearLocal: store.getState().clearLocal,
+    applyCoupon: store.getState().applyCoupon,
+    removeCoupon: store.getState().removeCoupon,
+    refresh: store.getState().refresh,
+    dismissIssues: store.getState().dismissIssues,
   };
 }

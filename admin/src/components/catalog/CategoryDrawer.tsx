@@ -112,7 +112,7 @@ export function CategoryDrawer({
           onChange={(e) => patch({ parentId: e.target.value || null })}
         />
         <Textarea label="Description" rows={3} value={d.description} onChange={(e) => patch({ description: e.target.value })} />
-        <ImageUploadField label="Category image" value={d.imageUrl} onChange={(url) => patch({ imageUrl: url })} hint="Landscape works best · PNG, JPG or WEBP" />
+        <ImageUploadField label="Category image" value={d.imageUrl} onChange={(url, file) => patch({ imageUrl: url, imageFile: file })} hint="Landscape works best · PNG, JPG or WEBP" />
         <div className="rounded-xl border border-zinc-200 p-4">
           <Toggle checked={d.status === 'active'} onChange={(on) => patch({ status: on ? 'active' : 'inactive' })} label="Active" description="Inactive categories are hidden from the storefront navigation." />
         </div>

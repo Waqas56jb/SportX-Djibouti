@@ -120,7 +120,7 @@ export default function CustomerDetailPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <RecentOrdersPanel customerId={c.id} />
+          <RecentOrdersPanel customerId={c.id} email={c.email} />
           <div className="grid gap-6 xl:grid-cols-2">
             <CustomerReviewsPanel customerId={c.id} />
             <CustomerTicketsPanel customerId={c.id} />
@@ -129,7 +129,7 @@ export default function CustomerDetailPage() {
         </div>
         <div className="min-w-0 space-y-6">
           <ContactPanel customer={c} />
-          <WishlistPanel productIds={c.wishlistProductIds} />
+          <WishlistPanel items={c.wishlist ?? []} count={c.wishlistProductIds.length} />
           <AddressesPanel customer={c} />
         </div>
       </div>

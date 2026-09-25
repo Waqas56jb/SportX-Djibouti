@@ -1,45 +1,19 @@
-import type { ShippingMethod } from '@/types';
+/**
+ * Storefront presentation config only. Business rules (shipping methods and prices, the free
+ * delivery threshold, coupons, tax, per-line quantity limit) come from the API:
+ * `GET /store`, `GET /shipping/methods` and `POST /checkout/validate` (see services/storeService
+ * and services/shippingService).
+ */
 
 /**
- * Currency configuration. Prices in mock data are stored in the base currency
- * (Djiboutian franc, no minor units). Switch `code`/`locale` here to change
- * how prices render everywhere.
+ * Currency formatting. Prices are stored in the base currency (Djiboutian franc, no minor
+ * units). Switch `code`/`locale` here to change how prices render everywhere.
  */
 export const CURRENCY = {
   code: 'DJF',
   locale: 'en-US',
   fractionDigits: 0,
 } as const;
-
-/**
- * Commercial rules below are placeholders for the demo storefront.
- * Final values must come from the backend / business once confirmed.
- */
-export const FREE_SHIPPING_THRESHOLD = 25000;
-
-export const SHIPPING_METHODS: ShippingMethod[] = [
-  {
-    id: 'standard',
-    name: 'Standard Delivery',
-    description: 'Delivered to your door across Djibouti City.',
-    price: 1000,
-    eta: [2, 4],
-  },
-  {
-    id: 'express',
-    name: 'Express Delivery',
-    description: 'Priority dispatch for next-day delivery in Djibouti City.',
-    price: 2500,
-    eta: [1, 1],
-  },
-  {
-    id: 'pickup',
-    name: 'Store Pickup',
-    description: 'Collect from SPORTX, Place Menelik.',
-    price: 0,
-    eta: [1, 2],
-  },
-];
 
 export const LAUNCH_COUNTRY = 'Djibouti';
 
@@ -54,8 +28,14 @@ export const DJIBOUTI_CITIES = [
   'Tadjourah',
 ] as const;
 
+/** UI fallback for the per-line quantity cap until `GET /store` (maxQuantityPerLine) has loaded. */
 export const MAX_QUANTITY_PER_LINE = 10;
 
+/** Display hint for "only N left" copy where the API has no stock status (guest bag lines). */
 export const LOW_STOCK_THRESHOLD = 5;
 
+/** Products per catalogue page ("load more" appends the next page). */
 export const PRODUCTS_PAGE_SIZE = 12;
+
+/** Product reviews per page. */
+export const REVIEWS_PAGE_SIZE = 5;

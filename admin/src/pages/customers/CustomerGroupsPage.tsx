@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import { Info, Lock, PencilRuler, Users } from 'lucide-react';
+import { Info, Lock, Users } from 'lucide-react';
 import type { Customer, CustomerGroup } from '@/types';
-import { Button, DemoBadge, EmptyState, ErrorState, PageHeader } from '@/components/common';
+import { EmptyState, ErrorState, PageHeader } from '@/components/common';
 import { SearchInput } from '@/components/forms';
 import { CustomerTable } from '@/components/customers/CustomerTable';
 import { GROUP_ICON, GroupCard } from '@/components/customers/GroupCard';
+import { useServerList } from '@/components/customers/useServerList';
 import { CUSTOMER_GROUPS, customerService } from '@/services/customerService';
 import { useAsync } from '@/hooks/useAsync';
 import { useDebounce } from '@/hooks/misc';
@@ -20,7 +21,7 @@ export default function CustomerGroupsPage() {
   const search = useDebounce(filters.search, 250);
 
   const summary = useAsync(() => customerService.getGroupSummary(), []);
-  const list = useAsync(() => customerService.getCustomers({ group: group === 'all' ? '' : group, search }), [group, search]);
+  const list = useServerList((q) => customerService.getCustomers({ ...q, search, filters: { group: group === 'all' ? '' : group } }), [group, search], { initialSort: { id: 'joined', dir: 'desc' } });
 
   const byId = useMemo(() => new Map((summary.data ?? []).map((s) => [s.id, s])), [summary.data]);
   const total = byId.get('all')?.count ?? 0;
@@ -28,7 +29,7 @@ export default function CustomerGroupsPage() {
   const GroupIcon = GROUP_ICON[group];
 
   const onUpdated = (c: Customer) => {
-    list.setData((rows) => rows?.map((x) => (x.id === c.id ? c : x)));
+    list.setData((p) => (p ? { ...p, data: p.data.map((x) => (x.id === c.id ? c : x)) } : p));
     void summary.reload(true);
   };
 
@@ -39,7 +40,6 @@ export default function CustomerGroupsPage() {
         backTo="/customers"
         backLabel="Customers"
         description="Segments update automatically from customer behaviour. Select a group to see who is in it."
-        actions={<DemoBadge />}
       />
 
       {summary.error ? (
@@ -56,7 +56,7 @@ export default function CustomerGroupsPage() {
                 id={g.id}
                 label={g.label}
                 description={g.description}
-                rule={g.rule}
+                rule={s?.rule ?? g.rule}
                 count={summary.loading ? undefined : (s?.count ?? 0)}
                 revenue={s?.revenue}
                 share={s && total ? s.count / total : undefined}
@@ -84,29 +84,23 @@ export default function CustomerGroupsPage() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="eyebrow mr-1">Rule</span>
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-medium text-zinc-700">
-                  <Lock size={12} className="text-zinc-400" aria-hidden /> {meta.rule}
+                  <Lock size={12} className="text-zinc-400" aria-hidden /> {current?.rule ?? meta.rule}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-500">Auto-updated daily</span>
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-500">Computed live</span>
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-start gap-1.5 md:items-end">
-            <span title="Rule builder available once backend is connected" className="inline-flex">
-              <Button icon={PencilRuler} disabled aria-describedby="rule-builder-hint">
-                Edit rule
-              </Button>
-            </span>
-            <span id="rule-builder-hint" className="inline-flex items-center gap-1 text-xs text-zinc-500">
-              <Info size={12} aria-hidden /> Rule builder available once backend is connected.
-            </span>
-          </div>
+          <p className="inline-flex shrink-0 items-center gap-1 text-xs text-zinc-500">
+            <Info size={12} aria-hidden /> Segment rules are fixed and evaluated on every request.
+          </p>
         </div>
       </section>
 
       <CustomerTable
         caption={`Customers in ${meta.label}`}
         storageKey="customer-groups"
-        data={list.data}
+        data={list.data?.data}
+        table={list.table}
         loading={list.loading}
         error={list.error}
         onRetry={() => void list.reload()}

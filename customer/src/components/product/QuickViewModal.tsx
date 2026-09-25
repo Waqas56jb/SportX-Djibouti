@@ -21,8 +21,8 @@ export function QuickViewModal() {
     setImageIdx(sel.colorImageIndex ?? 0);
   }, [sel.colorImageIndex, product]);
 
-  const handleAdd = () => {
-    const ok = sel.add({ openDrawer: false });
+  const handleAdd = async () => {
+    const ok = await sel.add({ openDrawer: false });
     if (ok) close();
   };
 
@@ -47,7 +47,7 @@ export function QuickViewModal() {
             <div className="relative aspect-[4/5]">
               <SmartImage
                 key={product.images[imageIdx]?.url}
-                src={product.images[imageIdx]?.url ?? product.images[0].url}
+                src={product.images[imageIdx]?.url ?? product.images[0]?.url ?? ''}
                 alt={product.images[imageIdx]?.alt ?? product.name}
                 sizes="(min-width: 768px) 40vw, 100vw"
                 wrapperClassName="absolute inset-0 animate-fade-in"
@@ -81,10 +81,10 @@ export function QuickViewModal() {
             <p className="text-sm leading-relaxed text-ink-600">{product.shortDescription}</p>
             <ColorSelector product={product} value={sel.color} onChange={sel.selectColor} error={sel.error === 'color'} />
             <SizeSelector product={product} color={sel.color} value={sel.size} onChange={sel.selectSize} error={sel.error === 'size'} />
-            <StockIndicator stock={sel.soldOut ? 0 : sel.selectedStock} sizeChosen={Boolean(sel.size)} />
+            <StockIndicator stock={sel.soldOut ? 0 : sel.selectedStock} sizeChosen={Boolean(sel.size)} status={sel.size ? sel.variant?.stockStatus : undefined} />
             <div className="flex gap-3">
               <QuantitySelector value={sel.quantity} onChange={sel.setQuantity} max={sel.maxQuantity} disabled={sel.soldOut || sel.variantSoldOut} />
-              <Button variant="primary" fullWidth className="flex-1" onClick={handleAdd} disabled={sel.soldOut || sel.variantSoldOut}>
+              <Button variant="primary" fullWidth className="flex-1" onClick={handleAdd} loading={sel.adding} disabled={sel.soldOut || sel.variantSoldOut}>
                 {sel.soldOut ? 'Out of stock' : 'Add to bag'}
               </Button>
               <WishlistButton product={product} variant="outline" className="h-12 w-12" />

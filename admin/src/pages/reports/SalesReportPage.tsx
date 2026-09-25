@@ -6,10 +6,10 @@ import { KpiCard } from '@/components/charts';
 import { EmptyState } from '@/components/common';
 import { DataTable, type Column } from '@/components/tables';
 import { ReportHeader, rangeLabel } from '@/components/reports/ReportHeader';
-import { KpiGrid, pctChange } from '@/components/reports/ChartKit';
+import { KpiGrid } from '@/components/reports/ChartKit';
+import { GroupBySelect } from '@/components/reports/RangeFilter';
 import { OrdersBarChart, RevenueNetChart } from '@/components/reports/SalesCharts';
-import { periodWord, useReportRange } from '@/components/reports/useReportRange';
-import { exportCsv } from '@/utils/csv';
+import { periodWord, useGroupBy, useReportRange } from '@/components/reports/useReportRange';
 import { formatMoney, formatNumber } from '@/utils/format';
 
 const money = (v: number) => <span className="whitespace-nowrap tabular">{formatMoney(v)}</span>;
@@ -26,38 +26,29 @@ const columns: Column<SalesPoint>[] = [
 
 export default function SalesReportPage() {
   const rs = useReportRange('30d');
-  const { data, loading, error, reload } = useAsync(() => reportService.getSalesReport(rs.range), [rs.key]);
+  const { groupBy, setGroupBy, bucket } = useGroupBy();
+  const { data, loading, error, reload } = useAsync(() => reportService.getSalesReport(rs.range, bucket), [rs.key, bucket]);
   const label = rangeLabel(rs);
   const period = periodWord(rs.range.preset);
   const t = data?.totals;
-  const p = data?.previous;
+  const c = data?.change;
   const busy = loading || !data;
 
-  const onExport = () =>
-    data &&
-    exportCsv('sales-report', data.series, [
-      { header: 'Period', value: (r) => r.label },
-      { header: 'Date', value: (r) => r.date.slice(0, 10) },
-      { header: 'Orders', value: (r) => r.orders },
-      { header: 'Revenue', value: (r) => r.revenue },
-      { header: 'Average order value', value: (r) => r.aov },
-      { header: 'Discounts', value: (r) => r.discounts },
-      { header: 'Refunds', value: (r) => r.refunds },
-      { header: 'Net sales', value: (r) => r.netSales },
-    ]);
+  // Server-generated CSV (same range and grouping as the screen).
+  const onExport = () => reportService.exportReport('sales', rs.range, { groupBy: bucket });
 
   return (
     <div>
-      <ReportHeader title="Sales report" description="Revenue, orders and deductions over time, compared with the previous period." rangeState={rs} onExport={onExport} exportDisabled={!data?.series.length} periodLabel={label} />
+      <ReportHeader title="Sales report" description="Revenue, orders and deductions over time, compared with the previous period." rangeState={rs} onExport={onExport} exportDisabled={!data?.series.length} periodLabel={label} filters={<GroupBySelect value={groupBy} onChange={setGroupBy} />} />
 
       {error ? null : (
         <KpiGrid>
-          <KpiCard label="Revenue" icon={Banknote} loading={busy} value={t && formatMoney(t.revenue, { compact: true })} change={t && p && pctChange(t.revenue, p.revenue)} period={period} />
-          <KpiCard label="Orders" icon={ShoppingBag} loading={busy} value={t && formatNumber(t.orders)} change={t && p && pctChange(t.orders, p.orders)} period={period} />
-          <KpiCard label="Average Order Value" icon={Receipt} loading={busy} value={t && formatMoney(t.aov, { compact: true })} change={t && p && pctChange(t.aov, p.aov)} period={period} />
-          <KpiCard label="Discounts" icon={BadgePercent} loading={busy} value={t && formatMoney(t.discounts, { compact: true })} change={t && p && pctChange(t.discounts, p.discounts)} inverse period={period} />
-          <KpiCard label="Refunds" icon={RotateCcw} loading={busy} value={t && formatMoney(t.refunds, { compact: true })} change={t && p && pctChange(t.refunds, p.refunds)} inverse period={period} />
-          <KpiCard label="Net Sales" icon={Wallet} loading={busy} value={t && formatMoney(t.netSales, { compact: true })} change={t && p && pctChange(t.netSales, p.netSales)} period={period} />
+          <KpiCard label="Revenue" icon={Banknote} loading={busy} value={t && formatMoney(t.revenue, { compact: true })} change={c?.revenue} period={period} />
+          <KpiCard label="Orders" icon={ShoppingBag} loading={busy} value={t && formatNumber(t.orders)} change={c?.orders} period={period} />
+          <KpiCard label="Average Order Value" icon={Receipt} loading={busy} value={t && formatMoney(t.aov, { compact: true })} change={c?.aov} period={period} />
+          <KpiCard label="Discounts" icon={BadgePercent} loading={busy} value={t && formatMoney(t.discounts, { compact: true })} change={c?.discounts} inverse period={period} />
+          <KpiCard label="Refunds" icon={RotateCcw} loading={busy} value={t && formatMoney(t.refunds, { compact: true })} change={c?.refunds} inverse period={period} />
+          <KpiCard label="Net Sales" icon={Wallet} loading={busy} value={t && formatMoney(t.netSales, { compact: true })} change={c?.netSales} period={period} />
         </KpiGrid>
       )}
 

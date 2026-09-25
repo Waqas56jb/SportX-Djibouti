@@ -1,7 +1,7 @@
 import { Check, Circle, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge, SmartImage, type BadgeTone } from '@/components/common';
-import { ORDER_FLOW, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from '@/constants/labels';
+import { ORDER_EXCEPTION_STATUSES, ORDER_FLOW, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from '@/constants/labels';
 import { productPath } from '@/constants/routes';
 import type { Order, OrderItem, OrderStatus, PaymentStatus } from '@/types';
 import { cn } from '@/utils/cn';
@@ -9,7 +9,8 @@ import { formatDate, formatDateTime, formatPrice } from '@/utils/format';
 import { SummaryRow } from '@/components/cart';
 
 const STATUS_TONE: Record<OrderStatus, BadgeTone> = {
-  created: 'neutral',
+  pending: 'neutral',
+  'payment-pending': 'warning',
   'payment-confirmed': 'neutral',
   processing: 'warning',
   packed: 'warning',
@@ -17,29 +18,39 @@ const STATUS_TONE: Record<OrderStatus, BadgeTone> = {
   'out-for-delivery': 'accent',
   delivered: 'success',
   cancelled: 'danger',
+  'refund-requested': 'warning',
+  refunded: 'neutral',
 };
 
-const PAYMENT_TONE: Record<PaymentStatus, BadgeTone> = { pending: 'warning', paid: 'success', failed: 'danger', refunded: 'neutral' };
+const PAYMENT_TONE: Record<PaymentStatus, BadgeTone> = {
+  pending: 'warning',
+  authorized: 'warning',
+  paid: 'success',
+  failed: 'danger',
+  cancelled: 'neutral',
+  refunded: 'neutral',
+  'partially-refunded': 'neutral',
+};
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   return (
-    <Badge tone={STATUS_TONE[status]} dot>
-      {ORDER_STATUS_LABELS[status]}
+    <Badge tone={STATUS_TONE[status] ?? 'neutral'} dot>
+      {ORDER_STATUS_LABELS[status] ?? status}
     </Badge>
   );
 }
 
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
-  return <Badge tone={PAYMENT_TONE[status]}>{PAYMENT_STATUS_LABELS[status]}</Badge>;
+  return <Badge tone={PAYMENT_TONE[status] ?? 'neutral'}>{PAYMENT_STATUS_LABELS[status] ?? status}</Badge>;
 }
 
 /** Vertical fulfilment timeline: completed, current and upcoming stages. */
 export function OrderTimeline({ order }: { order: Order }) {
-  if (order.status === 'cancelled') {
+  if (ORDER_EXCEPTION_STATUSES.includes(order.status)) {
     return (
       <ol className="space-y-6">
-        {order.timeline.map((e) => (
-          <li key={e.status} className="flex gap-4">
+        {order.timeline.map((e, idx) => (
+          <li key={`${e.status}-${idx}`} className="flex gap-4">
             <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', e.status === 'cancelled' ? 'bg-danger text-white' : 'bg-ink text-white')}>
               {e.status === 'cancelled' ? <X className="h-4 w-4" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
             </span>
@@ -52,11 +63,12 @@ export function OrderTimeline({ order }: { order: Order }) {
       </ol>
     );
   }
-  const currentIdx = ORDER_FLOW.indexOf(order.status);
+  // PAYMENT_PENDING sits between "placed" and "payment confirmed" on the pipeline.
+  const currentIdx = order.status === 'payment-pending' ? 1 : Math.max(0, ORDER_FLOW.indexOf(order.status));
   return (
     <ol className="relative">
       {ORDER_FLOW.map((status, i) => {
-        const event = order.timeline.find((t) => t.status === status);
+        const event = [...order.timeline].reverse().find((t) => t.status === status || (status === 'pending' && t.status === 'payment-pending'));
         const done = i < currentIdx || (i === currentIdx && status === 'delivered');
         const current = i === currentIdx && status !== 'delivered';
         const last = i === ORDER_FLOW.length - 1;
@@ -74,7 +86,7 @@ export function OrderTimeline({ order }: { order: Order }) {
             <div className="pt-1">
               <p className={cn('text-sm font-semibold', !done && !current && 'text-ink-500')}>{ORDER_STATUS_LABELS[status]}</p>
               <p className="text-xs text-ink-500">
-                {event ? formatDateTime(event.date) : current ? 'In progress' : status === 'delivered' ? `Expected ${formatDate(order.shipping.expectedDelivery)}` : 'Pending'}
+                {event ? formatDateTime(event.date) : current ? (order.status === 'payment-pending' ? 'Awaiting payment' : 'In progress') : status === 'delivered' && order.shipping.expectedDelivery ? `Expected ${formatDate(order.shipping.expectedDelivery)}` : 'Pending'}
               </p>
             </div>
           </li>
@@ -103,7 +115,7 @@ export function OrderItemsList({ items, compact }: { items: OrderItem[]; compact
             </p>
             <p className="mt-1 text-xs text-ink-500">{formatPrice(i.unitPrice)} each</p>
           </div>
-          <p className="text-sm font-semibold tabular-nums">{formatPrice(i.unitPrice * i.quantity)}</p>
+          <p className="text-sm font-semibold tabular-nums">{formatPrice(i.lineTotal ?? i.unitPrice * i.quantity)}</p>
         </li>
       ))}
     </ul>
@@ -114,10 +126,13 @@ export function OrderTotals({ order }: { order: Order }) {
   return (
     <dl className="space-y-3">
       <SummaryRow label="Subtotal" value={formatPrice(order.subtotal)} />
-      {order.discount > 0 && <SummaryRow label={`Discount${order.couponCode ? ` (${order.couponCode})` : ''}`} value={`−${formatPrice(order.discount)}`} accent />}
+      {order.productDiscount > 0 && <SummaryRow label="Promotions" value={`−${formatPrice(order.productDiscount)}`} accent />}
+      {order.discount > 0 && <SummaryRow label={`Promo code${order.couponCode ? ` (${order.couponCode})` : ''}`} value={`−${formatPrice(order.discount)}`} accent />}
       <SummaryRow label={`Shipping · ${order.shipping.method.name}`} value={order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)} />
+      {order.tax > 0 && <SummaryRow label="Tax" value={formatPrice(order.tax)} />}
       <div className="divider !my-4" />
       <SummaryRow label="Total" value={formatPrice(order.total)} strong />
+      {order.refunded > 0 && <SummaryRow label="Refunded" value={`−${formatPrice(order.refunded)}`} muted />}
     </dl>
   );
 }
@@ -127,7 +142,7 @@ export function PaymentSummary({ order }: { order: Order }) {
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between gap-3">
         <span className="text-ink-500">Method</span>
-        <span className="font-medium">{PAYMENT_METHOD_LABELS[order.payment.method]}</span>
+        <span className="font-medium">{PAYMENT_METHOD_LABELS[order.payment.method] ?? order.payment.method}</span>
       </div>
       {order.payment.reference && (
         <div className="flex items-center justify-between gap-3">
@@ -143,7 +158,7 @@ export function PaymentSummary({ order }: { order: Order }) {
   );
 }
 
-export function AddressBlock({ address, title }: { address: Order['shipping']['address']; title?: string }) {
+export function AddressBlock({ address, title }: { address: NonNullable<Order['shipping']['address']>; title?: string }) {
   return (
     <address className="text-sm not-italic leading-relaxed text-ink-600">
       {title && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink">{title}</p>}

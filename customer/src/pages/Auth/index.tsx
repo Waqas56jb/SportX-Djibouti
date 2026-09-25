@@ -1,17 +1,19 @@
-import { ArrowLeft, Check, MailCheck, X } from 'lucide-react';
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { ArrowLeft, Check, MailCheck, ShieldAlert, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, ButtonLink, Checkbox, InlineAlert, TextField } from '@/components/common';
 import { ROUTES } from '@/constants/routes';
 import { IMG } from '@/data/images';
-import { DEMO_CREDENTIALS } from '@/data/mockSeed';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { authService, errorMessage } from '@/services';
-import { USE_MOCK_API } from '@/services/config';
+import { ApiError } from '@/services/api';
+import { apiFieldErrors, authService, friendlyError } from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 import { email, password as passwordRule, passwordStrength, phone, required, validate } from '@/utils/validation';
+
+export const VERIFY_EMAIL_PATH = '/verify-email';
 import { AuthShell } from './AuthShell';
 
 const safeRedirect = (value: string | null) => (value && value.startsWith('/') && !value.startsWith('//') ? value : ROUTES.account);
@@ -41,6 +43,7 @@ export function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unverified, setUnverified] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,12 +52,16 @@ export function LoginPage() {
     if (Object.keys(errs).length) return;
     setLoading(true);
     setError(null);
+    setUnverified(false);
     try {
       const user = await login({ ...form.values, remember });
       toast.success(`Welcome back, ${user.firstName}`);
       navigate(safeRedirect(params.get('redirect')), { replace: true });
     } catch (err) {
-      setError(errorMessage(err));
+      const fields = apiFieldErrors(err);
+      if (Object.keys(fields).length) form.setErrors(fields);
+      setUnverified(err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED');
+      setError(friendlyError(err));
       setLoading(false);
     }
   };
@@ -72,13 +79,20 @@ export function LoginPage() {
         </p>
       }
     >
-      {USE_MOCK_API && (
-        <InlineAlert className="mb-6">
-          Demo account: <strong className="font-semibold">{DEMO_CREDENTIALS.email}</strong> / <strong className="font-semibold">{DEMO_CREDENTIALS.password}</strong>
-        </InlineAlert>
-      )}
       <form onSubmit={submit} noValidate className="space-y-5">
-        {error && <InlineAlert tone="error">{error}</InlineAlert>}
+        {error && (
+          <InlineAlert tone="error">
+            {error}
+            {unverified && (
+              <>
+                {' '}
+                <Link to={`${VERIFY_EMAIL_PATH}?email=${encodeURIComponent(form.values.email.trim())}`} className="font-semibold underline underline-offset-2">
+                  Resend the verification email
+                </Link>
+              </>
+            )}
+          </InlineAlert>
+        )}
         <TextField label="Email" type="email" inputMode="email" autoComplete="email" {...form.bind('email')} />
         <TextField label="Password" type="password" autoComplete="current-password" {...form.bind('password')} />
         <div className="flex items-center justify-between gap-4">
@@ -134,8 +148,10 @@ export function RegisterPage() {
   const form = useForm({ firstName: '', lastName: '', email: '', phone: '', password: '', confirm: '' });
   const [terms, setTerms] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
+  const [marketing, setMarketing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verifyEmailFor, setVerifyEmailFor] = useState<string | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -143,7 +159,7 @@ export function RegisterPage() {
       firstName: required('Enter your first name'),
       lastName: required('Enter your last name'),
       email,
-      phone,
+      phone: (v) => (v.trim() ? phone(v) : undefined),
       password: passwordRule,
       confirm: (v) => (!v ? 'Confirm your password' : v !== form.values.password ? 'Passwords do not match' : undefined),
     });
@@ -154,14 +170,40 @@ export function RegisterPage() {
     setError(null);
     try {
       const { confirm: _confirm, ...payload } = form.values;
-      const user = await register(payload);
-      toast.success(`Welcome to SPORTX, ${user.firstName}`, { description: 'Your account is ready.' });
+      const result = await register({ ...payload, marketingOptIn: marketing });
+      if (result.requiresEmailVerification) {
+        setVerifyEmailFor(result.user.email);
+        return;
+      }
+      toast.success(`Welcome to SPORTX, ${result.user.firstName}`, { description: 'Your account is ready.' });
       navigate(safeRedirect(params.get('redirect')), { replace: true });
     } catch (err) {
-      setError(errorMessage(err));
+      const fields = apiFieldErrors(err);
+      if (err instanceof ApiError && err.code === 'CONFLICT') fields.email = 'An account with this email already exists.';
+      form.setErrors(fields);
+      setError(friendlyError(err));
+    } finally {
       setLoading(false);
     }
   };
+
+  if (verifyEmailFor) {
+    return (
+      <AuthShell title="Verify your email">
+        <div className="flex gap-4">
+          <MailCheck className="h-8 w-8 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
+          <p className="text-ink-600">
+            Your account has been created. We sent a verification link to <strong className="font-semibold text-ink">{verifyEmailFor}</strong> — open it to activate your
+            account, then sign in.
+          </p>
+        </div>
+        <ButtonLink to={ROUTES.login} variant="primary" size="lg" fullWidth className="mt-8">
+          Go to sign in
+        </ButtonLink>
+        <ResendVerification email={verifyEmailFor} className="mt-4" />
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell
@@ -184,7 +226,7 @@ export function RegisterPage() {
           <TextField label="Last name" autoComplete="family-name" {...form.bind('lastName')} />
         </div>
         <TextField label="Email" type="email" inputMode="email" autoComplete="email" {...form.bind('email')} />
-        <TextField label="Phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+253" {...form.bind('phone')} />
+        <TextField label="Phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+253" optional {...form.bind('phone')} />
         <div>
           <TextField label="Password" type="password" autoComplete="new-password" {...form.bind('password')} />
           <PasswordMeter value={form.values.password} />
@@ -212,6 +254,7 @@ export function RegisterPage() {
           />
           {termsError && <p className="field-error">{termsError}</p>}
         </div>
+        <Checkbox checked={marketing} onChange={(e) => setMarketing(e.target.checked)} label="Email me new releases, drops and member offers" />
         <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} loadingText="Creating account…">
           Create account
         </Button>
@@ -238,7 +281,7 @@ export function ForgotPasswordPage() {
       await authService.requestPasswordReset(form.values.email);
       setSent(true);
     } catch (err) {
-      form.setErrors({ email: errorMessage(err) });
+      form.setErrors({ email: apiFieldErrors(err).email ?? friendlyError(err) });
     } finally {
       setLoading(false);
     }
@@ -253,14 +296,6 @@ export function ForgotPasswordPage() {
             If an account exists for <strong className="font-semibold text-ink">{form.values.email}</strong>, you’ll receive a link to reset your password within a few minutes.
           </p>
         </div>
-        {USE_MOCK_API && (
-          <InlineAlert className="mt-6">
-            Demo mode: no email is sent.{' '}
-            <Link to={`${ROUTES.resetPassword}?token=demo`} className="font-semibold underline underline-offset-2">
-              Open the reset page
-            </Link>
-          </InlineAlert>
-        )}
         <ButtonLink to={ROUTES.login} variant="outline" size="lg" fullWidth className="mt-8" leftIcon={<ArrowLeft className="h-4 w-4" />}>
           Back to sign in
         </ButtonLink>
@@ -306,7 +341,13 @@ export function ResetPasswordPage() {
       await authService.resetPassword(token, form.values.password);
       setDone(true);
     } catch (err) {
-      setError(errorMessage(err));
+      const fields = apiFieldErrors(err);
+      if (fields.password) form.setErrors({ password: fields.password });
+      setError(
+        err instanceof ApiError && !fields.password && (fields.token || err.status === 400 || err.status === 401 || err.status === 404)
+          ? 'This reset link is invalid or has expired. Request a new one below.'
+          : friendlyError(err),
+      );
     } finally {
       setLoading(false);
     }
@@ -329,7 +370,7 @@ export function ResetPasswordPage() {
         {error && (
           <InlineAlert tone="error">
             {error}{' '}
-            {!token && (
+            {(!token || /expired|invalid/i.test(error)) && (
               <Link to={ROUTES.forgotPassword} className="font-semibold underline">
                 Request a new link
               </Link>
@@ -345,6 +386,116 @@ export function ResetPasswordPage() {
           Update password
         </Button>
       </form>
+    </AuthShell>
+  );
+}
+
+// ───────────────────────────── Email verification ─────────────────────────────
+
+/** "Resend the email" helper shared by the register success state and the verify page. */
+function ResendVerification({ email: initialEmail, className }: { email?: string; className?: string }) {
+  const [value, setValue] = useState(initialEmail ?? '');
+  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [error, setError] = useState<string | undefined>();
+
+  const send = async (e: FormEvent) => {
+    e.preventDefault();
+    const invalid = email(value);
+    if (invalid) return setError(invalid);
+    setState('sending');
+    setError(undefined);
+    try {
+      await authService.resendVerification(value);
+      setState('sent');
+    } catch (err) {
+      setError(apiFieldErrors(err).email ?? friendlyError(err));
+      setState('idle');
+    }
+  };
+
+  if (state === 'sent') {
+    return (
+      <InlineAlert tone="success" className={className}>
+        If <strong className="font-semibold">{value}</strong> still needs verification, a new link is on its way.
+      </InlineAlert>
+    );
+  }
+
+  return (
+    <form onSubmit={send} noValidate className={cn('space-y-3', className)}>
+      {!initialEmail && (
+        <TextField label="Email" type="email" inputMode="email" autoComplete="email" value={value} error={error} onChange={(e) => (setValue(e.target.value), setError(undefined))} />
+      )}
+      {initialEmail && error && <p className="field-error">{error}</p>}
+      <Button type="submit" variant="outline" size="lg" fullWidth loading={state === 'sending'}>
+        Resend verification email
+      </Button>
+    </form>
+  );
+}
+
+export function VerifyEmailPage() {
+  usePageMeta({ title: 'Verify your email', noindex: true });
+  const [params] = useSearchParams();
+  const token = params.get('token') ?? '';
+  const [state, setState] = useState<'verifying' | 'done' | 'error'>(token ? 'verifying' : 'error');
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (!token || started.current) return;
+    started.current = true;
+    authService
+      .verifyEmail(token)
+      .then((user) => {
+        const current = useAuthStore.getState().session?.user;
+        if (current && current.id === user.id) useAuthStore.getState().setUser({ ...current, ...user });
+        setState('done');
+      })
+      .catch((err) => {
+        setError(err instanceof ApiError && err.code !== 'RATE_LIMITED' && err.code !== 'NETWORK_ERROR' ? 'This verification link is invalid or has expired.' : friendlyError(err));
+        setState('error');
+      });
+  }, [token]);
+
+  if (state === 'verifying') {
+    return (
+      <AuthShell title="Verifying…" subtitle="Hold on while we confirm your email address.">
+        <div className="h-1 w-full overflow-hidden bg-paper-200">
+          <div className="h-full w-1/3 animate-pulse bg-ink" />
+        </div>
+      </AuthShell>
+    );
+  }
+
+  if (state === 'done') {
+    const signedIn = Boolean(useAuthStore.getState().session);
+    return (
+      <AuthShell title="Email verified">
+        <div className="flex gap-4">
+          <MailCheck className="h-8 w-8 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
+          <p className="text-ink-600">Thanks — your email address is confirmed. {signedIn ? 'You’re all set.' : 'You can now sign in to your SPORTX account.'}</p>
+        </div>
+        <ButtonLink to={signedIn ? ROUTES.account : ROUTES.login} variant="primary" size="lg" fullWidth className="mt-8">
+          {signedIn ? 'Go to my account' : 'Sign in'}
+        </ButtonLink>
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell title="Verify your email" subtitle={token ? undefined : 'Enter your email and we’ll send you a new verification link.'}>
+      {error && (
+        <InlineAlert tone="error" className="mb-6">
+          <span className="flex items-start gap-2">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {error} Request a new link below.
+          </span>
+        </InlineAlert>
+      )}
+      <ResendVerification email={params.get('email') ?? undefined} />
+      <Link to={ROUTES.login} className="mt-6 flex items-center justify-center gap-2 text-sm font-medium hover:underline">
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to sign in
+      </Link>
     </AuthShell>
   );
 }

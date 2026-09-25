@@ -45,7 +45,7 @@ export default function ContactPage() {
     <>
       <PageHero eyebrow="Get in touch" title="Contact SPORTX" description="Questions about products, orders or team kit? Visit us, call us or send a message." crumbs={[{ label: 'Contact' }]} />
 
-      <div className="container-site grid gap-12 pb-24 lg:grid-cols-[1fr_1.3fr] lg:gap-20">
+      <div className="container-site grid grid-cols-1 gap-12 pb-24 lg:grid-cols-[1fr_1.3fr] lg:gap-20">
         <div className="space-y-10">
           <div className="bg-ink p-8 text-white sm:p-10">
             <p className="font-display text-4xl font-extrabold italic tracking-tight">

@@ -100,7 +100,8 @@ export function useCatalogParams() {
 
   const toQuery = (base: Partial<ProductQuery>): ProductQuery => ({
     ...base,
-    categories: state.category,
+    // A category page passes its slug in `base`; picking sub-categories in the facet narrows it.
+    categories: state.category.length ? state.category : base.categories,
     brands: state.brand,
     sizes: state.size,
     colors: state.color,

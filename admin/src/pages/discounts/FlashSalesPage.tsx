@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { CalendarClock, Plus, Timer, TrendingUp, Zap } from 'lucide-react';
 import type { FlashSale } from '@/types';
-import { Button, DemoBadge, EmptyState, ErrorState, PageHeader, SkeletonPanel, Tabs } from '@/components/common';
+import { Button, EmptyState, ErrorState, PageHeader, SkeletonPanel, Tabs } from '@/components/common';
+import { SearchInput } from '@/components/forms';
+import { Pagination } from '@/components/tables';
 import { StatStrip } from '@/components/marketing/MarketingParts';
 import { FlashSaleCard } from '@/components/marketing/FlashSaleCard';
 import { FlashSaleFormDrawer } from '@/components/marketing/FlashSaleFormDrawer';
 import { useMarketingCatalog, useNow } from '@/components/marketing/useMarketingData';
+import { useDebounce } from '@/hooks/misc';
 import { errorMessage } from '@/components/marketing/utils';
 import { useAsync } from '@/hooks/useAsync';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
@@ -19,13 +22,21 @@ type Tab = 'all' | FlashSaleStatus;
 const TABS: Tab[] = ['all', 'active', 'upcoming', 'ended', 'disabled'];
 const TAB_LABEL: Record<Tab, string> = { all: 'All', active: 'Active', upcoming: 'Upcoming', ended: 'Ended', disabled: 'Disabled' };
 const GROUP_ORDER: FlashSaleStatus[] = ['active', 'upcoming', 'ended', 'disabled'];
+const PAGE_SIZE = 12;
 const GROUP_TITLE: Record<FlashSaleStatus, string> = { active: 'Live now', upcoming: 'Upcoming', ended: 'Ended', disabled: 'Disabled' };
 
 export default function FlashSalesPage() {
-  const { filters, setFilter } = useUrlFilters({ tab: 'all' });
+  const { filters, setFilter, setFilters } = useUrlFilters({ tab: 'all', search: '', page: '1' });
   const tab = (TABS.includes(filters.tab as Tab) ? filters.tab : 'all') as Tab;
+  const search = useDebounce(filters.search, 300);
+  const page = Math.max(1, Number(filters.page) || 1);
   const now = useNow(30_000);
-  const { data, loading, error, reload, setData } = useAsync(() => discountService.getFlashSales(), []);
+  const { data: pageData, loading, error, reload } = useAsync(
+    () => discountService.getFlashSales({ page, pageSize: PAGE_SIZE, search, status: tab === 'all' ? undefined : tab, sort: 'starts_at', order: tab === 'upcoming' ? 'asc' : 'desc' }),
+    [page, search, tab],
+  );
+  const countsState = useAsync(() => discountService.getFlashSaleCounts(), []);
+  const data = pageData?.items;
   const catalog = useMarketingCatalog();
   const [drawer, setDrawer] = useState<{ sale?: FlashSale } | null>(null);
   const canCreate = usePermission('discounts:create');
@@ -44,20 +55,17 @@ export default function FlashSalesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, now],
   );
-  const counts = useMemo(() => {
-    const out: Record<Tab, number> = { all: items.length, active: 0, upcoming: 0, ended: 0, disabled: 0 };
-    items.forEach((x) => out[x.status]++);
-    return out;
-  }, [items]);
+  const counts = countsState.data;
+  const refresh = async () => {
+    await Promise.all([reload(true), countsState.reload(true)]);
+  };
   const totals = useMemo(() => items.reduce((acc, x) => ({ units: acc.units + x.s.unitsSold, revenue: acc.revenue + x.s.revenue }), { units: 0, revenue: 0 }), [items]);
-
-  const replace = (s: FlashSale) => setData((list) => list?.map((x) => (x.id === s.id ? s : x)));
 
   const toggle = async (s: FlashSale) => {
     try {
-      const saved = await discountService.updateFlashSale(s.id, { name: s.name, discountPercent: s.discountPercent, productIds: s.productIds, startsAt: s.startsAt, endsAt: s.endsAt, enabled: !s.enabled });
-      replace(saved);
+      const saved = await discountService.setFlashSaleEnabled(s.id, !s.enabled);
       toast.success(saved.enabled ? 'Flash sale enabled.' : 'Flash sale disabled.', { description: saved.name });
+      await refresh();
     } catch (e) {
       toast.error('Couldn’t update flash sale.', { description: errorMessage(e) });
     }
@@ -68,14 +76,17 @@ export default function FlashSalesPage() {
     if (!(await confirm({ title: `Delete “${s.name}”?`, description: live ? 'This sale is live. Prices return to normal immediately for every product in it.' : 'This action cannot be undone.', confirmLabel: 'Delete flash sale' }))) return;
     try {
       await discountService.deleteFlashSale(s.id);
-      setData((list) => list?.filter((x) => x.id !== s.id));
       toast.success('Flash sale deleted.', { description: s.name });
+      if ((data?.length ?? 0) === 1 && page > 1) {
+        setFilter('page', String(page - 1));
+        void countsState.reload(true);
+      } else await refresh();
     } catch (e) {
       toast.error('Couldn’t delete flash sale.', { description: errorMessage(e) });
     }
   };
 
-  const visible = tab === 'all' ? items : items.filter((x) => x.status === tab);
+  const visible = items;
   const groups = tab === 'all' ? GROUP_ORDER.map((g) => ({ g, list: visible.filter((x) => x.status === g) })).filter((x) => x.list.length) : [{ g: tab as FlashSaleStatus, list: visible }];
   const create = () => setDrawer({});
 
@@ -85,7 +96,7 @@ export default function FlashSalesPage() {
       sale={s}
       status={status}
       now={now}
-      products={s.productIds.map((id) => catalog.productById.get(id)).filter((p): p is NonNullable<typeof p> => Boolean(p))}
+      products={s.products?.length ? s.products : s.productIds.map((id) => catalog.productById.get(id)).filter((p): p is NonNullable<typeof p> => Boolean(p))}
       onEdit={canEdit ? () => setDrawer({ sale: s }) : undefined}
       onToggle={canEdit ? () => void toggle(s) : undefined}
       onDelete={canDelete ? () => void remove(s) : undefined}
@@ -101,12 +112,12 @@ export default function FlashSalesPage() {
       />
 
       <StatStrip
-        loading={loading}
+        loading={(loading && !pageData) || (countsState.loading && !counts)}
         items={[
-          { label: 'Live now', value: counts.active, icon: Zap, accent: true },
-          { label: 'Upcoming', value: counts.upcoming, icon: CalendarClock },
-          { label: 'Units sold', value: formatNumber(totals.units), icon: Timer, hint: 'All flash sales · demo data' },
-          { label: 'Flash sale revenue', value: formatMoney(totals.revenue, { compact: true }), icon: TrendingUp, hint: 'All flash sales · demo data' },
+          { label: 'Live now', value: counts?.active ?? 0, icon: Zap, accent: true },
+          { label: 'Upcoming', value: counts?.upcoming ?? 0, icon: CalendarClock },
+          { label: 'Units sold', value: formatNumber(totals.units), icon: Timer, hint: 'Sales on this page' },
+          { label: 'Flash sale revenue', value: formatMoney(totals.revenue, { compact: true }), icon: TrendingUp, hint: 'Sales on this page' },
         ]}
       />
 
@@ -115,17 +126,17 @@ export default function FlashSalesPage() {
           ariaLabel="Filter flash sales"
           className="min-w-0 flex-1"
           value={tab}
-          onChange={(v) => setFilter('tab', v)}
-          items={TABS.map((t) => ({ value: t, label: TAB_LABEL[t], count: loading ? undefined : counts[t] }))}
+          onChange={(v) => setFilters({ tab: v, page: '1' })}
+          items={TABS.map((t) => ({ value: t, label: TAB_LABEL[t], count: counts?.[t] }))}
         />
-        <DemoBadge className="mb-3" />
+        <SearchInput value={filters.search} onChange={(v) => setFilters({ search: v, page: '1' })} placeholder="Search flash sales…" className="mb-3 w-full sm:w-64" label="Search flash sales" />
       </div>
 
       {error ? (
         <div className="panel">
           <ErrorState onRetry={() => void reload()} description="We couldn’t load flash sales. Please try again." />
         </div>
-      ) : loading ? (
+      ) : loading && !pageData ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
             <SkeletonPanel key={i} rows={3} />
@@ -135,10 +146,10 @@ export default function FlashSalesPage() {
         <div className="panel">
           <EmptyState
             icon={Zap}
-            title={tab === 'all' ? 'No flash sales yet' : `No ${tab === 'active' ? 'live' : tab} flash sales`}
+            title={filters.search ? 'No flash sales match' : tab === 'all' ? 'No flash sales yet' : `No ${tab === 'active' ? 'live' : tab} flash sales`}
             description={tab === 'all' || tab === 'active' || tab === 'upcoming' ? 'Schedule a short, sharp markdown on hero products — boots drops, jersey launches, weekend deals.' : 'Nothing to show here.'}
             action={canCreate && (tab === 'all' || tab === 'active' || tab === 'upcoming') && <Button variant="primary" size="sm" icon={Plus} onClick={create}>Create flash sale</Button>}
-            secondaryAction={tab !== 'all' && <Button size="sm" onClick={() => setFilter('tab', 'all')}>View all</Button>}
+            secondaryAction={(tab !== 'all' || filters.search) && <Button size="sm" onClick={() => setFilters({ tab: 'all', search: '', page: '1' })}>View all</Button>}
           />
         </div>
       ) : (
@@ -157,15 +168,20 @@ export default function FlashSalesPage() {
         </div>
       )}
 
+      {pageData && pageData.total > PAGE_SIZE && (
+        <div className="panel mt-6 overflow-hidden">
+          <Pagination page={page} pageCount={pageData.totalPages} pageSize={PAGE_SIZE} total={pageData.total} onPageChange={(p) => setFilter('page', String(p))} />
+        </div>
+      )}
+
       <FlashSaleFormDrawer
         open={Boolean(drawer)}
         sale={drawer?.sale}
         catalog={catalog}
         onClose={() => setDrawer(null)}
-        onSaved={(s, created) => {
+        onSaved={() => {
           setDrawer(null);
-          if (created) setData((list) => [s, ...(list ?? [])]);
-          else replace(s);
+          void refresh();
         }}
       />
     </div>

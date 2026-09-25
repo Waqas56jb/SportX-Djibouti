@@ -1,32 +1,41 @@
-import { apiClient } from './api/client';
-import { USE_MOCK_API } from './config';
-import { db, delay } from './mock/db';
+import { api } from './api';
+
+export interface WishlistProductSummary {
+  id: string;
+  name: string;
+  slug: string;
+  brand: string;
+  brandSlug: string;
+  image: string | null;
+  hoverImage: string | null;
+  price: number;
+  compareAtPrice: number | null;
+  rating: number;
+  reviewCount: number;
+  badge: string | null;
+  isNew: boolean;
+  inStock: boolean;
+  colors: string[];
+}
+
+export interface ServerWishlist {
+  ids: string[];
+  count: number;
+  items: { productId: string; addedAt: string; product: WishlistProductSummary }[];
+}
 
 /**
- * Account-level wishlist persistence. Guests keep their wishlist on-device
- * (see store/wishlistStore); on sign-in the two lists are merged via `sync`.
+ * Account wishlist (`/wishlist`, signed-in only). Guests keep an on-device list in
+ * store/wishlistStore, which is merged into the account list once on sign-in.
+ * Every call returns the full, refreshed list.
  */
 export const wishlistService = {
-  async get(userId: string): Promise<string[]> {
-    if (!USE_MOCK_API) return apiClient.get<string[]>('/me/wishlist');
-    await delay(150, 300);
-    return db.read().wishlists[userId] ?? [];
-  },
+  get: () => api.get<ServerWishlist>('/wishlist'),
 
-  async sync(userId: string, productIds: string[]): Promise<string[]> {
-    if (!USE_MOCK_API) return apiClient.put<string[]>('/me/wishlist', { productIds });
-    await delay(100, 250);
-    const merged = [...new Set([...productIds, ...(db.read().wishlists[userId] ?? [])])];
-    db.write((d) => {
-      d.wishlists[userId] = merged;
-    });
-    return merged;
-  },
+  add: (productId: string) => api.post<ServerWishlist>(`/wishlist/${encodeURIComponent(productId)}`),
 
-  async save(userId: string, productIds: string[]): Promise<void> {
-    if (!USE_MOCK_API) return apiClient.put<void>('/me/wishlist', { productIds });
-    db.write((d) => {
-      d.wishlists[userId] = productIds;
-    });
-  },
+  remove: (productId: string) => api.delete<ServerWishlist>(`/wishlist/${encodeURIComponent(productId)}`),
+
+  /** Union of the guest list and the account list; unknown / unpublished products are skipped. */
+  merge: (productIds: string[]) => api.post<ServerWishlist>('/wishlist/merge', { productIds: productIds.filter((id) => /^[A-Za-z0-9-]+$/.test(id)).slice(0, 200) }),
 };

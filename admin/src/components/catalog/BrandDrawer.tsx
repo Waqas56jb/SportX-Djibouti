@@ -84,7 +84,7 @@ export function BrandDrawer({ open, brand, brands, onClose, onSubmit }: { open: 
             }}
           />
         </FormGrid>
-        <ImageUploadField label="Logo" aspect="square" value={d.logoUrl} onChange={(url) => patch({ logoUrl: url })} fallback={<BrandLogo name={d.name || '?'} size={72} />} hint="Square SVG or PNG on transparent background" />
+        <ImageUploadField label="Logo" aspect="square" value={d.logoUrl} onChange={(url, file) => patch({ logoUrl: url, logoFile: file })} fallback={<BrandLogo name={d.name || '?'} size={72} />} hint="Square SVG or PNG on transparent background" />
         <Textarea label="Description" rows={3} value={d.description} onChange={(e) => patch({ description: e.target.value })} />
         <Input label="Website" optional icon={Globe} type="url" inputMode="url" placeholder="https://" value={d.website} error={errors.website} onChange={(e) => patch({ website: e.target.value })} />
         <div className="rounded-xl border border-zinc-200 p-4">

@@ -7,7 +7,7 @@ import { Drawer } from '@/components/modals/Overlay';
 import { discountService } from '@/services/discountService';
 import { toast } from '@/store/toastStore';
 import type { MarketingCatalog } from './useMarketingData';
-import { discountLabel, endOfDayIso, errorMessage, fromLocalInput, nameList, toLocalDateInput } from './utils';
+import { applyApiErrors, discountLabel, endOfDayIso, errorMessage, fromLocalInput, nameList, toLocalDateInput } from './utils';
 
 type AppliesTo = Discount['appliesTo'];
 
@@ -22,6 +22,8 @@ interface FormState {
   enabled: boolean;
 }
 type Errors = Partial<Record<keyof FormState, string>>;
+const FIELDS = ['name', 'type', 'value', 'appliesTo', 'targetIds', 'startDate', 'endDate', 'enabled'] as const satisfies readonly (keyof FormState)[];
+const ALIAS: Record<string, (typeof FIELDS)[number]> = { startsAt: 'startDate', endsAt: 'endDate' };
 
 const APPLIES: { value: AppliesTo; label: string }[] = [
   { value: 'all', label: 'All products' },
@@ -55,10 +57,10 @@ function validate(f: FormState): Errors {
 }
 
 /** Human summary of what a discount targets, e.g. "3 categories: Football, Running +1". */
-export function describeTargets(d: Pick<Discount, 'appliesTo' | 'targetIds'>, catalog: MarketingCatalog): string {
+export function describeTargets(d: Pick<Discount, 'appliesTo' | 'targetIds' | 'targets'>, catalog: MarketingCatalog): string {
   if (d.appliesTo === 'all') return 'Entire catalogue';
   const names = d.targetIds
-    .map((id) => (d.appliesTo === 'categories' ? catalog.categoryById.get(id)?.name : d.appliesTo === 'products' ? catalog.productById.get(id)?.name : catalog.brandById.get(id)?.name))
+    .map((id) => d.targets?.find((t) => t.id === id)?.name ?? (d.appliesTo === 'categories' ? catalog.categoryById.get(id)?.name : d.appliesTo === 'products' ? catalog.productById.get(id)?.name : catalog.brandById.get(id)?.name))
     .filter((x): x is string => Boolean(x));
   if (!names.length) return `${d.targetIds.length} ${d.appliesTo}`;
   return nameList(names, 2);
@@ -101,7 +103,8 @@ export function DiscountFormDrawer({ open, discount, onClose, onSaved, catalog }
       toast.success(discount ? 'Discount updated.' : 'Discount created.', { description: saved.name });
       onSaved(saved, !discount);
     } catch (err) {
-      toast.error('Couldn’t save discount.', { description: errorMessage(err) });
+      const flagged = applyApiErrors(err, FIELDS, (x) => setErrors((prev) => ({ ...prev, ...x })), ALIAS);
+      toast.error('Couldn’t save discount.', { description: flagged ? `${errorMessage(err)} Check the highlighted fields.` : errorMessage(err) });
     } finally {
       setSaving(false);
     }
@@ -141,7 +144,7 @@ export function DiscountFormDrawer({ open, discount, onClose, onSaved, catalog }
           </div>
         </div>
 
-        <Input label="Name" required value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} maxLength={80} placeholder="e.g. Running week — 15% off" data-autofocus />
+        <Input label="Name" required value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} maxLength={120} placeholder="e.g. Running week — 15% off" data-autofocus />
         <RadioGroup
           label="Discount type"
           variant="cards"

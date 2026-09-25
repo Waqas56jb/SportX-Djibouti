@@ -2,43 +2,14 @@ import { useRef, useState } from 'react';
 import { Camera, CalendarDays, Clock, Loader2, Mail, Phone, ShieldCheck } from 'lucide-react';
 import type { AuthSession } from '@/types';
 import { Avatar, Badge } from '@/components/common';
-import { authService } from '@/services/authService';
+import { profileService } from '@/services/profileService';
+import { errorMessage } from '@/components/settings/formErrors';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { formatDate, formatRelative } from '@/utils/format';
 
 const MAX_MB = 5;
-
-/**
- * Loads the picked file through an object URL and downsizes it to a 256px square JPEG so the
- * preview survives a reload (object URLs die with the page). The real API would upload to storage.
- */
-function toAvatarDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const size = 256;
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        URL.revokeObjectURL(url);
-        return reject(new Error('Canvas unavailable'));
-      }
-      const side = Math.min(img.naturalWidth, img.naturalHeight);
-      ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', 0.86));
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Unreadable image'));
-    };
-    img.src = url;
-  });
-}
+const ACCEPT = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
 
 export function ProfileCard({ session }: { session: AuthSession }) {
   const { user, role } = session;
@@ -48,16 +19,15 @@ export function ProfileCard({ session }: { session: AuthSession }) {
 
   const onFile = async (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) return toast.error('Choose an image file.', { description: 'PNG, JPG or WEBP.' });
+    if (!ACCEPT.includes(file.type)) return toast.error('Choose an image file.', { description: 'PNG, JPG, WEBP or AVIF.' });
     if (file.size > MAX_MB * 1024 * 1024) return toast.error(`Image is larger than ${MAX_MB} MB.`);
     setUploading(true);
     try {
-      const avatarUrl = await toAvatarDataUrl(file);
-      const saved = await authService.updateProfile(user.id, { name: user.name, email: user.email, phone: user.phone, avatarUrl });
-      updateSession({ user: saved });
+      const saved = await profileService.uploadAvatar(file);
+      updateSession({ user: { ...user, avatarUrl: saved.avatarUrl } });
       toast.success('Profile photo updated.');
-    } catch {
-      toast.error('Couldn’t update your photo.', { description: 'Try a different image.' });
+    } catch (e) {
+      toast.error('Couldn’t update your photo.', { description: errorMessage(e, 'Try a different image.') });
     } finally {
       setUploading(false);
     }
@@ -66,11 +36,11 @@ export function ProfileCard({ session }: { session: AuthSession }) {
   const removePhoto = async () => {
     setUploading(true);
     try {
-      const saved = await authService.updateProfile(user.id, { name: user.name, email: user.email, phone: user.phone, avatarUrl: undefined });
-      updateSession({ user: saved });
+      await profileService.removeAvatar();
+      updateSession({ user: { ...user, avatarUrl: undefined } });
       toast.success('Profile photo removed.');
-    } catch {
-      toast.error('Couldn’t remove your photo.');
+    } catch (e) {
+      toast.error('Couldn’t remove your photo.', { description: errorMessage(e) });
     } finally {
       setUploading(false);
     }
@@ -106,7 +76,7 @@ export function ProfileCard({ session }: { session: AuthSession }) {
             <input
               ref={input}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/png,image/jpeg,image/webp,image/avif"
               className="hidden"
               onChange={(e) => {
                 void onFile(e.target.files?.[0]);

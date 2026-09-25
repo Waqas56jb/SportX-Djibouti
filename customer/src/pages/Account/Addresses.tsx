@@ -6,7 +6,8 @@ import { Badge, Button, ConfirmDialog, EmptyState, ErrorState, Modal, SkeletonLo
 import { useAsync } from '@/hooks/useAsync';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { addressService, errorMessage } from '@/services';
+import { addressService } from '@/services/addressService';
+import { friendlyError } from '@/services/authService';
 import { toast } from '@/store/toastStore';
 import type { Address, AddressInput } from '@/types';
 import { cn } from '@/utils/cn';
@@ -27,7 +28,7 @@ export default function AddressesPage() {
       toast.success(success);
       return true;
     } catch (err) {
-      toast.error('Something went wrong', { description: errorMessage(err) });
+      toast.error('Something went wrong', { description: friendlyError(err) });
       return false;
     } finally {
       setBusy(false);
@@ -98,6 +99,7 @@ export default function AddressesPage() {
                 </span>
                 <span className="block">{a.line1}</span>
                 {a.line2 && <span className="block">{a.line2}</span>}
+                {a.district && <span className="block">{a.district}</span>}
                 <span className="block">
                   {a.city}
                   {a.postalCode ? `, ${a.postalCode}` : ''}, {a.country}

@@ -1,21 +1,17 @@
 import type {
   CategorySales,
   CustomerGrowthPoint,
-  DashboardStats,
+  DashboardData,
   DateRange,
   DateRangePreset,
-  InventoryItem,
-  KpiValue,
+  NavCounts,
+  ProductStatus,
+  ProductType,
+  RecentOrder,
   SalesPoint,
   TopProduct,
 } from '@/types';
-import { appConfig } from '@/constants/config';
-import { CATEGORY_WEIGHTS, dailyMetrics, HOURLY_WEIGHTS, type DailyMetric } from '@/data/analytics';
-import { reportingCategory } from '@/data/catalog';
-import { totalStock, variantStockStatus } from '@/utils/stock';
-import { api } from './http';
-import { db, delay } from './mock/db';
-import { inventoryService } from './inventoryService';
+import { adminApi, download, type Query } from './api';
 
 const DAY = 86_400_000;
 
@@ -27,13 +23,13 @@ export const RANGE_PRESETS: { value: DateRangePreset; label: string; short: stri
   { value: '12m', label: 'Last 12 months', short: '12M' },
 ];
 
-type Bucket = 'hour' | 'day' | 'week' | 'month';
+export type ReportBucket = 'hour' | 'day' | 'week' | 'month';
 
 interface Bounds {
   from: Date;
   to: Date;
   days: number;
-  bucket: Bucket;
+  bucket: ReportBucket;
   label: string;
 }
 
@@ -43,6 +39,7 @@ function startOfDay(d: Date) {
   return x;
 }
 
+/** Client-side approximation of a range (labels / captions only — the API resolves real bounds). */
 export function resolveRange(range: DateRange): Bounds {
   const today = startOfDay(new Date());
   switch (range.preset) {
@@ -65,343 +62,288 @@ export function resolveRange(range: DateRange): Bounds {
   }
 }
 
-function metricsBetween(from: Date, to: Date): DailyMetric[] {
-  const a = from.getTime();
-  const b = to.getTime();
-  return dailyMetrics.filter((m) => m.date.getTime() >= a && m.date.getTime() <= b);
+/** Local calendar date (YYYY-MM-DD) of an ISO timestamp — what the admin picked in the date input. */
+function localDate(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** Fraction of today's trading completed — so "today" isn't compared against a full day. */
-function todayFraction() {
-  const h = new Date().getHours() + new Date().getMinutes() / 60;
-  const total = HOURLY_WEIGHTS.reduce((s, w) => s + w, 0);
-  let done = 0;
-  for (let i = 0; i < 24; i++) done += i + 1 <= h ? HOURLY_WEIGHTS[i] : i < h ? HOURLY_WEIGHTS[i] * (h - i) : 0;
-  return Math.max(0.02, done / total);
+/** DateRange → API `range` / `from` / `to` query. */
+export function rangeQuery(range: DateRange): Query {
+  if (range.preset === 'custom' && range.from && range.to) return { range: 'custom', from: localDate(range.from), to: localDate(range.to) };
+  return { range: range.preset === 'custom' ? '30d' : range.preset };
 }
 
-function point(label: string, date: Date, ms: DailyMetric[], scale = 1): SalesPoint {
-  const revenue = Math.round(ms.reduce((s, m) => s + m.revenue, 0) * scale);
-  const orders = Math.round(ms.reduce((s, m) => s + m.orders, 0) * scale);
-  const discounts = Math.round(ms.reduce((s, m) => s + m.discounts, 0) * scale);
-  const refunds = Math.round(ms.reduce((s, m) => s + m.refunds, 0) * scale);
-  return { date: date.toISOString(), label, revenue, orders, aov: orders ? Math.round(revenue / orders) : 0, discounts, refunds, netSales: revenue - discounts - refunds };
+const pct = (v: number | null | undefined) => (v === null || v === undefined ? undefined : v);
+const lower = (s: string | null | undefined) => (s ?? '').toLowerCase();
+
+// ─── API shapes ─────────────────────────────────────────────────────────────
+
+interface ApiKpi {
+  value: number;
+  previous: number;
+  change: number | null;
+  trend: number[];
 }
 
-function series(b: Bounds): SalesPoint[] {
-  const out: SalesPoint[] = [];
-  if (b.bucket === 'hour') {
-    const m = metricsBetween(b.from, b.to);
-    const total = HOURLY_WEIGHTS.reduce((s, w) => s + w, 0);
-    const nowH = new Date().getHours();
-    for (let h = 0; h <= nowH; h++) {
-      const d = new Date(b.from.getTime() + h * 3600_000);
-      out.push(point(`${String(h).padStart(2, '0')}:00`, d, m, HOURLY_WEIGHTS[h] / total));
-    }
-    return out;
-  }
-  if (b.bucket === 'day') {
-    for (let t = b.from.getTime(); t <= b.to.getTime(); t += DAY) {
-      const d = new Date(t);
-      const isToday = t === startOfDay(new Date()).getTime();
-      out.push(point(d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), d, metricsBetween(d, d), isToday ? todayFraction() : 1));
-    }
-    return out;
-  }
-  if (b.bucket === 'week') {
-    for (let t = b.from.getTime(); t <= b.to.getTime(); t += 7 * DAY) {
-      const s = new Date(t);
-      const e = new Date(Math.min(t + 6 * DAY, b.to.getTime()));
-      out.push(point(s.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), s, metricsBetween(s, e)));
-    }
-    return out;
-  }
-  const cursor = new Date(b.from.getFullYear(), b.from.getMonth(), 1);
-  while (cursor.getTime() <= b.to.getTime()) {
-    const s = new Date(cursor);
-    const e = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
-    out.push(point(s.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }), s, metricsBetween(s, e > b.to ? b.to : e)));
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-  return out;
+interface ApiTopProduct {
+  productId: string;
+  name: string;
+  slug?: string | null;
+  sku?: string;
+  image: string | null;
+  category: string | null;
+  brand: string | null;
+  productType: string | null;
+  sport?: string;
+  status?: string;
+  unitsSold: number;
+  revenue: number;
+  views?: number;
+  conversion?: number | null;
+  stock: number;
+  trend?: number | null;
 }
 
-function previousBounds(b: Bounds): Bounds {
-  if (b.bucket === 'month') return { ...b, from: new Date(b.from.getFullYear() - 1, b.from.getMonth(), 1), to: new Date(b.to.getTime() - 365 * DAY) };
-  const span = b.days * DAY;
-  return { ...b, from: new Date(b.from.getTime() - span), to: new Date(b.to.getTime() - span) };
+interface ApiOrderSummary {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  customer: { firstName: string | null; lastName: string | null; email: string | null };
+  itemsCount: number;
+  grandTotal: number;
+  image: string | null;
+  placedAt: string;
 }
 
-function sumMetric(b: Bounds, key: keyof Omit<DailyMetric, 'date'>, partialToday = true) {
-  const ms = metricsBetween(b.from, b.to);
-  const todayT = startOfDay(new Date()).getTime();
-  return Math.round(ms.reduce((s, m) => s + m[key] * (partialToday && m.date.getTime() === todayT ? todayFraction() : 1), 0));
+interface ApiDashboard {
+  range: DashboardData['range'];
+  sales: { averageOrderValue: number };
+  orders: { pending: number; refundRequests: number };
+  products: { lowStockVariants: number; outOfStockVariants: number };
+  supportOpen: number;
+  reviewsPending: number;
+  recentOrders: ApiOrderSummary[];
+  topProducts: ApiTopProduct[];
+  salesChart: { date: string; label: string; revenue: number; orders: number; aov: number; units: number; newCustomers: number }[];
+  salesByCategory: CategorySales[];
+  kpis: { revenue: ApiKpi; orders: ApiKpi; customers: ApiKpi; productsSold: ApiKpi };
 }
 
-function kpi(b: Bounds, key: keyof Omit<DailyMetric, 'date'>, trend: number[]): KpiValue {
-  const value = sumMetric(b, key);
-  const prevB = previousBounds(b);
-  // Compare "today so far" with the same fraction of yesterday.
-  const previous = b.bucket === 'hour' ? Math.round(sumMetric(prevB, key, false) * todayFraction()) : sumMetric(prevB, key, false);
-  return { value, previous, change: previous ? ((value - previous) / previous) * 100 : 0, trend };
-}
-
-/** Deterministic per-product noise so rankings differ by period but stay stable. */
-function hash(s: string) {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return ((h >>> 0) % 1000) / 1000;
-}
-
-function productRows(preset: DateRangePreset, days: number): TopProduct[] {
-  const scale = Math.min(1.4, days / 365) * 2.2;
-  return db.products
-    .filter((p) => p.status !== 'draft')
-    .map((p) => {
-      const n = hash(p.id + preset);
-      const units = Math.max(0, Math.round(p.unitsSold * scale * (0.6 + n * 0.8)));
-      const views = Math.round(units * (22 + hash(p.slug) * 30)) + Math.round(40 * scale * 10 * hash(p.name));
-      return {
-        productId: p.id,
-        name: p.name,
-        productType: p.type,
-        category: reportingCategory(p),
-        brand: db.brands.find((b) => b.id === p.brandId)?.name ?? '—',
-        unitsSold: units,
-        revenue: units * p.price,
-        views,
-        conversion: views ? (units / views) * 100 : 0,
-        stock: totalStock(p.variants),
-        trend: Math.round((hash(p.id + preset + 't') - 0.4) * 60 * 10) / 10,
-      };
-    });
+interface ApiSalesTotals {
+  revenue: number;
+  orders: number;
+  aov: number;
+  grossSales: number;
+  discounts: number;
+  refunds: number;
+  shipping: number;
+  tax: number;
+  netSales: number;
 }
 
 export interface SalesReport {
   range: string;
-  totals: { revenue: number; orders: number; aov: number; discounts: number; refunds: number; netSales: number };
-  previous: { revenue: number; orders: number; aov: number; discounts: number; refunds: number; netSales: number };
+  bucket: ReportBucket;
+  totals: ApiSalesTotals;
+  previous: ApiSalesTotals;
+  /** % change per total (undefined when the previous period had none). */
+  change: Partial<Record<keyof ApiSalesTotals, number>>;
   series: SalesPoint[];
 }
 
+export interface ProductReportFilters {
+  categoryId?: string;
+  brandId?: string;
+  sport?: string;
+  search?: string;
+  status?: ProductStatus | '';
+  sort?: 'revenue' | 'units' | 'views' | 'conversion' | 'stock' | 'name' | 'trend';
+  order?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductReport {
+  totals: { products: number; unitsSold: number; revenue: number; views: number; conversion?: number };
+  best: TopProduct[];
+  worst: TopProduct[];
+  items: TopProduct[];
+  total: number;
+}
+
 export interface CustomerReport {
-  totals: { newCustomers: number; returningCustomers: number; averageSpend: number; ordersPerCustomer: number; totalCustomers: number; repeatRate: number };
+  bucket: ReportBucket;
+  totals: { newCustomers: number; returningCustomers: number; averageSpend: number; ordersPerCustomer: number; totalCustomers: number; repeatRate: number; buyers: number };
   growth: CustomerGrowthPoint[];
   byCity: { name: string; value: number }[];
   byGroup: { name: string; value: number }[];
-  topCustomers: { id: string; name: string; orders: number; spent: number }[];
+  topCustomers: { id: string; name: string; email?: string; orders: number; spent: number }[];
 }
 
 export interface InventoryReport {
-  totals: { products: number; variants: number; units: number; lowStock: number; outOfStock: number; inventoryValue: number; retailValue: number };
-  aging: { bucket: string; units: number; value: number }[];
+  bucket: ReportBucket;
+  totals: {
+    products: number;
+    variants: number;
+    units: number;
+    reserved: number;
+    lowStock: number;
+    outOfStock: number;
+    inventoryValue: number;
+    retailValue: number;
+    /** Variants in stock whose product has no cost price (counted as 0 in inventoryValue). */
+    variantsMissingCost: number;
+  };
+  aging: { bucket: string; units: number; value: number; variants?: number }[];
   movement: { label: string; inbound: number; outbound: number }[];
-  topStocked: { productId: string; name: string; units: number; value: number }[];
+  topStocked: { productId: string; name: string; units: number; value: number; retailValue?: number }[];
   byStatus: { name: string; value: number }[];
-  items: InventoryItem[];
 }
 
+// ─── Mappers ────────────────────────────────────────────────────────────────
+
+const kpi = (k: ApiKpi) => ({ value: k.value, previous: k.previous, change: pct(k.change), trend: k.trend });
+
+export const toTopProduct = (p: ApiTopProduct): TopProduct => ({
+  productId: p.productId,
+  name: p.name,
+  productType: (p.productType ?? '') as ProductType,
+  category: p.category ?? '—',
+  brand: p.brand ?? '—',
+  unitsSold: p.unitsSold,
+  revenue: p.revenue,
+  views: p.views ?? 0,
+  conversion: p.conversion ?? 0,
+  stock: p.stock,
+  trend: p.trend ?? 0,
+  image: p.image ?? undefined,
+  sku: p.sku,
+  sport: p.sport,
+  status: p.status ? (lower(p.status) as ProductStatus) : undefined,
+});
+
+const toRecentOrder = (o: ApiOrderSummary): RecentOrder => ({
+  id: o.id,
+  number: o.orderNumber,
+  customerName: [o.customer?.firstName, o.customer?.lastName].filter(Boolean).join(' ') || o.customer?.email || 'Guest',
+  itemsCount: o.itemsCount,
+  total: o.grandTotal,
+  status: lower(o.status) as RecentOrder['status'],
+  paymentStatus: lower(o.paymentStatus) as RecentOrder['paymentStatus'],
+  image: o.image ?? undefined,
+  createdAt: o.placedAt,
+});
+
+const salesPoint = (p: ApiSalesTotals & { date: string; label: string }): SalesPoint => ({
+  date: p.date,
+  label: p.label,
+  revenue: p.revenue,
+  orders: p.orders,
+  aov: p.aov,
+  discounts: p.discounts,
+  refunds: p.refunds,
+  netSales: p.netSales,
+  grossSales: p.grossSales,
+  shipping: p.shipping,
+  tax: p.tax,
+});
+
+const stamp = () => new Date().toISOString().slice(0, 10);
+
 export const reportService = {
-  /** GET /reports/dashboard?range= */
-  async getDashboardStats(range: DateRange): Promise<DashboardStats> {
-    if (!appConfig.useMocks) return api.get<DashboardStats>('/reports/dashboard', { ...range });
-    const b = resolveRange(range);
-    const s = series(b);
-    const inv = db.products.flatMap((p) => (p.status === 'archived' ? [] : p.variants));
-    return delay({
-      periodLabel: b.label,
-      revenue: kpi(b, 'revenue', s.map((x) => x.revenue)),
-      orders: kpi(b, 'orders', s.map((x) => x.orders)),
-      customers: kpi(b, 'newCustomers', s.map((_, i) => Math.round(s[i].orders * 0.35))),
-      productsSold: kpi(b, 'unitsSold', s.map((x) => Math.round(x.orders * 1.7))),
-      pendingOrders: db.orders.filter((o) => o.status === 'pending' || o.status === 'processing').length,
-      lowStock: inv.filter((v) => variantStockStatus(v) === 'low_stock').length,
-      refundRequests: db.orders.filter((o) => o.payment.status === 'refund_pending').length,
-      openTickets: db.tickets.filter((t) => t.status === 'open').length,
-    });
-  },
-
-  /** GET /reports/sales/series?range= */
-  async getSalesSeries(range: DateRange): Promise<SalesPoint[]> {
-    if (!appConfig.useMocks) return api.get<SalesPoint[]>('/reports/sales/series', { ...range });
-    return delay(series(resolveRange(range)));
-  },
-
-  /** GET /reports/sales/by-category?range= */
-  async getCategorySales(range: DateRange): Promise<CategorySales[]> {
-    if (!appConfig.useMocks) return api.get<CategorySales[]>('/reports/sales/by-category', { ...range });
-    const b = resolveRange(range);
-    const revenue = sumMetric(b, 'revenue');
-    const units = sumMetric(b, 'unitsSold');
-    const raw = Object.entries(CATEGORY_WEIGHTS).map(([category, w]) => ({ category, w: w * (0.85 + hash(category + range.preset) * 0.3) }));
-    const total = raw.reduce((s, r) => s + r.w, 0);
-    return delay(
-      raw
-        .map((r) => ({ category: r.category, share: (r.w / total) * 100, revenue: Math.round((revenue * r.w) / total), units: Math.round((units * r.w) / total) }))
-        .sort((a, b2) => b2.revenue - a.revenue),
-    );
-  },
-
-  /** GET /reports/products/top?range=&limit= */
-  async getTopProducts(range: DateRange, limit = 5): Promise<TopProduct[]> {
-    if (!appConfig.useMocks) return api.get<TopProduct[]>('/reports/products/top', { ...range, limit });
-    const b = resolveRange(range);
-    return delay(productRows(range.preset, b.days).sort((a, c) => c.revenue - a.revenue).slice(0, limit));
-  },
-
-  /** GET /reports/sales?range= */
-  async getSalesReport(range: DateRange): Promise<SalesReport> {
-    if (!appConfig.useMocks) return api.get<SalesReport>('/reports/sales', { ...range });
-    const b = resolveRange(range);
-    const tot = (bb: Bounds, partial: boolean) => {
-      const revenue = sumMetric(bb, 'revenue', partial);
-      const orders = sumMetric(bb, 'orders', partial);
-      const discounts = sumMetric(bb, 'discounts', partial);
-      const refunds = sumMetric(bb, 'refunds', partial);
-      return { revenue, orders, aov: orders ? Math.round(revenue / orders) : 0, discounts, refunds, netSales: revenue - discounts - refunds };
+  /** GET /admin/dashboard?range= — KPIs, attention counters, charts, top products and recent orders in one call. */
+  async getDashboard(range: DateRange): Promise<DashboardData> {
+    const d = await adminApi.get<ApiDashboard>('/dashboard', rangeQuery(range));
+    return {
+      range: d.range,
+      stats: {
+        periodLabel: d.range.label,
+        revenue: kpi(d.kpis.revenue),
+        orders: kpi(d.kpis.orders),
+        customers: kpi(d.kpis.customers),
+        productsSold: kpi(d.kpis.productsSold),
+        pendingOrders: d.orders.pending,
+        lowStock: d.products.lowStockVariants,
+        outOfStock: d.products.outOfStockVariants,
+        refundRequests: d.orders.refundRequests,
+        openTickets: d.supportOpen,
+        pendingReviews: d.reviewsPending,
+        averageOrderValue: d.sales.averageOrderValue,
+      },
+      salesChart: d.salesChart.map((p) => ({ ...p, discounts: 0, refunds: 0, netSales: p.revenue })),
+      salesByCategory: d.salesByCategory,
+      topProducts: d.topProducts.map(toTopProduct),
+      recentOrders: d.recentOrders.map(toRecentOrder),
     };
-    return delay({ range: b.label, totals: tot(b, true), previous: tot(previousBounds(b), false), series: series(b) }, 500);
   },
 
-  /** GET /reports/products */
-  async getProductReport(range: DateRange, filters: { categoryName?: string; brand?: string; sport?: string } = {}): Promise<TopProduct[]> {
-    if (!appConfig.useMocks) return api.get<TopProduct[]>('/reports/products', { ...range, ...filters });
-    const b = resolveRange(range);
-    const sportOf = (id: string) => db.products.find((p) => p.id === id)?.sport;
-    return delay(
-      productRows(range.preset, b.days)
-        .filter((r) => !filters.categoryName || r.category === filters.categoryName)
-        .filter((r) => !filters.brand || r.brand === filters.brand)
-        .filter((r) => !filters.sport || sportOf(r.productId) === filters.sport)
-        .sort((a, c) => c.revenue - a.revenue),
-      500,
-    );
+  /** GET /admin/reports/sales?range=&groupBy= */
+  async getSalesReport(range: DateRange, groupBy?: ReportBucket): Promise<SalesReport> {
+    const r = await adminApi.get<{
+      range: { label: string; bucket: ReportBucket };
+      totals: ApiSalesTotals;
+      previous: ApiSalesTotals;
+      change: Record<string, number | null>;
+      series: (ApiSalesTotals & { date: string; label: string })[];
+    }>('/reports/sales', { ...rangeQuery(range), groupBy });
+    const change = Object.fromEntries(Object.entries(r.change).filter(([, v]) => v !== null)) as SalesReport['change'];
+    return { range: r.range.label, bucket: r.range.bucket, totals: r.totals, previous: r.previous, change, series: r.series.map(salesPoint) };
   },
 
-  /** GET /reports/customers */
-  async getCustomerReport(range: DateRange): Promise<CustomerReport> {
-    if (!appConfig.useMocks) return api.get<CustomerReport>('/reports/customers', { ...range });
-    const b = resolveRange(range);
-    const newC = sumMetric(b, 'newCustomers');
-    const retC = sumMetric(b, 'returningCustomers');
-    const revenue = sumMetric(b, 'revenue');
-    const orders = sumMetric(b, 'orders');
-    // Growth is always shown monthly over 12 months to answer "is the base growing?".
-    const g = resolveRange({ preset: '12m' });
-    let running = 2400;
-    const growth: CustomerGrowthPoint[] = series(g).map((pt) => {
-      const s = new Date(pt.date);
-      const e = new Date(s.getFullYear(), s.getMonth() + 1, 0);
-      const ms = metricsBetween(s, e);
-      const n = ms.reduce((x, m) => x + m.newCustomers, 0);
-      const r = ms.reduce((x, m) => x + m.returningCustomers, 0);
-      running += n;
-      return { label: pt.label, newCustomers: n, returningCustomers: r, total: running };
-    });
-    const cityCounts = new Map<string, number>();
-    for (const c of db.customers) {
-      const city = c.addresses[0]?.city ?? 'Unknown';
-      cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
-    }
-    const groupLabel: Record<string, string> = { new: 'New', returning: 'Returning', high_value: 'High value', inactive: 'Inactive' };
-    return delay(
+  /** GET /admin/reports/products — server-filtered, sorted and paginated. */
+  async getProductReport(range: DateRange, filters: ProductReportFilters = {}): Promise<ProductReport> {
+    const r = await adminApi.get<{ totals: ProductReport['totals'] & { conversion: number | null }; best: ApiTopProduct[]; worst: ApiTopProduct[]; items: ApiTopProduct[]; total: number }>(
+      '/reports/products',
       {
-        totals: {
-          newCustomers: newC,
-          returningCustomers: retC,
-          averageSpend: orders ? Math.round(revenue / Math.max(1, newC + retC)) : 0,
-          ordersPerCustomer: Math.round((orders / Math.max(1, newC + retC * 0.6)) * 100) / 100,
-          totalCustomers: running,
-          repeatRate: newC + retC ? (retC / (newC + retC)) * 100 : 0,
-        },
-        growth,
-        byCity: [...cityCounts.entries()].map(([name, value]) => ({ name, value })).sort((a, c) => c.value - a.value),
-        byGroup: Object.entries(groupLabel).map(([k, name]) => ({ name, value: db.customers.filter((c) => c.groups.includes(k as never)).length })),
-        topCustomers: [...db.customers]
-          .sort((a, c) => c.totalSpent - a.totalSpent)
-          .slice(0, 8)
-          .map((c) => ({ id: c.id, name: `${c.firstName} ${c.lastName}`, orders: c.ordersCount, spent: c.totalSpent })),
+        ...rangeQuery(range),
+        category: filters.categoryId,
+        brand: filters.brandId,
+        sport: filters.sport,
+        search: filters.search,
+        status: filters.status ? filters.status.toUpperCase() : undefined,
+        sort: filters.sort,
+        order: filters.order,
+        page: filters.page ?? 1,
+        limit: filters.pageSize ?? 50,
       },
-      500,
     );
+    return {
+      totals: { ...r.totals, conversion: r.totals.conversion ?? undefined },
+      best: r.best.map(toTopProduct),
+      worst: r.worst.map(toTopProduct),
+      items: r.items.map(toTopProduct),
+      total: r.total,
+    };
   },
 
-  /** GET /reports/inventory */
-  async getInventoryReport(): Promise<InventoryReport> {
-    if (!appConfig.useMocks) return api.get<InventoryReport>('/reports/inventory');
-    const items = await inventoryService.getInventory();
-    const buckets = [
-      { bucket: '0–30 days', min: 0, max: 30 },
-      { bucket: '31–60 days', min: 31, max: 60 },
-      { bucket: '61–90 days', min: 61, max: 90 },
-      { bucket: '90+ days', min: 91, max: Infinity },
-    ];
-    const byProduct = new Map<string, { productId: string; name: string; units: number; value: number }>();
-    for (const i of items) {
-      const cur = byProduct.get(i.productId) ?? { productId: i.productId, name: i.productName, units: 0, value: 0 };
-      cur.units += i.stock;
-      cur.value += i.stock * i.unitCost;
-      byProduct.set(i.productId, cur);
-    }
-    // Movement over the last 8 weeks: recorded movements + demo sales volume.
-    const movement: InventoryReport['movement'] = [];
-    const today = startOfDay(new Date()).getTime();
-    for (let w = 7; w >= 0; w--) {
-      const s = today - (w * 7 + 6) * DAY;
-      const e = today - w * 7 * DAY + DAY - 1;
-      const mv = db.stockMovements.filter((m) => {
-        const t = new Date(m.createdAt).getTime();
-        return t >= s && t <= e;
-      });
-      const sold = metricsBetween(new Date(s), new Date(e)).reduce((x, m) => x + m.unitsSold, 0);
-      movement.push({
-        label: new Date(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-        inbound: mv.filter((m) => m.quantity > 0).reduce((x, m) => x + m.quantity, 0) + Math.round(sold * (0.7 + hash(String(w)) * 0.6)),
-        outbound: mv.filter((m) => m.quantity < 0).reduce((x, m) => x - m.quantity, 0) + sold,
-      });
-    }
-    const productIds = new Set(items.map((i) => i.productId));
-    return delay(
-      {
-        totals: {
-          products: productIds.size,
-          variants: items.length,
-          units: items.reduce((s, i) => s + i.stock, 0),
-          lowStock: items.filter((i) => i.status === 'low_stock').length,
-          outOfStock: items.filter((i) => i.status === 'out_of_stock').length,
-          inventoryValue: items.reduce((s, i) => s + i.stock * i.unitCost, 0),
-          retailValue: items.reduce((s, i) => s + i.stock * (db.products.find((p) => p.id === i.productId)?.price ?? 0), 0),
-        },
-        aging: buckets.map((bk) => {
-          const inB = items.filter((i) => i.daysSinceRestock >= bk.min && i.daysSinceRestock <= bk.max);
-          return { bucket: bk.bucket, units: inB.reduce((s, i) => s + i.stock, 0), value: inB.reduce((s, i) => s + i.stock * i.unitCost, 0) };
-        }),
-        movement,
-        topStocked: [...byProduct.values()].sort((a, c) => c.units - a.units).slice(0, 8),
-        byStatus: [
-          { name: 'In stock', value: items.filter((i) => i.status === 'in_stock').length },
-          { name: 'Low stock', value: items.filter((i) => i.status === 'low_stock').length },
-          { name: 'Out of stock', value: items.filter((i) => i.status === 'out_of_stock').length },
-        ],
-        items,
-      },
-      300,
+  /** GET /admin/reports/customers?range=&groupBy= */
+  async getCustomerReport(range: DateRange, groupBy?: ReportBucket): Promise<CustomerReport> {
+    const r = await adminApi.get<Omit<CustomerReport, 'bucket' | 'topCustomers'> & { range: { bucket: ReportBucket }; topCustomers: { id: string; name: string; email: string; orders: number; spent: number }[] }>(
+      '/reports/customers',
+      { ...rangeQuery(range), groupBy },
     );
+    return { bucket: r.range.bucket, totals: r.totals, growth: r.growth, byCity: r.byCity, byGroup: r.byGroup.map(({ name, value }) => ({ name, value })), topCustomers: r.topCustomers };
   },
 
-  /** GET /reports/nav-counts — sidebar badges. */
-  async getNavCounts(): Promise<Record<'orders' | 'lowStock' | 'support' | 'reviews' | 'refunds', number>> {
-    if (!appConfig.useMocks) return api.get('/reports/nav-counts');
-    const variants = db.products.flatMap((p) => (p.status === 'archived' ? [] : p.variants));
-    return delay(
-      {
-        orders: db.orders.filter((o) => o.status === 'pending' || o.status === 'processing').length,
-        lowStock: variants.filter((v) => variantStockStatus(v) === 'low_stock').length,
-        support: db.tickets.filter((t) => t.status === 'open').length,
-        reviews: db.reviews.filter((r) => r.status === 'pending').length,
-        refunds: db.orders.filter((o) => o.payment.status === 'refund_pending').length,
-      },
-      100,
-    );
+  /** GET /admin/reports/inventory — snapshot + stock movement over the range (default 3 months, weekly). */
+  async getInventoryReport(range?: DateRange, groupBy?: ReportBucket): Promise<InventoryReport> {
+    const r = await adminApi.get<Omit<InventoryReport, 'bucket'> & { range: { bucket: ReportBucket } }>('/reports/inventory', { ...(range ? rangeQuery(range) : {}), groupBy });
+    return { bucket: r.range.bucket, totals: r.totals, aging: r.aging, movement: r.movement, topStocked: r.topStocked, byStatus: r.byStatus.map(({ name, value }) => ({ name, value })) };
+  },
+
+  /** Server-generated CSV (`?format=csv`, needs reports:export). */
+  async exportReport(kind: 'sales' | 'products' | 'customers' | 'inventory', range?: DateRange, extra: Query = {}): Promise<void> {
+    const query: Query = { ...(range ? rangeQuery(range) : {}), ...extra, format: 'csv' };
+    const tag = kind === 'inventory' ? '' : `-${range?.preset ?? '30d'}`;
+    await download(`/admin/reports/${kind}`, query, `${kind}-report${tag}-${stamp()}.csv`);
+  },
+
+  /** GET /admin/dashboard/nav-counts — sidebar badges (any staff member). */
+  async getNavCounts(): Promise<NavCounts> {
+    const c = await adminApi.get<{ orders: number; lowStock: number; outOfStock: number; support: number; reviews: number; refunds: number }>('/dashboard/nav-counts');
+    return { orders: c.orders, lowStock: c.lowStock, support: c.support, reviews: c.reviews, refunds: c.refunds, outOfStock: c.outOfStock };
   },
 };

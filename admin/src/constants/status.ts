@@ -24,26 +24,29 @@ type Meta<K extends string> = Record<K, StatusMeta>;
 
 export const ORDER_STATUS: Meta<OrderStatus> = {
   pending: { label: 'Pending', tone: 'warning' },
+  payment_pending: { label: 'Awaiting Payment', tone: 'warning' },
+  payment_confirmed: { label: 'Payment Confirmed', tone: 'info' },
   processing: { label: 'Processing', tone: 'info' },
   packed: { label: 'Packed', tone: 'info' },
   shipped: { label: 'Shipped', tone: 'brand' },
   out_for_delivery: { label: 'Out for Delivery', tone: 'brand' },
   delivered: { label: 'Delivered', tone: 'success' },
   cancelled: { label: 'Cancelled', tone: 'muted' },
+  refund_requested: { label: 'Refund Requested', tone: 'warning' },
   refunded: { label: 'Refunded', tone: 'danger' },
 };
 
 /** Forward fulfilment flow, used for the status stepper and "next status" actions. */
-export const ORDER_FLOW: OrderStatus[] = ['pending', 'processing', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
+export const ORDER_FLOW: OrderStatus[] = ['pending', 'payment_confirmed', 'processing', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
 
 export const PAYMENT_STATUS: Meta<PaymentStatus> = {
   pending: { label: 'Pending', tone: 'warning' },
   authorized: { label: 'Authorized', tone: 'info' },
   paid: { label: 'Paid', tone: 'success' },
   failed: { label: 'Failed', tone: 'danger' },
-  refund_pending: { label: 'Refund Pending', tone: 'warning' },
-  refunded: { label: 'Refunded', tone: 'muted' },
   partially_refunded: { label: 'Partially Refunded', tone: 'info' },
+  refunded: { label: 'Refunded', tone: 'muted' },
+  cancelled: { label: 'Cancelled', tone: 'muted' },
 };
 
 export const PAYMENT_METHOD: Record<PaymentMethod, string> = {
@@ -54,9 +57,9 @@ export const PAYMENT_METHOD: Record<PaymentMethod, string> = {
 };
 
 export const SHIPPING_STATUS: Meta<ShippingStatus> = {
-  not_shipped: { label: 'Not Shipped', tone: 'muted' },
-  label_created: { label: 'Label Created', tone: 'info' },
-  in_transit: { label: 'In Transit', tone: 'brand' },
+  pending: { label: 'Not Shipped', tone: 'muted' },
+  packed: { label: 'Packed', tone: 'info' },
+  shipped: { label: 'Shipped', tone: 'brand' },
   out_for_delivery: { label: 'Out for Delivery', tone: 'brand' },
   delivered: { label: 'Delivered', tone: 'success' },
   returned: { label: 'Returned', tone: 'danger' },

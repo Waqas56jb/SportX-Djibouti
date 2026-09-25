@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MAX_QUANTITY_PER_LINE } from '@/constants/commerce';
 import { useCart } from '@/hooks/useCart';
+import { useStoreSettings } from '@/hooks/useStoreSettings';
 import type { Product } from '@/types';
 import { findVariant, firstAvailableColor, requiresSizeSelection, stockFor } from '@/utils/product';
 
@@ -14,6 +15,9 @@ export function useProductSelection(product: Product | null | undefined) {
   const [size, setSize] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<'size' | 'color' | null>(null);
+  const [adding, setAdding] = useState(false);
+  const addingRef = useRef(false);
+  const lineLimit = useStoreSettings()?.maxQuantityPerLine ?? MAX_QUANTITY_PER_LINE;
 
   // Reset when the product changes.
   useEffect(() => {
@@ -27,8 +31,8 @@ export function useProductSelection(product: Product | null | undefined) {
   const variant = product && color && size ? findVariant(product, color, size) : undefined;
   const colorStock = product && color ? stockFor(product, color) : 0;
   const selectedStock = variant?.stock ?? (size ? 0 : colorStock);
-  const maxQuantity = Math.max(1, Math.min(variant?.stock ?? MAX_QUANTITY_PER_LINE, MAX_QUANTITY_PER_LINE));
-  const soldOut = (product?.stock ?? 0) <= 0;
+  const maxQuantity = Math.max(1, Math.min(variant?.stock ?? lineLimit, lineLimit));
+  const soldOut = product?.stockStatus ? product.stockStatus === 'OUT_OF_STOCK' : (product?.stock ?? 0) <= 0;
   const variantSoldOut = Boolean(size) && selectedStock <= 0;
 
   // Clamp quantity when the variant's stock is lower than the current value.
@@ -48,11 +52,19 @@ export function useProductSelection(product: Product | null | undefined) {
     setError(null);
   };
 
-  const add = (options: { openDrawer?: boolean } = {}) => {
-    if (!product) return false;
-    const failure = addProduct(product, { color, size, quantity, openDrawer: options.openDrawer });
-    if (failure === 'size' || failure === 'color') setError(failure);
-    return failure === null;
+  /** Resolves true when added. Guards against double clicks while the server responds. */
+  const add = async (options: { openDrawer?: boolean; silent?: boolean } = {}) => {
+    if (!product || addingRef.current) return false;
+    addingRef.current = true;
+    setAdding(true);
+    try {
+      const failure = await addProduct(product, { color, size, quantity, openDrawer: options.openDrawer, silent: options.silent });
+      if (failure === 'size' || failure === 'color') setError(failure);
+      return failure === null;
+    } finally {
+      addingRef.current = false;
+      setAdding(false);
+    }
   };
 
   const image = useMemo(() => {
@@ -71,6 +83,7 @@ export function useProductSelection(product: Product | null | undefined) {
     maxQuantity,
     soldOut,
     variantSoldOut,
+    adding,
     colorImageIndex: image,
     selectColor,
     selectSize,

@@ -6,6 +6,8 @@ import { useAsync } from '@/hooks/useAsync';
 import { PageHeader, StatusBadge } from '@/components/common';
 import { PRODUCT_STATUS } from '@/constants/status';
 import { toast } from '@/store/toastStore';
+import { ApiError } from '@/services/api';
+import { productErrorDescription } from '@/components/products/useProductActions';
 import { emptyDraft, fromProduct, sectionCompletion, sectionOfError, toInput, validate, type FormErrors, type ProductDraft, type SectionId, type SetDraft } from '@/components/products/form/model';
 import { SectionNav } from '@/components/products/form/SectionNav';
 import { ErrorSummary, SaveBar, type SaveIntent } from '@/components/products/form/SaveBar';
@@ -109,12 +111,17 @@ export default function ProductFormPage() {
     }
     try {
       const input = toInput({ ...draft, status }, status);
-      const saved = id ? await productService.updateProduct(id, input) : await productService.createProduct(input);
+      const { product: saved, failedUploads, publishError } = await productService.saveProduct(id, input, product.data ?? undefined);
       toast.success(id ? 'Product updated.' : 'Product created successfully.');
+      if (failedUploads.length) toast.warning(`${failedUploads.length} image(s) could not be uploaded.`, { description: failedUploads.join(' · ') });
+      if (publishError) toast.warning('Saved as draft — not published yet.', { description: publishError });
       bypass();
       navigate(`/products/${saved.id}`);
     } catch (e) {
-      toast.error('Could not save product.', { description: e instanceof Error ? e.message : undefined });
+      // Map server field errors (e.g. { field: 'sku' } on a 409) back onto the form.
+      const field = e instanceof ApiError ? (e.details as { field?: string } | undefined)?.field : undefined;
+      if (field === 'sku' || field === 'slug') setUniqueErrors((u) => ({ ...u, [field]: e instanceof Error ? e.message : 'Already in use.' }));
+      toast.error('Could not save product.', { description: productErrorDescription(e) });
       setSaving(null);
     }
   };

@@ -21,6 +21,8 @@ const LoginPage = lazy(() => import('@/pages/Auth').then((m) => ({ default: m.Lo
 const RegisterPage = lazy(() => import('@/pages/Auth').then((m) => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import('@/pages/Auth').then((m) => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('@/pages/Auth').then((m) => ({ default: m.ResetPasswordPage })));
+const VerifyEmailPage = lazy(() => import('@/pages/Auth').then((m) => ({ default: m.VerifyEmailPage })));
+const NotificationsPage = lazy(() => import('@/pages/Account/Notifications'));
 const AccountOverviewPage = lazy(() => import('@/pages/Account/Overview'));
 const OrdersPage = lazy(() => import('@/pages/Orders').then((m) => ({ default: m.OrdersPage })));
 const OrderDetailsPage = lazy(() => import('@/pages/Orders').then((m) => ({ default: m.OrderDetailsPage })));
@@ -80,6 +82,7 @@ export const router = createBrowserRouter([
       },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
       {
         element: <RequireAuth />,
         children: [
@@ -96,6 +99,7 @@ export const router = createBrowserRouter([
               { path: 'payments', element: <PaymentHistoryPage /> },
               { path: 'support', element: <SupportPage /> },
               { path: 'support/:id', element: <TicketDetailPage /> },
+              { path: 'notifications', element: <NotificationsPage /> },
               { path: 'settings', element: <SettingsPage /> },
             ],
           },

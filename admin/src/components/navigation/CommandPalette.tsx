@@ -58,14 +58,24 @@ export function CommandPalette() {
       return;
     }
     setLoading(true);
-    searchService.search(dq).then((r) => {
-      if (cancelled) return;
-      setResults(r.filter((x) => can(GROUPS[x.group].permission)));
-      setLoading(false);
-      setActive(0);
-    });
+    const ctrl = new AbortController();
+    searchService
+      .search(dq, 5, ctrl.signal)
+      .then((r) => {
+        if (cancelled) return;
+        // The API already scopes groups by permission; keep the client check as a safety net.
+        setResults(r.filter((x) => (GROUPS[x.group] ? can(GROUPS[x.group].permission) : false)));
+        setActive(0);
+      })
+      .catch(() => {
+        if (!cancelled) setResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
+      ctrl.abort();
     };
   }, [dq, can]);
 

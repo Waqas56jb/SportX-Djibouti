@@ -60,6 +60,18 @@ export interface DataTableProps<T> {
   rowClassName?: (row: T) => string | undefined;
   footer?: ReactNode;
   hidePagination?: boolean;
+  /**
+   * Server-side pagination: `data` is already the current page. The table renders the given
+   * totals and reports page changes instead of slicing locally. Combine with controlled `sort`
+   * + `onSortChange` for server-side sorting.
+   */
+  serverPagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number) => void;
+    onPageSizeChange?: (size: number) => void;
+  };
 }
 
 function readHidden(key: string | undefined, cols: Column<unknown>[]): string[] {
@@ -87,7 +99,7 @@ function compare(a: unknown, b: unknown) {
  * and a card layout on small screens.
  */
 export function DataTable<T>(props: DataTableProps<T>) {
-  const { data, columns, getRowId, loading, error, onRetry, empty, onRowClick, selectable, bulkActions, toolbar, toolbarRight, pageSize: initialPageSize = 10, initialSort, rowActions, storageKey, caption, className, rowClassName, footer, hidePagination } = props;
+  const { data, columns, getRowId, loading, error, onRetry, empty, onRowClick, selectable, bulkActions, toolbar, toolbarRight, pageSize: initialPageSize = 10, initialSort, rowActions, storageKey, caption, className, rowClassName, footer, hidePagination, serverPagination: sp } = props;
   const isMobile = useIsMobile();
   const density = useUiStore((s) => s.tableDensity);
   const [internalSort, setInternalSort] = useState<SortState | undefined>(initialSort);
@@ -117,13 +129,18 @@ export function DataTable<T>(props: DataTableProps<T>) {
     return sort.dir === 'desc' ? out.reverse() : out;
   }, [data, sort, columns, props.sort]);
 
-  const total = sorted.length;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const total = sp ? sp.total : sorted.length;
+  const effPageSize = sp ? sp.pageSize : pageSize;
+  const effPage = sp ? sp.page : page;
+  const pageCount = Math.max(1, Math.ceil(total / effPageSize));
   useEffect(() => {
-    if (page > pageCount) setPage(pageCount);
-  }, [page, pageCount]);
+    if (!sp && page > pageCount) setPage(pageCount);
+  }, [page, pageCount, sp]);
   // Reset to first page when the dataset changes shape (new filters).
-  useEffect(() => setPage(1), [data?.length]);
+  useEffect(() => {
+    if (!sp) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.length]);
   // Drop selections that no longer exist.
   useEffect(() => {
     if (!data) return;
@@ -135,7 +152,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  const rows = hidePagination ? sorted : sorted.slice((page - 1) * pageSize, page * pageSize);
+  const rows = hidePagination || sp ? sorted : sorted.slice((page - 1) * pageSize, page * pageSize);
   const pageIds = rows.map(getRowId);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const somePageSelected = pageIds.some((id) => selected.has(id));
@@ -193,9 +210,9 @@ export function DataTable<T>(props: DataTableProps<T>) {
           <span className="text-[0.8125rem] font-medium tabular">
             <span className="mr-1 inline-flex h-5 min-w-5 items-center justify-center rounded bg-volt px-1 text-xs font-bold text-ink-950">{selected.size}</span> selected
           </span>
-          {selected.size < total && (
+          {selected.size < sorted.length && (
             <button type="button" onClick={() => setSelected(new Set(sorted.map(getRowId)))} className="text-xs font-medium text-zinc-400 underline-offset-2 hover:text-white hover:underline">
-              Select all {total}
+              Select all {sorted.length}{sp && total > sorted.length ? ' on this page' : ''}
             </button>
           )}
           <div className="dark-surface flex flex-1 flex-wrap items-center gap-1.5 [&_button]:text-zinc-200">{bulkActions?.([...selected], clear)}</div>
@@ -210,7 +227,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
       ) : isMobile ? (
         <MobileList {...{ rows, loading, columns: visibleCols, getRowId, onRowClick, selectable, selected, toggleRow, rowActions, empty, rowClassName }} />
       ) : (
-        <div className="overflow-x-auto scrollbar-thin">
+        <div className="relative overflow-x-auto scrollbar-thin">
           <table className="w-full min-w-[640px] border-collapse text-left">
             <caption className="sr-only">{caption}</caption>
             <thead>
@@ -252,7 +269,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   );
                 })}
                 {rowActions && (
-                  <th scope="col" className="w-12 py-2.5 pr-4">
+                  <th scope="col" className="relative w-12 py-2.5 pr-4">
                     <span className="sr-only">Actions</span>
                   </th>
                 )}
@@ -312,15 +329,19 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
       {!error && !loading && total > 0 && !hidePagination && (
         <Pagination
-          page={page}
+          page={effPage}
           pageCount={pageCount}
-          pageSize={pageSize}
+          pageSize={effPageSize}
           total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
+          onPageChange={sp ? sp.onPageChange : setPage}
+          onPageSizeChange={
+            sp
+              ? sp.onPageSizeChange
+              : (s) => {
+                  setPageSize(s);
+                  setPage(1);
+                }
+          }
         />
       )}
       {footer}

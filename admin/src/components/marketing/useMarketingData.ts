@@ -1,42 +1,40 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Brand, Category, ProductListItem } from '@/types';
+import type { MarketingBrand, MarketingCategory, MarketingProduct } from '@/types';
 import type { SelectOption } from '@/components/forms';
 import { useAsync } from '@/hooks/useAsync';
-import { productService } from '@/services/productService';
-import { categoryService } from '@/services/categoryService';
-import { brandService } from '@/services/brandService';
+import { discountService } from '@/services/discountService';
 
 export interface MarketingCatalog {
-  products: ProductListItem[];
-  categories: Category[];
-  brands: Brand[];
+  products: MarketingProduct[];
+  categories: MarketingCategory[];
+  brands: MarketingBrand[];
   productOptions: SelectOption[];
   categoryOptions: SelectOption[];
   brandOptions: SelectOption[];
-  productById: Map<string, ProductListItem>;
-  categoryById: Map<string, Category>;
-  brandById: Map<string, Brand>;
+  productById: Map<string, MarketingProduct>;
+  categoryById: Map<string, MarketingCategory>;
+  brandById: Map<string, MarketingBrand>;
   loading: boolean;
 }
 
 /** Catalogue lookups used by coupon, discount, flash sale and campaign editors. Loaded once per page. */
 export function useMarketingCatalog(): MarketingCatalog {
-  const { data, loading } = useAsync(() => Promise.all([productService.getProducts(), categoryService.getCategories(), brandService.getBrands()]), []);
+  const { data, loading } = useAsync(() => discountService.getMarketingCatalog(), []);
   return useMemo(() => {
-    const [products = [], categories = [], brands = []] = data ?? [];
-    const parentName = (c: Category) => (c.parentId ? categories.find((p) => p.id === c.parentId)?.name : undefined);
+    const { products = [], categories = [], brands = [] } = data ?? {};
+    const byId = new Map(categories.map((c) => [c.id, c]));
     return {
       products,
       categories,
       brands,
-      productOptions: products.map((p) => ({ value: p.id, label: `${p.name} · ${p.sku}` })),
+      productOptions: products.map((p) => ({ value: p.id, label: p.sku ? `${p.name} · ${p.sku}` : p.name })),
       categoryOptions: categories.map((c) => {
-        const parent = parentName(c);
+        const parent = c.parentId ? byId.get(c.parentId)?.name : undefined;
         return { value: c.id, label: parent ? `${parent} › ${c.name}` : c.name };
       }),
       brandOptions: brands.map((b) => ({ value: b.id, label: b.name })),
       productById: new Map(products.map((p) => [p.id, p])),
-      categoryById: new Map(categories.map((c) => [c.id, c])),
+      categoryById: byId,
       brandById: new Map(brands.map((b) => [b.id, b])),
       loading,
     };
@@ -53,4 +51,4 @@ export function useNow(intervalMs = 30_000): number {
   return now;
 }
 
-export const mainImage = (p?: Pick<ProductListItem, 'images'>) => p?.images.find((i) => i.role === 'main')?.url ?? p?.images[0]?.url;
+export const mainImage = (p?: Pick<MarketingProduct, 'image'>) => p?.image;

@@ -4,7 +4,7 @@ import { COUNTRIES, DJIBOUTI_CITIES, LAUNCH_COUNTRY } from '@/constants/commerce
 import type { Address, AddressInput } from '@/types';
 import { phone, required, validate } from '@/utils/validation';
 
-type Values = Omit<AddressInput, 'isDefault' | 'line2' | 'postalCode'> & { line2: string; postalCode: string };
+type Values = Omit<AddressInput, 'isDefault' | 'line2' | 'postalCode' | 'district'> & { line2: string; district: string; postalCode: string };
 
 export function AddressForm({ initial, onSubmit, onCancel, saving }: { initial?: Address; onSubmit: (v: AddressInput) => void; onCancel: () => void; saving: boolean }) {
   const [values, setValues] = useState<Values>({
@@ -14,6 +14,7 @@ export function AddressForm({ initial, onSubmit, onCancel, saving }: { initial?:
     phone: initial?.phone ?? '',
     line1: initial?.line1 ?? '',
     line2: initial?.line2 ?? '',
+    district: initial?.district ?? '',
     city: initial?.city ?? DJIBOUTI_CITIES[0],
     country: initial?.country ?? LAUNCH_COUNTRY,
     postalCode: initial?.postalCode ?? '',
@@ -33,12 +34,12 @@ export function AddressForm({ initial, onSubmit, onCancel, saving }: { initial?:
       firstName: required('Enter a first name'),
       lastName: required('Enter a last name'),
       phone,
-      line1: required('Enter the street address'),
+      line1: (v) => (!v.trim() ? 'Enter the street address' : v.trim().length < 3 ? 'Enter the full street address' : undefined),
       city: required('Select a city'),
     });
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    onSubmit({ ...values, line2: values.line2 || undefined, postalCode: values.postalCode || undefined, isDefault });
+    onSubmit({ ...values, line2: values.line2.trim() || undefined, district: values.district.trim() || undefined, postalCode: values.postalCode.trim() || undefined, isDefault });
   };
 
   return (
@@ -50,6 +51,7 @@ export function AddressForm({ initial, onSubmit, onCancel, saving }: { initial?:
         <TextField label="Phone" type="tel" autoComplete="tel" placeholder="+253" value={values.phone} onChange={set('phone')} error={errors.phone} containerClassName="sm:col-span-2" />
         <TextField label="Address" autoComplete="address-line1" value={values.line1} onChange={set('line1')} error={errors.line1} containerClassName="sm:col-span-2" />
         <TextField label="Apartment, building, landmark" autoComplete="address-line2" value={values.line2} onChange={set('line2')} optional containerClassName="sm:col-span-2" />
+        <TextField label="District / neighbourhood" autoComplete="address-level3" value={values.district} onChange={set('district')} optional containerClassName="sm:col-span-2" />
         <SelectField label="City" value={values.city} onChange={set('city')} error={errors.city} options={DJIBOUTI_CITIES.map((c) => ({ value: c, label: c }))} />
         <SelectField label="Country" value={values.country} onChange={set('country')} options={COUNTRIES.map((c) => ({ value: c.name, label: c.name }))} />
         <TextField label="Postal code" value={values.postalCode} onChange={set('postalCode')} optional />

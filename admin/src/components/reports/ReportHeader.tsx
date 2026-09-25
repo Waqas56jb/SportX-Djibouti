@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { RANGE_PRESETS } from '@/services';
-import { DemoBadge, PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/common';
+import { toast } from '@/store/toastStore';
 import { usePermission } from '@/hooks/usePermission';
 import { RangeFilter } from './RangeFilter';
 import { ExportButton } from './ChartKit';
@@ -19,12 +20,24 @@ export function ReportHeader({
   title: string;
   description: ReactNode;
   rangeState?: ReportRangeState;
-  onExport: () => void;
+  /** May be async (server-generated CSV download). Errors are shown as a toast. */
+  onExport: () => void | Promise<void>;
   exportDisabled?: boolean;
   filters?: ReactNode;
   periodLabel?: string;
 }) {
   const canExport = usePermission('reports:export');
+  const [exporting, setExporting] = useState(false);
+  const runExport = async () => {
+    setExporting(true);
+    try {
+      await onExport();
+    } catch (e) {
+      toast.error('Export failed.', { description: e instanceof Error ? e.message : undefined });
+    } finally {
+      setExporting(false);
+    }
+  };
   return (
     <>
       <PageHeader
@@ -33,11 +46,10 @@ export function ReportHeader({
         description={description}
         meta={
           <>
-            <DemoBadge />
             {periodLabel && <span className="text-xs font-medium text-zinc-500">{periodLabel}</span>}
           </>
         }
-        actions={canExport ? <ExportButton onClick={onExport} disabled={exportDisabled} /> : undefined}
+        actions={canExport ? <ExportButton onClick={() => void runExport()} disabled={exportDisabled} loading={exporting} /> : undefined}
       />
       {(rangeState || filters) && (
         <div className="mb-6 flex flex-col gap-3 border-b border-zinc-200/80 pb-4 lg:flex-row lg:items-end lg:justify-between">

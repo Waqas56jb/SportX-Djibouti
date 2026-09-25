@@ -53,9 +53,14 @@ export interface AdminUser {
 
 export interface AuthSession {
   user: AdminUser;
+  /**
+   * Effective role for the UI. `permissions` is the union of every permission key granted by all of
+   * the admin's roles (from the API), so `hasPermission('orders:edit')` keeps working unchanged.
+   */
   role: Role;
-  /** Opaque token issued by the backend. Mock sessions use a random string. */
-  token: string;
+  /** Every staff role assigned to the admin (API `roles[]`). */
+  roles: { id: ID; slug: string; name: string }[];
+  /** Access-token expiry. The token itself lives in memory only (services/api `tokenStore`). */
   expiresAt: ISODate;
 }
 

@@ -1,14 +1,46 @@
-import { AlertTriangle, CreditCard, RotateCcw, ShieldCheck } from 'lucide-react';
-import type { Order } from '@/types';
+import { useState } from 'react';
+import { AlertTriangle, BadgeCheck, CreditCard, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
+import type { Order, RefundStatus, Tone } from '@/types';
+import { orderService, isOfflinePayment } from '@/services/orderService';
+import { confirm } from '@/store/confirmStore';
+import { toast } from '@/store/toastStore';
 import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/constants/status';
 import { formatDateTime, formatMoney } from '@/utils/format';
-import { Button, Can, DescriptionList, Panel, StatusBadge } from '@/components/common';
+import { Badge, Button, Can, DescriptionList, Panel, StatusBadge } from '@/components/common';
 import { REFUND_REASONS, labelOf } from '@/constants/catalog';
-import { canRefund } from './orderMeta';
+import { canRefund, canSetPayment } from './orderMeta';
+import { refreshBadges } from './useOrderActions';
+
+const REFUND_TONE: Record<RefundStatus, Tone> = { requested: 'warning', processing: 'info', completed: 'success', failed: 'danger' };
 
 /** Non-sensitive payment record. Only brand + last 4 digits are ever shown. */
-export function OrderPaymentPanel({ order, onRefund }: { order: Order; onRefund: () => void }) {
+export function OrderPaymentPanel({ order, onRefund, onChange }: { order: Order; onRefund: () => void; onChange: (o: Order) => void }) {
   const p = order.payment;
+  const [saving, setSaving] = useState<'paid' | 'failed' | null>(null);
+
+  /** Offline payments only (COD / bank transfer) — the API refuses provider-confirmed methods. */
+  const setPayment = async (status: 'paid' | 'failed') => {
+    const ok = await confirm({
+      title: status === 'paid' ? 'Mark payment as received?' : 'Mark payment as failed?',
+      description:
+        status === 'paid'
+          ? `Confirms ${formatMoney(p.amount)} was received by ${PAYMENT_METHOD[p.method].toLowerCase()} for order ${order.number}.`
+          : 'Use when the transfer never arrived or the courier could not collect the cash.',
+      confirmLabel: status === 'paid' ? 'Mark as paid' : 'Mark as failed',
+      tone: status === 'failed' ? 'danger' : undefined,
+    });
+    if (!ok) return;
+    setSaving(status);
+    try {
+      onChange(await orderService.setPaymentStatus(order.id, status));
+      toast.success(status === 'paid' ? 'Payment marked as received.' : 'Payment marked as failed.', { description: order.number });
+      refreshBadges();
+    } catch (e) {
+      toast.error('Payment status not updated.', { description: e instanceof Error ? e.message : undefined });
+    } finally {
+      setSaving(null);
+    }
+  };
   return (
     <Panel
       title="Payment"
@@ -23,8 +55,8 @@ export function OrderPaymentPanel({ order, onRefund }: { order: Order; onRefund:
       <DescriptionList
         columns={2}
         items={[
-          { label: 'Method', value: PAYMENT_METHOD[p.method] },
-          { label: 'Provider', value: p.provider },
+          { label: 'Method', value: PAYMENT_METHOD[p.method] ?? p.method },
+          { label: 'Provider', value: p.provider || '—' },
           { label: 'Amount', value: <span className="font-semibold tabular">{formatMoney(p.amount)}</span> },
           { label: 'Refunded', value: <span className={p.refundedAmount ? 'font-medium text-red-600 tabular' : 'tabular text-zinc-500'}>{formatMoney(p.refundedAmount)}</span> },
           {
@@ -59,12 +91,34 @@ export function OrderPaymentPanel({ order, onRefund }: { order: Order; onRefund:
                   <p className="text-xs text-zinc-500">
                     {formatDateTime(r.createdAt)} · {r.requestedBy}
                   </p>
+                  {r.note && <p className="text-xs text-zinc-600">{r.note}</p>}
+                  {r.failureReason && <p className="text-xs text-red-600">{r.failureReason}</p>}
                 </div>
-                <span className="whitespace-nowrap text-[0.8125rem] font-semibold text-red-600 tabular">−{formatMoney(r.amount)}</span>
+                <span className="flex flex-col items-end gap-1">
+                  <span className="whitespace-nowrap text-[0.8125rem] font-semibold text-red-600 tabular">−{formatMoney(r.amount)}</span>
+                  <Badge tone={REFUND_TONE[r.status] ?? 'neutral'}>{r.status.charAt(0).toUpperCase() + r.status.slice(1)}</Badge>
+                </span>
               </li>
             ))}
           </ul>
         </div>
+      )}
+      {canSetPayment(order) && (
+        <Can permission="orders:approve">
+          <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+            <Button variant="secondary" size="sm" icon={BadgeCheck} loading={saving === 'paid'} disabled={Boolean(saving)} onClick={() => void setPayment('paid')}>
+              Mark as paid
+            </Button>
+            {p.status !== 'failed' && (
+              <Button variant="danger-ghost" size="sm" icon={XCircle} loading={saving === 'failed'} disabled={Boolean(saving)} onClick={() => void setPayment('failed')}>
+                Mark as failed
+              </Button>
+            )}
+          </div>
+        </Can>
+      )}
+      {!isOfflinePayment(p.method) && ['pending', 'authorized'].includes(p.status) && (
+        <p className="mt-4 text-xs text-zinc-500">Online payments are confirmed automatically by the payment provider.</p>
       )}
       {canRefund(order) && (
         <Can permission="orders:approve">

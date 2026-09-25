@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { PackagePlus, Plus, ReceiptText, TicketPercent } from 'lucide-react';
-import { Button, DemoBadge } from '@/components/common';
+import { Button } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
 import { usePermissions } from '@/hooks/usePermission';
 import { useDocumentTitle } from '@/hooks/misc';
@@ -40,7 +40,6 @@ export function DashboardHeader() {
           <time dateTime={new Date().toISOString().slice(0, 10)} className="eyebrow">
             {longDate.format(new Date())}
           </time>
-          <DemoBadge />
         </div>
         <h1 className="mt-2 text-[1.75rem] font-semibold leading-tight tracking-tight text-zinc-950 sm:text-[2rem]">
           {greeting()}, {first}.

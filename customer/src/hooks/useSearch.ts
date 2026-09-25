@@ -1,4 +1,4 @@
-import { productService } from '@/services';
+import { productService } from '@/services/productService';
 import { useSearchHistoryStore } from '@/store/historyStores';
 import { useAsync } from './useAsync';
 import { useDebounce } from './useDebounce';
@@ -14,7 +14,8 @@ export function useSearch(term: string, limit = 6) {
 
   return {
     query: debounced,
-    results: debounced.length >= 2 ? (results.data ?? []) : [],
+    results: debounced.length >= 2 ? (results.data?.items ?? []) : [],
+    total: debounced.length >= 2 ? (results.data?.total ?? 0) : 0,
     loading: results.loading || (term.trim() !== debounced && term.trim().length >= 2),
     error: results.error,
     recent: history.terms,

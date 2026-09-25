@@ -66,9 +66,9 @@ export function ChartFrame({
   );
 }
 
-export function ExportButton({ onClick, disabled, label = 'EXPORT CSV' }: { onClick: () => void; disabled?: boolean; label?: string }) {
+export function ExportButton({ onClick, disabled, loading, label = 'EXPORT CSV' }: { onClick: () => void; disabled?: boolean; loading?: boolean; label?: string }) {
   return (
-    <Button variant="secondary" size="sm" icon={Download} onClick={onClick} disabled={disabled}>
+    <Button variant="secondary" size="sm" icon={Download} onClick={onClick} disabled={disabled} loading={loading}>
       {label}
     </Button>
   );

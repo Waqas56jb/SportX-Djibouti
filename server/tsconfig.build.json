@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "rootDir": ".", "outDir": "dist", "noEmit": false, "sourceMap": true },
+  "include": ["src", "scripts/migrate.ts", "scripts/seed.ts", "scripts/create-admin.ts"]
+}

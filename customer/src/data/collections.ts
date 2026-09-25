@@ -1,6 +1,9 @@
-import type { Product } from '@/types';
 import { IMG } from './images';
 
+/**
+ * Static merchandising copy for collection landing pages. Product membership is decided by the API
+ * (`GET /products?collection=<key>`), so there is no client-side matching here.
+ */
 export interface Collection {
   key: string;
   path: string;
@@ -8,10 +11,7 @@ export interface Collection {
   eyebrow: string;
   description: string;
   image: string;
-  match: (product: Product) => boolean;
 }
-
-const forGender = (g: 'men' | 'women') => (p: Product) => p.gender.includes(g) || p.gender.includes('unisex');
 
 export const COLLECTIONS: Collection[] = [
   {
@@ -21,7 +21,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'The full range',
     description: 'Footwear, apparel and equipment engineered for every sport and every session.',
     image: IMG.trDarkAthlete,
-    match: () => true,
   },
   {
     key: 'men',
@@ -30,7 +29,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Men’s performance',
     description: 'Match-day boots, court shoes, training kit and everyday essentials built for men who compete.',
     image: IMG.trCurl,
-    match: forGender('men'),
   },
   {
     key: 'women',
@@ -39,7 +37,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Women’s performance',
     description: 'Technical running, studio and training gear cut for women’s movement and made to perform.',
     image: IMG.trStrongWoman,
-    match: forGender('women'),
   },
   {
     key: 'kids',
@@ -48,7 +45,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'The next generation',
     description: 'Tough, comfortable gear for young athletes — from school pitches to weekend academies.',
     image: IMG.kidsJacket,
-    match: (p) => p.gender.includes('kids'),
   },
   {
     key: 'football',
@@ -57,7 +53,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Built for the game',
     description: 'Boots, match balls, jerseys and essentials for players who live for ninety minutes.',
     image: IMG.fbNightPitch,
-    match: (p) => p.sport === 'football',
   },
   {
     key: 'basketball',
@@ -66,7 +61,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Own the court',
     description: 'Court shoes, game balls and hoops apparel engineered for explosive play.',
     image: IMG.bbArena,
-    match: (p) => p.sport === 'basketball',
   },
   {
     key: 'running',
@@ -75,7 +69,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Go further',
     description: 'Daily trainers, race shoes and run apparel for every pace and every distance.',
     image: IMG.runTrackTop,
-    match: (p) => p.sport === 'running',
   },
   {
     key: 'training',
@@ -84,7 +77,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Train without limits',
     description: 'Gym-ready footwear, sweat-wicking apparel and equipment for strength, HIIT and conditioning.',
     image: IMG.trDarkLift,
-    match: (p) => p.sport === 'training',
   },
   {
     key: 'equipment',
@@ -93,7 +85,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Gear up',
     description: 'Balls, gym equipment, bags and accessories trusted by clubs, schools and athletes.',
     image: IMG.trDumbbellRack,
-    match: (p) => p.department === 'equipment' || p.department === 'accessories',
   },
   {
     key: 'new-arrivals',
@@ -102,7 +93,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Just landed',
     description: 'The latest SPORTX drops — fresh colourways, new technology and limited releases.',
     image: IMG.runSprint,
-    match: (p) => p.isNew,
   },
   {
     key: 'sale',
@@ -111,7 +101,6 @@ export const COLLECTIONS: Collection[] = [
     eyebrow: 'Limited time',
     description: 'Premium performance gear at reduced prices. While stock lasts.',
     image: IMG.fbStadium,
-    match: (p) => typeof p.compareAtPrice === 'number' && p.compareAtPrice > p.price,
   },
 ];
 
@@ -124,7 +113,6 @@ export const DEPARTMENT_COLLECTIONS: Collection[] = [
     eyebrow: 'Engineered for performance',
     description: 'Boots, court shoes, runners and trainers designed around the demands of your sport.',
     image: IMG.shoeRedKnit,
-    match: (p) => p.department === 'footwear',
   },
   {
     key: 'apparel',
@@ -133,7 +121,6 @@ export const DEPARTMENT_COLLECTIONS: Collection[] = [
     eyebrow: 'Built to move',
     description: 'Jerseys, tees, shorts, tracksuits and layers that keep you cool, dry and moving freely.',
     image: IMG.apTracksuit,
-    match: (p) => p.department === 'apparel',
   },
   {
     key: 'accessories',
@@ -142,7 +129,6 @@ export const DEPARTMENT_COLLECTIONS: Collection[] = [
     eyebrow: 'The details matter',
     description: 'Bags, caps, socks, gloves and wearables to complete your kit.',
     image: IMG.acBackpackNavy,
-    match: (p) => p.department === 'accessories',
   },
   {
     key: 'balls',
@@ -151,7 +137,6 @@ export const DEPARTMENT_COLLECTIONS: Collection[] = [
     eyebrow: 'Match ready',
     description: 'Football and basketball game balls built to competition specification.',
     image: IMG.fbBallsTrio,
-    match: (p) => p.category === 'balls',
   },
   {
     key: 'bags',
@@ -160,7 +145,6 @@ export const DEPARTMENT_COLLECTIONS: Collection[] = [
     eyebrow: 'Carry everything',
     description: 'Backpacks and packs with dedicated boot compartments and laptop sleeves.',
     image: IMG.acBackpackBlack,
-    match: (p) => p.category === 'bags',
   },
   {
     key: 'gym-equipment',
@@ -169,7 +153,6 @@ export const DEPARTMENT_COLLECTIONS: Collection[] = [
     eyebrow: 'Home or club',
     description: 'Dumbbells, bands, mats and conditioning tools for serious training anywhere.',
     image: IMG.trDumbbells,
-    match: (p) => p.category === 'gym-equipment',
   },
 ];
 

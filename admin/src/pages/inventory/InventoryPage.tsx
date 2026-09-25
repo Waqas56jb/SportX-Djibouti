@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Download, History, Minus, PackageSearch, Plus, SlidersHorizontal } from 'lucide-react';
 import type { InventoryItem, StockStatus } from '@/types';
-import { inventoryService } from '@/services/inventoryService';
+import { inventoryService, type InventoryFilters } from '@/services/inventoryService';
 import { useAsync } from '@/hooks/useAsync';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
 import { useDebounce } from '@/hooks/misc';
@@ -14,7 +14,7 @@ import { cn } from '@/utils/cn';
 import { toast } from '@/store/toastStore';
 import { Button, ColorDot, EmptyState, Menu, PageHeader, ProductThumb, StatusBadge, Tabs } from '@/components/common';
 import { FilterSelect, SearchInput } from '@/components/forms';
-import { BulkButton, ClearFiltersButton, DataTable, type Column } from '@/components/tables';
+import { BulkButton, ClearFiltersButton, DataTable, type Column, type SortState } from '@/components/tables';
 import { InventorySummary } from '@/components/inventory/InventorySummary';
 import { StockAdjustmentDrawer } from '@/components/inventory/StockAdjustmentDrawer';
 import { StockBar } from '@/components/inventory/StockBar';
@@ -22,6 +22,8 @@ import { VariantPickerModal } from '@/components/inventory/VariantPickerModal';
 import { INVENTORY_CSV, type AdjustMode } from '@/components/inventory/inventoryMeta';
 
 type StatusTab = StockStatus | 'all';
+/** Table column → API sort key (columns without one are not sortable server-side). */
+const SORT_KEY: Record<string, NonNullable<InventoryFilters['sort']>> = { product: 'product_name', sku: 'sku', stock: 'stock', available: 'available', threshold: 'threshold' };
 const STATUS_TABS: { value: StatusTab; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'in_stock', label: 'In stock' },
@@ -38,8 +40,21 @@ export default function InventoryPage() {
   const canEdit = usePermission('inventory:edit');
   const canExport = usePermission('inventory:export');
 
-  // Full inventory is loaded once; filtering is local so saved rows update in place without a reload.
-  const { data, loading, error, reload, setData } = useAsync(() => inventoryService.getInventory(), []);
+  const status = (filters.status in STOCK_STATUS ? filters.status : 'all') as StatusTab;
+  const [sort, setSort] = useState<SortState | undefined>(undefined);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const base: InventoryFilters = {
+    search: filters.search || undefined,
+    status: status === 'all' ? '' : status,
+    productType: filters.type || undefined,
+    ...(sort && SORT_KEY[sort.id] ? { sort: SORT_KEY[sort.id], order: sort.dir } : {}),
+  };
+  const baseKey = JSON.stringify(base);
+  useEffect(() => setPage(1), [baseKey]);
+  const query: InventoryFilters = { ...base, page, pageSize };
+  const { data: pageData, loading, error, reload, setData } = useAsync(() => inventoryService.listInventory(query), [JSON.stringify(query)]);
+  const [exporting, setExporting] = useState(false);
   const [adjust, setAdjust] = useState<{ item: InventoryItem; mode: AdjustMode } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -59,12 +74,17 @@ export default function InventoryPage() {
       clearAdjustParam();
       return;
     }
-    if (!data) return;
-    const hit = data.find((i) => i.variantId === adjustParam || i.sku === adjustParam);
-    if (hit) setAdjust({ item: hit, mode: 'add' });
-    else toast.warning('Variant not found.', { description: 'It may have been archived or removed.' });
+    const sku = adjustParam.toLowerCase();
+    const load = /^[0-9a-f-]{36}$/i.test(adjustParam)
+      ? inventoryService.getItem(adjustParam)
+      : inventoryService.listInventory({ search: adjustParam, pageSize: 5 }).then((r) => {
+          const hit = r.data.find((i) => i.sku.toLowerCase() === sku);
+          if (!hit) throw new Error('not found');
+          return hit;
+        });
+    load.then((hit) => setAdjust({ item: hit, mode: 'add' })).catch(() => toast.warning('Variant not found.', { description: 'It may have been archived or removed.' }));
     clearAdjustParam();
-  }, [adjustParam, data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [adjustParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function clearAdjustParam() {
     setParams(
@@ -77,24 +97,31 @@ export default function InventoryPage() {
     );
   }
 
-  const status = (filters.status in STOCK_STATUS ? filters.status : 'all') as StatusTab;
-  const base = useMemo(() => {
-    const term = filters.search.trim().toLowerCase();
-    return (data ?? []).filter((i) => (!filters.type || i.productType === filters.type) && (!term || [i.productName, i.sku, i.variantLabel].some((s) => s.toLowerCase().includes(term))));
-  }, [data, filters.type, filters.search]);
-  const rows = useMemo(() => (status === 'all' ? base : base.filter((i) => i.status === status)), [base, status]);
-  const counts = useMemo(() => {
-    const c: Record<StatusTab, number> = { all: base.length, in_stock: 0, low_stock: 0, out_of_stock: 0 };
-    base.forEach((i) => c[i.status]++);
-    return c;
-  }, [base]);
+  const rows = pageData?.data;
+  const summary = pageData?.summary;
+  const total = pageData?.pagination.total ?? 0;
+  const counts: Record<StatusTab, number> | undefined = summary && { all: summary.total, in_stock: summary.inStock, low_stock: summary.lowStock, out_of_stock: summary.outOfStock };
 
-  const onSaved = (updated: InventoryItem) => setData((prev) => prev?.map((i) => (i.variantId === updated.variantId ? updated : i)));
+  // Update the saved row in place, then refresh quietly so counts and status tabs stay correct.
+  const onSaved = (updated: InventoryItem) => {
+    setData((prev) => (prev ? { ...prev, data: prev.data.map((i) => (i.variantId === updated.variantId ? updated : i)) } : prev));
+    void reload(true);
+  };
   const open = (item: InventoryItem, mode: AdjustMode) => setAdjust({ item, mode });
   const exportRows = (list: InventoryItem[], label = 'inventory') => {
     if (!list.length) return toast.info('Nothing to export.');
     exportCsv(label, list, INVENTORY_CSV);
     toast.success(`Exported ${list.length} variant${list.length === 1 ? '' : 's'}.`);
+  };
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      exportRows(await inventoryService.getInventory(base));
+    } catch (e) {
+      toast.error('Could not export inventory.', { description: e instanceof Error ? e.message : undefined });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const columns: Column<InventoryItem>[] = [
@@ -120,7 +147,6 @@ export default function InventoryPage() {
       id: 'variant',
       header: 'Variant',
       mobile: 'subtitle',
-      sortValue: (r) => r.variantLabel,
       cell: (r) => (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-zinc-800">
           <ColorDot hex={r.colorHex} /> {r.color} / {r.size}
@@ -141,10 +167,10 @@ export default function InventoryPage() {
         </div>
       ),
     },
-    { id: 'reserved', header: 'Reserved', align: 'right', sortValue: (r) => r.reserved, cell: (r) => <span className="tabular text-zinc-600">{r.reserved}</span> },
+    { id: 'reserved', header: 'Reserved', align: 'right', cell: (r) => <span className="tabular text-zinc-600">{r.reserved}</span> },
     { id: 'available', header: 'Available', align: 'right', sortValue: (r) => r.available, cell: (r) => <span className="font-medium tabular text-zinc-900">{r.available}</span> },
     { id: 'threshold', header: 'Threshold', align: 'right', sortValue: (r) => r.threshold, cell: (r) => <span className="tabular text-zinc-500">{r.threshold}</span> },
-    { id: 'status', header: 'Status', mobile: 'aside', sortValue: (r) => ['out_of_stock', 'low_stock', 'in_stock'].indexOf(r.status), cell: (r) => <StatusBadge map={STOCK_STATUS} value={r.status} /> },
+    { id: 'status', header: 'Status', mobile: 'aside', cell: (r) => <StatusBadge map={STOCK_STATUS} value={r.status} /> },
   ];
 
   const hasFilters = Boolean(filters.search || filters.type || filters.status);
@@ -160,7 +186,7 @@ export default function InventoryPage() {
               Movement history
             </Button>
             {canExport && (
-              <Button variant="secondary" icon={Download} onClick={() => exportRows(rows)} disabled={loading}>
+              <Button variant="secondary" icon={Download} onClick={() => void exportAll()} disabled={!total} loading={exporting}>
                 Export CSV
               </Button>
             )}
@@ -173,9 +199,9 @@ export default function InventoryPage() {
         }
       />
 
-      <InventorySummary items={data} loading={loading} />
+      <InventorySummary summary={summary} loading={loading} />
 
-      <Tabs ariaLabel="Stock status" className="mb-4" items={STATUS_TABS.map((t) => ({ ...t, count: data ? counts[t.value] : undefined }))} value={status} onChange={(v) => setFilter('status', v === 'all' ? '' : v)} />
+      <Tabs ariaLabel="Stock status" className="mb-4" items={STATUS_TABS.map((t) => ({ ...t, count: counts?.[t.value] }))} value={status} onChange={(v) => setFilter('status', v === 'all' ? '' : v)} />
 
       <DataTable
         caption="Inventory by variant"
@@ -187,8 +213,9 @@ export default function InventoryPage() {
         error={error}
         onRetry={() => void reload()}
         selectable={canExport}
-        pageSize={25}
-        initialSort={{ id: 'status', dir: 'asc' }}
+        sort={sort}
+        onSortChange={setSort}
+        serverPagination={{ page, pageSize, total, onPageChange: setPage, onPageSizeChange: (n) => { setPageSize(n); setPage(1); } }}
         rowClassName={(r) => (r.status === 'out_of_stock' ? 'bg-red-50/30' : undefined)}
         toolbar={
           <>
@@ -203,12 +230,12 @@ export default function InventoryPage() {
             />
           </>
         }
-        toolbarRight={<span className="hidden text-xs text-zinc-500 tabular sm:inline">{rows.length} variants</span>}
+        toolbarRight={<span className="hidden text-xs text-zinc-500 tabular sm:inline">{total} variants</span>}
         bulkActions={(ids, clear) => (
           <BulkButton
             icon={Download}
             onClick={() => {
-              exportRows(rows.filter((r) => ids.includes(r.variantId)), 'inventory-selection');
+              exportRows((rows ?? []).filter((r) => ids.includes(r.variantId)), 'inventory-selection');
               clear();
             }}
           >
@@ -253,8 +280,6 @@ export default function InventoryPage() {
 
       <VariantPickerModal
         open={pickerOpen}
-        items={data}
-        loading={loading}
         onClose={() => setPickerOpen(false)}
         onSelect={(item) => {
           setPickerOpen(false);

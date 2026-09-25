@@ -1,5 +1,5 @@
 import { Clock, Hourglass, Inbox, Siren, type LucideIcon } from 'lucide-react';
-import type { SupportTicket } from '@/types';
+import type { TicketCounts } from '@/services/supportService';
 import { Skeleton } from '@/components/common';
 import { cn } from '@/utils/cn';
 
@@ -12,14 +12,9 @@ const ITEMS: { key: SummaryKey; label: string; hint: string; icon: LucideIcon; t
   { key: 'urgent', label: 'Urgent', hint: 'Unresolved, urgent priority', icon: Siren, tone: 'bg-red-50 text-red-600' },
 ];
 
-export function countSummary(tickets: SupportTicket[]): Record<SummaryKey, number> {
-  const active = (t: SupportTicket) => t.status !== 'resolved' && t.status !== 'closed';
-  return {
-    open: tickets.filter((t) => t.status === 'open').length,
-    in_progress: tickets.filter((t) => t.status === 'in_progress').length,
-    waiting_customer: tickets.filter((t) => t.status === 'waiting_customer').length,
-    urgent: tickets.filter((t) => t.priority === 'urgent' && active(t)).length,
-  };
+/** Builds tile values from the server's per-status counts plus the number of unresolved urgent tickets. */
+export function summaryFrom(counts: Pick<TicketCounts, 'open' | 'in_progress' | 'waiting_customer'>, urgent: number): Record<SummaryKey, number> {
+  return { open: counts.open, in_progress: counts.in_progress, waiting_customer: counts.waiting_customer, urgent };
 }
 
 /** Workload overview; each tile doubles as a quick filter. */

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Info } from 'lucide-react';
 import type { Order, RefundReason } from '@/types';
 import { orderService } from '@/services/orderService';
+import { ApiError, newIdempotencyKey } from '@/services/api';
 import { REFUND_REASONS } from '@/constants/catalog';
 import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/constants/status';
 import { formatMoney } from '@/utils/format';
@@ -10,9 +11,12 @@ import { Button, StatusBadge } from '@/components/common';
 import { CurrencyInput, RadioGroup, Select, Textarea, Toggle } from '@/components/forms';
 import { Modal } from '@/components/modals/Overlay';
 import { refundable } from './orderMeta';
-import { cloneOrder, refreshBadges } from './useOrderActions';
+import { refreshBadges } from './useOrderActions';
 
-/** Records a full or partial refund. Frontend phase: no money moves — the backend will call the provider. */
+/**
+ * Issues a full or partial refund through POST /admin/orders/:id/refund. The server refunds via the payment
+ * provider; one Idempotency-Key is kept per dialog session so retries never refund twice.
+ */
 export function RefundModal({ open, order, onClose, onDone }: { open: boolean; order: Order; onClose: () => void; onDone: (o: Order) => void }) {
   const remaining = refundable(order);
   const [type, setType] = useState<'full' | 'partial'>('full');
@@ -23,6 +27,7 @@ export function RefundModal({ open, order, onClose, onDone }: { open: boolean; o
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const idemKey = useRef(newIdempotencyKey());
 
   useEffect(() => {
     if (!open) return;
@@ -33,6 +38,7 @@ export function RefundModal({ open, order, onClose, onDone }: { open: boolean; o
     setRestock(false);
     setSubmitted(false);
     setServerError(null);
+    idemKey.current = newIdempotencyKey();
   }, [open]);
 
   const value = type === 'full' ? remaining : amount;
@@ -54,15 +60,31 @@ export function RefundModal({ open, order, onClose, onDone }: { open: boolean; o
     setSaving(true);
     setServerError(null);
     try {
-      const updated = await orderService.createRefund({ orderId: order.id, type, amount: value, reason, note: note.trim() || undefined, restock });
-      toast.success('Refund recorded.', { description: `${formatMoney(value)} on ${order.number}` });
+      const { order: updated, refundStatus } = await orderService.createRefund({
+        orderId: order.id,
+        type,
+        amount: type === 'partial' ? value : undefined,
+        reason,
+        note: note.trim() || undefined,
+        restock,
+        idempotencyKey: idemKey.current,
+      });
+      if (refundStatus === 'failed') {
+        setServerError('The payment provider rejected this refund. Check the order timeline for details.');
+        onDone(updated);
+        return;
+      }
+      toast.success(refundStatus === 'completed' ? 'Refund completed.' : 'Refund is processing.', {
+        description: refundStatus === 'completed' ? `${formatMoney(value)} on ${order.number}` : 'The provider confirms it shortly; the order updates automatically.',
+      });
       refreshBadges();
-      onDone(cloneOrder(updated));
+      onDone(updated);
       onClose();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Refund could not be recorded.';
+      const msg = e instanceof Error ? e.message : 'The refund could not be issued.';
       setServerError(msg);
-      toast.error('Refund not recorded.', { description: msg });
+      // Validation / state errors are final for this attempt; a network error keeps the key so a retry is safe.
+      if (e instanceof ApiError && e.status > 0 && e.status < 500) idemKey.current = newIdempotencyKey();
     } finally {
       setSaving(false);
     }
@@ -90,7 +112,7 @@ export function RefundModal({ open, order, onClose, onDone }: { open: boolean; o
       onClose={onClose}
       dismissible={!saving}
       title="Issue refund"
-      description="Refunds are logged on the order timeline and in the activity log."
+      description="Refunds are logged on the order timeline and in the activity log. The customer is notified."
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
@@ -131,7 +153,11 @@ export function RefundModal({ open, order, onClose, onDone }: { open: boolean; o
 
         <div className="flex items-start gap-2 rounded-lg border border-sky-200/70 bg-sky-50 px-3 py-2.5 text-[0.8125rem] text-sky-800">
           <Info size={15} className="mt-0.5 shrink-0" aria-hidden />
-          <span>Frontend phase: this records the refund only. No money is moved until the payment provider integration is connected on the backend.</span>
+          <span>
+            {order.payment.method === 'cash_on_delivery' || order.payment.method === 'bank_transfer'
+              ? 'Offline payment: the refund is recorded on the order — return the money to the customer manually (cash or bank transfer).'
+              : 'The refund is sent to the payment provider and returned to the customer’s original payment method.'}
+          </span>
         </div>
 
         {serverError && (

@@ -1,22 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Check, EyeOff, MessageSquareText, Star, Trash2, X } from 'lucide-react';
+import { Check, EyeOff, MessageSquareText, Trash2, X } from 'lucide-react';
 import type { Review, ReviewStatus } from '@/types';
 import { Button, EmptyState, PageHeader, Tabs } from '@/components/common';
 import { FilterSelect, SearchInput } from '@/components/forms';
 import { BulkButton, ClearFiltersButton, DataTable } from '@/components/tables';
+import { useServerList } from '@/components/customers/useServerList';
 import { ReviewDetailDrawer } from '@/components/reviews/ReviewDetailDrawer';
 import { ReviewRowMenu, reviewColumns } from '@/components/reviews/reviewColumns';
 import { useReviewModeration } from '@/components/reviews/useReviewModeration';
 import { REVIEW_STATUS } from '@/constants/status';
-import { productService } from '@/services/productService';
 import { reviewService } from '@/services/reviewService';
 import { useAsync } from '@/hooks/useAsync';
 import { useDebounce } from '@/hooks/misc';
 import { usePermission } from '@/hooks/usePermission';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
 import { cn } from '@/utils/cn';
-import { fromDateInput } from '@/utils/format';
 
 type TabValue = 'all' | ReviewStatus;
 const STATUSES: ReviewStatus[] = ['pending', 'approved', 'rejected', 'hidden'];
@@ -31,22 +30,25 @@ export default function ReviewsPage() {
   const { setStatus, remove, busy } = useReviewModeration();
   const [openId, setOpenId] = useState<string | null>(null);
 
-  // Status is filtered client-side so the tabs can show counts for the other filters.
-  const { data, loading, error, reload } = useAsync(
-    () => reviewService.getReviews({ search, rating: filters.rating ? Number(filters.rating) : '', productId: filters.product || undefined, from: filters.from ? fromDateInput(filters.from) : undefined }),
-    [search, filters.rating, filters.product, filters.from],
-  );
-  const products = useAsync(() => productService.getProducts(), []);
-  const productOptions = useMemo(() => (products.data ?? []).map((p) => ({ value: p.id, label: p.name })).sort((a, b) => a.label.localeCompare(b.label)), [products.data]);
-
+  // Status filter, search, sort and pagination are server-side; the per-status counts
+  // returned alongside ignore the status filter so every tab shows its total.
   const tab: TabValue = STATUSES.includes(filters.status as ReviewStatus) ? (filters.status as ReviewStatus) : 'all';
-  const counts = useMemo(() => {
-    const c: Record<TabValue, number> = { all: data?.length ?? 0, pending: 0, approved: 0, rejected: 0, hidden: 0 };
-    for (const r of data ?? []) c[r.status] += 1;
-    return c;
-  }, [data]);
-  const rows = useMemo(() => (tab === 'all' ? data : data?.filter((r) => r.status === tab)), [data, tab]);
-  const open = data?.find((r) => r.id === openId) ?? null;
+  const list = useServerList(
+    (q) =>
+      reviewService.getReviews({
+        ...q,
+        search,
+        filters: { status: tab === 'all' ? '' : tab, rating: filters.rating ? Number(filters.rating) : '', productId: filters.product || undefined, from: filters.from || undefined },
+      }),
+    [search, tab, filters.rating, filters.product, filters.from],
+    { initialSort: { id: 'date', dir: 'desc' } },
+  );
+  const { loading, error, reload } = list;
+  const rows = list.data?.data;
+  const counts = list.data?.counts;
+
+  const products = useAsync(() => reviewService.getProductOptions(), []);
+  const open = rows?.find((r) => r.id === openId) ?? null;
 
   const act = async (ids: string[], status: ReviewStatus, clear?: () => void) => {
     if (await setStatus(ids, status)) {
@@ -102,16 +104,16 @@ export default function ReviewsPage() {
         value={tab}
         onChange={(v) => setFilter('status', v === 'all' ? '' : v)}
         items={[
-          { value: 'all', label: 'All', count: loading ? undefined : counts.all },
+          { value: 'all', label: 'All', count: counts?.all },
           ...STATUSES.map((s) => ({
             value: s,
             label: (
               <span className="inline-flex items-center gap-1.5">
-                {s === 'pending' && counts.pending > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />}
+                {s === 'pending' && (counts?.pending ?? 0) > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />}
                 {REVIEW_STATUS[s].label}
               </span>
             ),
-            count: loading ? undefined : counts[s],
+            count: counts?.[s],
           })),
         ]}
       />
@@ -125,7 +127,7 @@ export default function ReviewsPage() {
         loading={loading}
         error={error}
         onRetry={() => void reload()}
-        initialSort={{ id: 'date', dir: 'desc' }}
+        {...list.table}
         onRowClick={(r) => setOpenId(r.id)}
         rowClassName={(r) => (r.status === 'pending' ? 'bg-amber-50/30' : undefined)}
         selectable={canModerate || canDelete}
@@ -134,7 +136,7 @@ export default function ReviewsPage() {
           <>
             <SearchInput value={filters.search} onChange={(v) => setFilter('search', v)} placeholder="Search reviews, products, customers…" label="Search reviews" className="w-full sm:w-72" />
             <FilterSelect label="Rating" value={filters.rating} onChange={(v) => setFilter('rating', v)} options={RATING_OPTIONS} />
-            <FilterSelect label="Product" value={filters.product} onChange={(v) => setFilter('product', v)} options={productOptions} className="max-w-[16rem]" />
+            <FilterSelect label="Product" value={filters.product} onChange={(v) => setFilter('product', v)} options={products.data ?? []} className="max-w-[16rem]" />
             <label className={cn('inline-flex h-8 items-center gap-2 rounded-lg border pl-3 pr-2 text-[0.8125rem] font-medium shadow-sm', filters.from ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700')}>
               <span>From</span>
               <input
@@ -173,13 +175,6 @@ export default function ReviewsPage() {
         )}
         rowActions={(r) => <ReviewRowMenu review={r} canModerate={canModerate} canDelete={canDelete} onOpen={() => setOpenId(r.id)} onStatus={(s) => void act([r.id], s)} onDelete={() => void del([r.id])} />}
       />
-
-      {!loading && counts.all > 0 && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-zinc-500">
-          <Star size={12} className="fill-amber-400 text-amber-400" aria-hidden />
-          Average rating {(data!.reduce((s, r) => s + r.rating, 0) / counts.all).toFixed(1)} across {counts.all} {counts.all === 1 ? 'review' : 'reviews'}
-        </p>
-      )}
 
       <ReviewDetailDrawer
         review={open}

@@ -1,7 +1,7 @@
 import { ArrowRight, Lock, ShoppingBag, Store, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Breadcrumbs, Button, ButtonLink, EmptyState, SectionHeading } from '@/components/common';
-import { CartLineItem, CouponForm, FreeShippingMeter, TotalsList } from '@/components/cart';
+import { Breadcrumbs, Button, ButtonLink, EmptyState, ErrorState, SectionHeading, Skeleton } from '@/components/common';
+import { CartIssuesAlert, CartLineItem, CouponForm, FreeShippingMeter, TotalsList } from '@/components/cart';
 import { ProductCarousel } from '@/components/product';
 import { ROUTES } from '@/constants/routes';
 import { SITE } from '@/constants/site';
@@ -12,7 +12,8 @@ import { pluralize } from '@/utils/format';
 
 export default function CartPage() {
   usePageMeta({ title: 'Your Bag', noindex: true });
-  const { items, totals, coupon, count, setQuantity, remove, setCoupon } = useCart();
+  const { items, totals, coupon, count, setQuantity, remove, applyCoupon, removeCoupon, isAccount, syncing, pending, issues, dismissIssues, syncError, refresh } = useCart();
+  const blocked = items.some((i) => i.status && i.status !== 'OK');
   const navigate = useNavigate();
   const recs = useFeaturedProducts('bestseller', 8);
 
@@ -25,7 +26,25 @@ export default function CartPage() {
           {count > 0 && <p className="pb-1 text-sm text-ink-500">{pluralize(count, 'item')}</p>}
         </div>
 
-        {items.length === 0 ? (
+        {syncing && items.length === 0 ? (
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_400px]" aria-busy="true" aria-label="Loading your bag">
+            <div className="space-y-6">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex gap-4">
+                  <Skeleton className="aspect-[4/5] w-24 sm:w-32" />
+                  <div className="flex-1 space-y-3 pt-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Skeleton className="h-80 w-full" />
+          </div>
+        ) : syncError && isAccount && items.length === 0 ? (
+          <ErrorState message={syncError} onRetry={() => void refresh()} className="py-20" />
+        ) : items.length === 0 ? (
           <EmptyState
             icon={<ShoppingBag />}
             title="Your bag is empty"
@@ -45,11 +64,12 @@ export default function CartPage() {
           <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_400px] lg:gap-14 xl:grid-cols-[1fr_440px]">
             <section aria-label="Bag items">
               <div className="border-y border-paper-200 py-5">
-                <FreeShippingMeter remaining={totals.freeShippingRemaining} />
+                <FreeShippingMeter remaining={totals.freeShippingRemaining} threshold={totals.freeShippingThreshold} />
               </div>
+              <CartIssuesAlert issues={issues} onDismiss={dismissIssues} className="mt-5" />
               <ul className="divide-y divide-paper-200 border-b border-paper-200">
                 {items.map((item) => (
-                  <CartLineItem key={item.id} item={item} size="full" onQuantity={(q) => setQuantity(item.id, q)} onRemove={() => remove(item.id)} />
+                  <CartLineItem key={item.id} item={item} size="full" busy={pending} onQuantity={(q) => setQuantity(item.id, q)} onRemove={() => remove(item.id)} />
                 ))}
               </ul>
               <div className="mt-8 grid gap-4 text-sm sm:grid-cols-2">
@@ -76,14 +96,15 @@ export default function CartPage() {
                   Order summary
                 </h2>
                 <div className="mt-6">
-                  <CouponForm subtotal={totals.subtotal} coupon={coupon} onApply={setCoupon} />
+                  <CouponForm coupon={coupon} onApply={applyCoupon} onRemove={removeCoupon} signedIn={isAccount} />
                 </div>
                 <div className="mt-6 border-t border-paper-200 pt-6">
-                  <TotalsList totals={totals} coupon={coupon} />
+                  <TotalsList totals={totals} coupon={coupon} updating={pending} />
                 </div>
                 <div className="mt-8 space-y-3">
-                  <Button variant="primary" size="lg" fullWidth onClick={() => navigate(ROUTES.checkout)} rightIcon={<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}>
-                    Proceed to checkout
+                  {blocked && <p className="text-sm text-danger">Remove unavailable items to continue.</p>}
+                  <Button variant="primary" size="lg" fullWidth disabled={blocked || pending} onClick={() => navigate(isAccount ? ROUTES.checkout : `${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.checkout)}`)} rightIcon={<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}>
+                    {isAccount ? 'Proceed to checkout' : 'Sign in to check out'}
                   </Button>
                   <ButtonLink to={ROUTES.shop} variant="outline" size="lg" fullWidth>
                     Continue shopping

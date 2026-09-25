@@ -6,17 +6,19 @@ import { CurrencyInput, DateInput, FormGrid, Input, MultiSelect, NumberInput, Ra
 import { Drawer } from '@/components/modals/Overlay';
 import { discountService } from '@/services/discountService';
 import { CUSTOMER_GROUPS } from '@/services/customerService';
-import { ApiError } from '@/services/http';
 import { toast } from '@/store/toastStore';
 import { CouponCalculator, CouponTicket, type CouponPreviewData } from './CouponTicket';
 import { couponToForm, formToInput, validateCoupon, type CouponFormErrors, type CouponFormState } from './couponForm';
 import type { MarketingCatalog } from './useMarketingData';
-import { endOfDayIso, errorMessage, fromLocalInput, generateCouponCode, nameList } from './utils';
+import { applyApiErrors, endOfDayIso, errorMessage, fromLocalInput, generateCouponCode, nameList } from './utils';
 
 export interface CouponDrawerState {
   mode: 'create' | 'edit' | 'duplicate';
   coupon?: Coupon;
 }
+
+const COUPON_FIELDS = ['code', 'description', 'type', 'value', 'minOrder', 'maxDiscount', 'usageLimit', 'perCustomerLimit', 'startDate', 'endDate', 'categoryIds', 'productIds', 'customerGroups', 'enabled'] as const satisfies readonly (keyof CouponFormState)[];
+const COUPON_ALIAS: Record<string, (typeof COUPON_FIELDS)[number]> = { startsAt: 'startDate', endsAt: 'endDate', minimumOrderAmount: 'minOrder', maximumDiscount: 'maxDiscount', perUserLimit: 'perCustomerLimit', isActive: 'enabled' };
 
 const GROUP_OPTIONS = CUSTOMER_GROUPS.filter((g) => g.id !== 'all').map((g) => ({ value: g.id, label: g.label }));
 
@@ -85,8 +87,8 @@ export function CouponFormDrawer({ state, onClose, onSaved, catalog }: { state: 
       toast.success(editing ? 'Coupon updated.' : 'Coupon created.', { description: `${saved.code} is ${saved.enabled ? 'ready to use' : 'saved as disabled'}.` });
       onSaved(saved, state?.mode ?? 'create');
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'code_taken') setErrors((x) => ({ ...x, code: err.message }));
-      toast.error(editing ? 'Couldn’t update coupon.' : 'Couldn’t create coupon.', { description: errorMessage(err) });
+      const flagged = applyApiErrors(err, COUPON_FIELDS, (x) => setErrors((prev) => ({ ...prev, ...x })), COUPON_ALIAS);
+      toast.error(editing ? 'Couldn’t update coupon.' : 'Couldn’t create coupon.', { description: flagged ? `${errorMessage(err)} Check the highlighted fields.` : errorMessage(err) });
     } finally {
       setSaving(false);
     }
@@ -126,9 +128,9 @@ export function CouponFormDrawer({ state, onClose, onSaved, catalog }: { state: 
             required
             value={form.code}
             onChange={(e) => set('code', e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
-            maxLength={20}
+            maxLength={32}
             error={errors.code}
-            help="3–20 characters: letters, numbers, dash or underscore."
+            help="3–32 characters: letters, numbers, dash or underscore."
             inputClassName="font-mono tracking-wider uppercase"
             placeholder="MATCHDAY15"
             autoComplete="off"
@@ -173,9 +175,9 @@ export function CouponFormDrawer({ state, onClose, onSaved, catalog }: { state: 
         </Section>
 
         <Section title="Eligibility" description="Leave everything empty to apply the coupon to the whole catalogue and every customer.">
-          <MultiSelect label="Applicable categories" optional options={catalog.categoryOptions} value={form.categoryIds} onChange={(v) => set('categoryIds', v)} placeholder={catalog.loading ? 'Loading categories…' : 'All categories'} />
-          <MultiSelect label="Applicable products" optional options={catalog.productOptions} value={form.productIds} onChange={(v) => set('productIds', v)} placeholder={catalog.loading ? 'Loading products…' : 'All products'} maxChips={3} help="Search by name or SKU." />
-          <MultiSelect label="Customer groups" optional options={GROUP_OPTIONS} value={form.customerGroups} onChange={(v) => set('customerGroups', v as CustomerGroup[])} placeholder="All customers" searchable={false} />
+          <MultiSelect label="Applicable categories" optional options={catalog.categoryOptions} value={form.categoryIds} onChange={(v) => set('categoryIds', v)} error={errors.categoryIds} placeholder={catalog.loading ? 'Loading categories…' : 'All categories'} />
+          <MultiSelect label="Applicable products" optional options={catalog.productOptions} value={form.productIds} onChange={(v) => set('productIds', v)} error={errors.productIds} placeholder={catalog.loading ? 'Loading products…' : 'All products'} maxChips={3} help="Search by name or SKU." />
+          <MultiSelect label="Customer groups" optional options={GROUP_OPTIONS} value={form.customerGroups} onChange={(v) => set('customerGroups', v as CustomerGroup[])} error={errors.customerGroups} placeholder="All customers" searchable={false} />
         </Section>
 
         <Section title="Availability">

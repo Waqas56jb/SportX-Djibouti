@@ -1,63 +1,64 @@
-import type { SupportTicket, TicketInput, User } from '@/types';
-import { uid } from '@/utils/id';
-import { apiClient } from './api/client';
-import { USE_MOCK_API } from './config';
-import { MockError, db, delay } from './mock/db';
+import type { SupportTicket, TicketCategory, TicketInput, TicketMessage, TicketStatus } from '@/types';
+import { ApiError, api, requestPage } from './api';
 
+type ApiTicket = Omit<SupportTicket, 'status' | 'category' | 'messages'> & {
+  status: string;
+  category: string;
+  messages?: TicketMessage[];
+};
+
+const STATUS: Record<string, TicketStatus> = {
+  OPEN: 'open',
+  IN_PROGRESS: 'in-progress',
+  WAITING_CUSTOMER: 'waiting-customer',
+  RESOLVED: 'resolved',
+  CLOSED: 'closed',
+};
+
+const CATEGORIES: TicketCategory[] = ['order', 'delivery', 'returns', 'payment', 'product', 'account', 'other'];
+
+const toTicket = (t: ApiTicket): SupportTicket => {
+  const category = t.category.toLowerCase() as TicketCategory;
+  return {
+    ...t,
+    status: STATUS[t.status] ?? 'open',
+    category: CATEGORIES.includes(category) ? category : 'other',
+    messages: t.messages ?? [],
+    messageCount: t.messageCount ?? t.messages?.length ?? 0,
+  };
+};
+
+/** The signed-in customer's support tickets (`/support/tickets`). */
 export const supportService = {
-  async list(userId: string): Promise<SupportTicket[]> {
-    if (!USE_MOCK_API) return apiClient.get<SupportTicket[]>('/me/tickets');
-    await delay(300, 550);
-    return db
-      .read()
-      .tickets.filter((t) => t.userId === userId)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  async list(_userId?: string, opts: { page?: number; limit?: number; status?: TicketStatus } = {}): Promise<SupportTicket[]> {
+    const res = await requestPage<ApiTicket>('/support/tickets', {
+      query: { page: opts.page ?? 1, limit: opts.limit ?? 50, status: opts.status },
+    });
+    return res.data.map(toTicket);
   },
 
-  async get(userId: string, id: string): Promise<SupportTicket | null> {
-    if (!USE_MOCK_API) return apiClient.get<SupportTicket | null>(`/me/tickets/${id}`);
-    await delay(250, 450);
-    return db.read().tickets.find((t) => t.id === id && t.userId === userId) ?? null;
+  /** Resolves null when the ticket does not exist (or is not the customer's). */
+  async get(_userId: string | undefined, id: string): Promise<SupportTicket | null> {
+    try {
+      return toTicket(await api.get<ApiTicket>(`/support/tickets/${id}`));
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 404 || err.code === 'VALIDATION_ERROR')) return null;
+      throw err;
+    }
   },
 
-  async create(user: User, input: TicketInput): Promise<SupportTicket> {
-    if (!USE_MOCK_API) return apiClient.post<SupportTicket>('/me/tickets', input);
-    await delay(500, 800);
-    const now = new Date().toISOString();
-    const count = db.read().tickets.length;
-    const ticket: SupportTicket = {
-      id: uid('tkt'),
-      number: `TCK-${1100 + count}`,
-      userId: user.id,
+  async create(_user: unknown, input: TicketInput): Promise<SupportTicket> {
+    const ticket = await api.post<ApiTicket>('/support/tickets', {
       subject: input.subject.trim(),
-      category: input.category,
-      orderNumber: input.orderNumber || undefined,
-      status: 'open',
-      createdAt: now,
-      updatedAt: now,
-      messages: [{ id: uid('msg'), author: 'customer', authorName: `${user.firstName} ${user.lastName}`, body: input.message.trim(), createdAt: now }],
-    };
-    db.write((d) => {
-      d.tickets.unshift(ticket);
+      category: input.category.toUpperCase(),
+      orderNumber: input.orderNumber || null,
+      message: input.message.trim(),
     });
-    return ticket;
+    return toTicket(ticket);
   },
 
-  async reply(user: User, ticketId: string, body: string): Promise<SupportTicket> {
-    if (!USE_MOCK_API) return apiClient.post<SupportTicket>(`/me/tickets/${ticketId}/messages`, { body });
-    await delay(400, 700);
-    let updated: SupportTicket | undefined;
-    db.write((d) => {
-      const t = d.tickets.find((x) => x.id === ticketId && x.userId === user.id);
-      if (!t || t.status === 'closed') return;
-      const now = new Date().toISOString();
-      t.messages.push({ id: uid('msg'), author: 'customer', authorName: `${user.firstName} ${user.lastName}`, body: body.trim(), createdAt: now });
-      t.updatedAt = now;
-      // A customer reply re-opens a resolved ticket for the support team.
-      if (t.status === 'resolved') t.status = 'open';
-      updated = t;
-    });
-    if (!updated) throw new MockError('This ticket is closed and can no longer receive replies.', 409);
-    return updated;
+  /** Replying to a resolved ticket reopens it; closed tickets reject replies. */
+  async reply(_user: unknown, ticketId: string, body: string): Promise<SupportTicket> {
+    return toTicket(await api.post<ApiTicket>(`/support/tickets/${ticketId}/messages`, { body: body.trim() }));
   },
 };

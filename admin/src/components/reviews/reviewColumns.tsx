@@ -1,6 +1,6 @@
-import { BadgeCheck, Check, Eye, EyeOff, Package, Trash2, X } from 'lucide-react';
+import { BadgeCheck, Check, Eye, EyeOff, Trash2, X } from 'lucide-react';
 import type { Review, ReviewStatus } from '@/types';
-import { Menu, Rating, StatusBadge, type MenuItem } from '@/components/common';
+import { Menu, ProductThumb, Rating, StatusBadge, type MenuItem } from '@/components/common';
 import type { Column } from '@/components/tables';
 import { PRODUCT_TYPES, labelOf } from '@/constants/catalog';
 import { REVIEW_STATUS } from '@/constants/status';
@@ -12,12 +12,9 @@ export const reviewColumns: Column<Review>[] = [
     header: 'Product',
     hideable: false,
     mobile: 'subtitle',
-    sortValue: (r) => r.productName,
     cell: (r) => (
       <span className="flex min-w-0 max-w-[15rem] items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-500">
-          <Package size={16} aria-hidden />
-        </span>
+        <ProductThumb src={r.productImage} alt={r.productName} size={36} />
         <span className="min-w-0">
           <span className="block truncate font-medium text-zinc-900">{r.productName}</span>
           <span className="block truncate text-xs text-zinc-500">{labelOf(PRODUCT_TYPES, r.productType)}</span>
@@ -28,7 +25,6 @@ export const reviewColumns: Column<Review>[] = [
   {
     id: 'customer',
     header: 'Customer',
-    sortValue: (r) => r.customerName,
     cell: (r) => (
       <span className="block whitespace-nowrap">
         <span className="block text-zinc-800">{r.customerName}</span>
@@ -63,7 +59,7 @@ export const reviewColumns: Column<Review>[] = [
       </span>
     ),
   },
-  { id: 'status', header: 'Status', mobile: 'meta', sortValue: (r) => r.status, cell: (r) => <StatusBadge map={REVIEW_STATUS} value={r.status} /> },
+  { id: 'status', header: 'Status', mobile: 'meta', cell: (r) => <StatusBadge map={REVIEW_STATUS} value={r.status} /> },
 ];
 
 export function ReviewRowMenu({ review: r, canModerate, canDelete, onOpen, onStatus, onDelete }: { review: Review; canModerate: boolean; canDelete: boolean; onOpen: () => void; onStatus: (s: ReviewStatus) => void; onDelete: () => void }) {

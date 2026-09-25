@@ -1,3 +1,4 @@
+import { errorMessage } from '@/services/errors';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AlertCircle, ArrowRight, Minus, Plus, Equal } from 'lucide-react';
 import type { InventoryItem, StockReason } from '@/types';
@@ -97,7 +98,7 @@ export function StockAdjustmentDrawer({ open, item, onClose, onSaved, initialMod
       onSaved?.(updated);
       onClose();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Could not update stock.';
+      const msg = errorMessage(err, 'Could not update stock.');
       setServerError(msg);
       toast.error('Stock was not updated.', { description: msg });
     } finally {

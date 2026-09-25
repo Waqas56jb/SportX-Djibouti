@@ -19,7 +19,7 @@ export function CustomerGrowthChart({ data, loading, error, onRetry }: Common & 
   return (
     <Panel
       title="Customer growth"
-      description="New vs returning customers per month · last 12 months"
+      description="New vs returning customers per period"
       actions={
         <ChartLegend
           items={[
@@ -68,7 +68,7 @@ export function TotalCustomersChart({ data, loading, error, onRetry }: Common & 
   const rows = data ?? [];
   const last = rows[rows.length - 1]?.total;
   return (
-    <Panel title="Total customers" description="Cumulative customer base at month end">
+    <Panel title="Total customers" description="Cumulative customer base at the end of each period">
       <div className="mb-3 font-display text-[1.75rem] font-bold leading-none text-zinc-950 tabular" aria-live="polite">
         {loading || last === undefined ? '—' : formatNumber(last)}
       </div>

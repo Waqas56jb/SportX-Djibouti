@@ -31,7 +31,7 @@ export default function AboutPage() {
         size="lg"
       />
 
-      <section className="container-site grid gap-12 py-20 sm:py-28 lg:grid-cols-[1fr_1.2fr] lg:gap-24">
+      <section className="container-site grid grid-cols-1 gap-12 py-20 sm:py-28 lg:grid-cols-[1fr_1.2fr] lg:gap-24">
         <Reveal>
           <p className="eyebrow">Our story</p>
           <h2 className="heading-xl mt-4">

@@ -1,80 +1,103 @@
-import { PRODUCTS } from '@/data/products';
-import { generateProductReviews } from '@/data/reviews';
-import type { RatingSummary, Review, ReviewInput, User } from '@/types';
-import { uid } from '@/utils/id';
-import { apiClient } from './api/client';
-import { USE_MOCK_API } from './config';
-import { MockError, db, delay } from './mock/db';
+import { REVIEWS_PAGE_SIZE } from '@/constants/commerce';
+import type { RatingSummary, Review, ReviewInput, ReviewSort } from '@/types';
+import type { Pagination } from './api';
+import { api } from './api';
+
+interface ApiReview {
+  id: string;
+  productId: string;
+  author: string;
+  rating: number;
+  title: string;
+  comment: string;
+  body?: string;
+  fit: Review['fit'] | null;
+  size: string | null;
+  verifiedPurchase: boolean;
+  helpfulCount: number;
+  createdAt: string;
+  updatedAt?: string;
+  status?: string;
+  product?: { id: string; name: string; slug: string | null; image: string | null };
+}
 
 export interface ProductReviews {
   reviews: Review[];
   summary: RatingSummary;
+  pagination: Pagination;
 }
 
-/** Spreads the product's aggregate rating into a plausible 1–5 distribution. */
-function summarise(average: number, total: number): RatingSummary {
-  const weights = [5, 4, 3, 2, 1].map((star) => Math.exp(-Math.abs(star - average) * 1.6));
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const counts = weights.map((w) => Math.round((w / sum) * total));
-  return {
-    average,
-    total,
-    distribution: { 5: counts[0], 4: counts[1], 3: counts[2], 2: counts[3], 1: counts[4] },
-  };
+export const toReview = (r: ApiReview): Review => ({
+  id: r.id,
+  productId: r.productId,
+  author: r.author,
+  rating: r.rating,
+  title: r.title,
+  body: r.body ?? r.comment,
+  createdAt: r.createdAt,
+  updatedAt: r.updatedAt,
+  verified: Boolean(r.verifiedPurchase),
+  size: r.size ?? undefined,
+  fit: r.fit ?? undefined,
+  helpfulCount: r.helpfulCount,
+  status: r.status,
+  product: r.product,
+});
+
+export interface ReviewQuery {
+  page?: number;
+  limit?: number;
+  sort?: ReviewSort;
+  rating?: number;
 }
 
 export const reviewService = {
-  async forProduct(productId: string): Promise<ProductReviews> {
-    if (!USE_MOCK_API) return apiClient.get<ProductReviews>(`/products/${productId}/reviews`);
-    await delay(300, 600);
-    const product = PRODUCTS.find((p) => p.id === productId);
-    if (!product) return { reviews: [], summary: summarise(0, 0) };
-    const own = db.read().reviews.filter((r) => r.productId === productId);
-    const reviews = [...own, ...generateProductReviews(product)].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return { reviews, summary: summarise(product.rating, product.reviewCount + own.length) };
+  /** Approved reviews for a product (id or slug), one page at a time, with the rating summary. */
+  async forProduct(productId: string, q: ReviewQuery = {}): Promise<ProductReviews> {
+    const res = await api.get<{ reviews: ApiReview[]; summary: RatingSummary; pagination: Pagination }>(`/products/${encodeURIComponent(productId)}/reviews`, {
+      page: q.page ?? 1,
+      limit: q.limit ?? REVIEWS_PAGE_SIZE,
+      sort: q.sort ?? 'newest',
+      rating: q.rating,
+    });
+    return { reviews: res.reviews.map(toReview), summary: res.summary, pagination: res.pagination };
   },
 
-  async forUser(userId: string): Promise<Review[]> {
-    if (!USE_MOCK_API) return apiClient.get<Review[]>('/me/reviews');
-    await delay(300, 500);
-    return db
-      .read()
-      .reviews.filter((r) => r.userId === userId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  },
-
-  async create(user: User, input: ReviewInput): Promise<Review> {
-    if (!USE_MOCK_API) return apiClient.post<Review>(`/products/${input.productId}/reviews`, input);
-    await delay(500, 800);
-    if (db.read().reviews.some((r) => r.userId === user.id && r.productId === input.productId)) {
-      throw new MockError('You have already reviewed this product.', 409);
-    }
-    const verified = db
-      .read()
-      .orders.some((o) => o.userId === user.id && o.status === 'delivered' && o.items.some((i) => i.productId === input.productId));
-    const review: Review = {
-      id: uid('rev'),
-      productId: input.productId,
-      userId: user.id,
-      author: `${user.firstName} ${user.lastName.charAt(0)}.`,
+  /**
+   * Submits a review. It goes to moderation before it is published. The API answers 403
+   * ("You can review products you have received.") when the customer has not received the product.
+   */
+  async create(input: ReviewInput): Promise<Review> {
+    const review = await api.post<ApiReview>(`/products/${encodeURIComponent(input.productId)}/reviews`, {
       rating: input.rating,
       title: input.title.trim(),
-      body: input.body.trim(),
-      fit: input.fit,
-      createdAt: new Date().toISOString(),
-      verified,
-    };
-    db.write((d) => {
-      d.reviews.unshift(review);
+      comment: input.body.trim(),
+      fit: input.fit ?? null,
+      size: input.size ?? null,
     });
-    return review;
+    return toReview(review);
   },
 
-  async remove(userId: string, reviewId: string): Promise<void> {
-    if (!USE_MOCK_API) return apiClient.delete<void>(`/me/reviews/${reviewId}`);
-    await delay(300, 500);
-    db.write((d) => {
-      d.reviews = d.reviews.filter((r) => !(r.id === reviewId && r.userId === userId));
+  /** The signed-in customer's own reviews (all moderation statuses). Legacy positional args are ignored. */
+  async forUser(_legacyUserId?: string): Promise<Review[]> {
+    const rows = await api.get<ApiReview[]>('/reviews/mine');
+    return rows.map(toReview);
+  },
+
+  /** Edits an own review; it returns to moderation. */
+  async update(id: string, input: Partial<Omit<ReviewInput, 'productId'>>): Promise<Review> {
+    const review = await api.patch<ApiReview>(`/reviews/${id}`, {
+      rating: input.rating,
+      title: input.title?.trim(),
+      comment: input.body?.trim(),
+      fit: input.fit,
+      size: input.size,
     });
+    return toReview(review);
+  },
+
+  /** Deletes an own review. Accepts `remove(id)` (or the legacy `remove(userId, id)`). */
+  async remove(idOrLegacyUserId: string, legacyReviewId?: string): Promise<void> {
+    await api.delete<void>(`/reviews/${legacyReviewId ?? idOrLegacyUserId}`);
   },
 };

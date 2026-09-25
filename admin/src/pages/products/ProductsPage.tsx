@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Archive, Copy, Download, Eye, FolderTree, Package, Pencil, Plus, Send, Trash2, Upload, Undo2 } from 'lucide-react';
 import type { ProductListItem } from '@/types';
@@ -24,7 +24,6 @@ import {
   STOCK_OPTIONS,
   parseSort,
   serializeSort,
-  sortProducts,
   toServiceFilters,
 } from '@/components/products/productListConfig';
 import { GENDERS, SPORTS } from '@/constants/catalog';
@@ -40,13 +39,20 @@ export default function ProductsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [moveIds, setMoveIds] = useState<{ ids: string[]; clear: () => void } | null>(null);
 
-  const serviceFilters = toServiceFilters(filters, search);
-  const { data, loading, error, reload } = useAsync(() => productService.getProducts(serviceFilters), [JSON.stringify(serviceFilters)]);
+  const sort = parseSort(sortParam.sort);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const filterKey = JSON.stringify(toServiceFilters(filters, search, sort));
+  // New filters / sort → back to the first page.
+  useEffect(() => setPage(1), [filterKey]);
+  const serviceFilters = toServiceFilters(filters, search, sort, page, pageSize);
+  const { data: pageData, loading, error, reload } = useAsync(() => productService.listProducts(serviceFilters), [JSON.stringify(serviceFilters)]);
+  const [exporting, setExporting] = useState(false);
   const { data: categories } = useAsync(() => categoryService.getCategories(), []);
   const { data: brands } = useAsync(() => brandService.getBrands(), []);
 
-  const sort = parseSort(sortParam.sort);
-  const rows = useMemo(() => (data ? sortProducts(data, sort) : undefined), [data, sort.id, sort.dir]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = pageData?.data;
+  const total = pageData?.pagination.total ?? 0;
   const refresh = () => void reload(true);
   const actions = useProductActions(refresh);
 
@@ -123,10 +129,19 @@ export default function ProductsPage() {
             {can('products:export') && (
               <Button
                 icon={Download}
-                disabled={!rows?.length}
-                onClick={() => {
-                  exportCsv('products', rows ?? [], PRODUCT_CSV);
-                  toast.success(`Exported ${rows?.length ?? 0} products.`);
+                disabled={!total}
+                loading={exporting}
+                onClick={async () => {
+                  setExporting(true);
+                  try {
+                    const all = await productService.getProducts(toServiceFilters(filters, search, sort));
+                    exportCsv('products', all, PRODUCT_CSV);
+                    toast.success(`Exported ${all.length} products.`);
+                  } catch (e) {
+                    toast.error('Could not export products.', { description: e instanceof Error ? e.message : undefined });
+                  } finally {
+                    setExporting(false);
+                  }
                 }}
               >
                 EXPORT
@@ -156,6 +171,7 @@ export default function ProductsPage() {
         rowActions={rowActions}
         sort={sort}
         onSortChange={(s) => setSortParam('sort', serializeSort(s))}
+        serverPagination={{ page, pageSize, total, onPageChange: setPage, onPageSizeChange: (n) => { setPageSize(n); setPage(1); } }}
         toolbar={
           <>
             <SearchInput value={filters.search} onChange={(v) => setFilter('search', v)} placeholder="Search name, SKU, brand…" label="Search products" className="w-full sm:w-64" />

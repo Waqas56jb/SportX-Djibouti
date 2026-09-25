@@ -1,21 +1,41 @@
 import { useEffect, useState } from 'react';
 import { Mail, Phone, Send } from 'lucide-react';
 import type { AdminUser, Role } from '@/types';
-import type { AdminUserInput } from '@/services/settingsService';
+import type { AdminUserInput } from '@/services/staffService';
 import { Avatar } from '@/components/common/Misc';
 import { Button } from '@/components/common/Button';
 import { Drawer } from '@/components/modals/Overlay';
 import { Input, Select } from '@/components/forms/Inputs';
 import { compact, isEmail, isPhone, required } from '@/utils/validation';
 import { PERMISSION_MODULES } from '@/constants/permissions';
+import type { FieldErrors } from './formErrors';
 
 type Errors = Partial<Record<keyof AdminUserInput, string>>;
 
-/** Invite (create) or edit an admin. `onSubmit` resolves to an error message to show inline, or null on success. */
-export function AdminUserDrawer({ open, user, roles, onClose, onSubmit }: { open: boolean; user?: AdminUser; roles: Role[]; onClose: () => void; onSubmit: (input: AdminUserInput) => Promise<string | null> }) {
+/**
+ * Invite (create) or edit an admin. There is deliberately no password field: an invitation emails
+ * a link where the new admin chooses their own password. `onSubmit` resolves to null on success,
+ * or server field errors to show inline.
+ */
+export function AdminUserDrawer({
+  open,
+  user,
+  roles,
+  selfId,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  user?: AdminUser;
+  roles: Role[];
+  selfId?: string;
+  onClose: () => void;
+  onSubmit: (input: AdminUserInput) => Promise<FieldErrors | null>;
+}) {
   const [f, setF] = useState<AdminUserInput>({ name: '', email: '', phone: '', roleId: '' });
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
+  const isSelf = Boolean(user && user.id === selfId);
 
   useEffect(() => {
     if (!open) return;
@@ -33,19 +53,18 @@ export function AdminUserDrawer({ open, user, roles, onClose, onSubmit }: { open
 
   const submit = async () => {
     const errs: Errors = compact({
-      name: required(f.name, 'Full name'),
-      email: required(f.email, 'Email') ?? (isEmail(f.email) ? undefined : 'Enter a valid email address.'),
+      name: required(f.name, 'Full name') ?? (f.name.trim().length < 2 ? 'Enter the full name.' : undefined),
+      email: user ? undefined : required(f.email, 'Email') ?? (isEmail(f.email) ? undefined : 'Enter a valid email address.'),
       phone: f.phone?.trim() && !isPhone(f.phone) ? 'Enter a valid phone number.' : undefined,
       roleId: required(f.roleId, 'Role'),
     });
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setSaving(true);
-    const err = await onSubmit({ name: f.name.trim(), email: f.email.trim().toLowerCase(), phone: f.phone?.trim() || undefined, roleId: f.roleId });
+    const res = await onSubmit({ name: f.name.trim(), email: f.email.trim().toLowerCase(), phone: f.phone?.trim() || undefined, roleId: f.roleId });
     setSaving(false);
-    if (err === null) onClose();
-    else if (/super admin/i.test(err)) setErrors({ roleId: err });
-    else if (/email/i.test(err)) setErrors({ email: err });
+    if (res === null) onClose();
+    else setErrors(res as Errors);
   };
 
   return (
@@ -54,8 +73,8 @@ export function AdminUserDrawer({ open, user, roles, onClose, onSubmit }: { open
       onClose={onClose}
       dismissible={!saving}
       width="md"
-      title={user ? 'Edit admin' : 'Add admin'}
-      description={user ? 'Update profile details and access level.' : 'An invitation email with a secure sign-up link is sent to this address.'}
+      title={user ? 'Edit admin' : 'Invite admin'}
+      description={user ? 'Update profile details and access level.' : 'We email a secure link where the new admin sets their own password. You never see or choose it.'}
       headerExtra={
         user && (
           <div className="mt-4 flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5">
@@ -86,10 +105,32 @@ export function AdminUserDrawer({ open, user, roles, onClose, onSubmit }: { open
           void submit();
         }}
       >
-        <Input label="Full name" required value={f.name} onChange={(e) => set('name', e.target.value)} error={errors.name} autoComplete="off" data-autofocus maxLength={80} />
-        <Input label="Work email" type="email" required icon={Mail} value={f.email} onChange={(e) => set('email', e.target.value)} error={errors.email} autoComplete="off" placeholder="name@company" />
+        <Input label="Full name" required value={f.name} onChange={(e) => set('name', e.target.value)} error={errors.name} autoComplete="off" data-autofocus maxLength={160} />
+        <Input
+          label="Work email"
+          type="email"
+          required={!user}
+          icon={Mail}
+          value={f.email}
+          onChange={(e) => set('email', e.target.value)}
+          error={errors.email}
+          autoComplete="off"
+          placeholder="name@company"
+          disabled={Boolean(user)}
+          help={user ? 'Admins change their own sign-in email from their profile.' : undefined}
+        />
         <Input label="Phone" type="tel" optional icon={Phone} value={f.phone ?? ''} onChange={(e) => set('phone', e.target.value)} error={errors.phone} placeholder="+253 …" />
-        <Select label="Role" required placeholder="Select a role…" options={roles.map((r) => ({ value: r.id, label: r.name }))} value={f.roleId} onChange={(e) => set('roleId', e.target.value)} error={errors.roleId} />
+        <Select
+          label="Role"
+          required
+          placeholder="Select a role…"
+          options={roles.map((r) => ({ value: r.id, label: r.name }))}
+          value={f.roleId}
+          onChange={(e) => set('roleId', e.target.value)}
+          error={errors.roleId}
+          disabled={isSelf}
+          help={isSelf ? 'You can’t change your own role.' : 'Only a Super Admin can grant or remove the Super Admin role.'}
+        />
         {role && (
           <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 px-4 py-3">
             <p className="text-[0.8125rem] font-medium text-zinc-900">{role.name}</p>

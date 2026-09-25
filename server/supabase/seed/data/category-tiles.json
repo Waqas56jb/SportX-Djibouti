@@ -1,0 +1,86 @@
+[
+  {
+    "slug": "football",
+    "name": "Football",
+    "description": "Boots, balls & match kit",
+    "image": "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?auto=format&fit=crop&q=80",
+    "href": "/football"
+  },
+  {
+    "slug": "basketball",
+    "name": "Basketball",
+    "description": "Court shoes & game balls",
+    "image": "https://images.unsplash.com/photo-1608245449230-4ac19066d2d0?auto=format&fit=crop&q=80",
+    "href": "/basketball"
+  },
+  {
+    "slug": "running",
+    "name": "Running",
+    "description": "Road, trail & race day",
+    "image": "https://images.unsplash.com/photo-1594882645126-14020914d58d?auto=format&fit=crop&q=80",
+    "href": "/running"
+  },
+  {
+    "slug": "training",
+    "name": "Training",
+    "description": "Strength, HIIT & conditioning",
+    "image": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80",
+    "href": "/training"
+  },
+  {
+    "slug": "apparel",
+    "name": "Apparel",
+    "description": "Tees, tracksuits & layers",
+    "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80",
+    "href": "/categories/apparel"
+  },
+  {
+    "slug": "equipment",
+    "name": "Equipment",
+    "description": "Balls, bags & gym gear",
+    "image": "https://images.unsplash.com/photo-1590239926044-4131f5d0654d?auto=format&fit=crop&q=80",
+    "href": "/equipment"
+  },
+  {
+    "slug": "footwear",
+    "name": "Footwear",
+    "description": "Every sport, every surface",
+    "image": "https://images.unsplash.com/photo-1579338559194-a162d19bf842?auto=format&fit=crop&q=80",
+    "href": "/categories/footwear"
+  },
+  {
+    "slug": "accessories",
+    "name": "Accessories",
+    "description": "Caps, socks & wearables",
+    "image": "https://images.unsplash.com/photo-1622445275576-721325763afe?auto=format&fit=crop&q=80",
+    "href": "/categories/accessories"
+  },
+  {
+    "slug": "bags",
+    "name": "Bags",
+    "description": "Backpacks & packs",
+    "image": "https://images.unsplash.com/photo-1546938576-6e6a64f317cc?auto=format&fit=crop&q=80",
+    "href": "/categories/bags"
+  },
+  {
+    "slug": "balls",
+    "name": "Balls",
+    "description": "Match & training balls",
+    "image": "https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?auto=format&fit=crop&q=80",
+    "href": "/categories/balls"
+  },
+  {
+    "slug": "gym-equipment",
+    "name": "Gym Equipment",
+    "description": "Home & club training",
+    "image": "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&q=80",
+    "href": "/categories/gym-equipment"
+  },
+  {
+    "slug": "kids",
+    "name": "Kids",
+    "description": "For young athletes",
+    "image": "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&q=80",
+    "href": "/kids"
+  }
+]

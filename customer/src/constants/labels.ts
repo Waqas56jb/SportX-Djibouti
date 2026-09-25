@@ -66,7 +66,8 @@ export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  created: 'Order Created',
+  pending: 'Order Placed',
+  'payment-pending': 'Awaiting Payment',
   'payment-confirmed': 'Payment Confirmed',
   processing: 'Processing',
   packed: 'Packed',
@@ -74,11 +75,13 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   'out-for-delivery': 'Out for Delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
+  'refund-requested': 'Refund Requested',
+  refunded: 'Refunded',
 };
 
 /** The fulfilment pipeline in order — used to render timelines. */
 export const ORDER_FLOW: OrderStatus[] = [
-  'created',
+  'pending',
   'payment-confirmed',
   'processing',
   'packed',
@@ -87,22 +90,30 @@ export const ORDER_FLOW: OrderStatus[] = [
   'delivered',
 ];
 
+/** Terminal / off-pipeline statuses rendered as a plain event list. */
+export const ORDER_EXCEPTION_STATUSES: OrderStatus[] = ['cancelled', 'refund-requested', 'refunded'];
+
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   pending: 'Pending',
+  authorized: 'Authorised',
   paid: 'Paid',
   failed: 'Failed',
+  cancelled: 'Cancelled',
   refunded: 'Refunded',
+  'partially-refunded': 'Partially refunded',
 };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethodType, string> = {
   card: 'Credit / Debit Card',
   'mobile-money': 'Mobile Money',
   'cash-on-delivery': 'Cash on Delivery',
+  'bank-transfer': 'Bank Transfer',
 };
 
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   open: 'Open',
   'in-progress': 'In Progress',
+  'waiting-customer': 'Awaiting your reply',
   resolved: 'Resolved',
   closed: 'Closed',
 };

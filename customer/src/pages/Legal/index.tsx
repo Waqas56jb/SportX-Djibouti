@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react';
 import { FileWarning } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { PageHero } from '@/components/marketing/PageHero';
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from '@/constants/commerce';
+import { shippingService, type ShippingMethodsResult } from '@/services/shippingService';
 import { SITE } from '@/constants/site';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { cn } from '@/utils/cn';
@@ -52,13 +53,9 @@ const DOCS: Record<LegalKey, LegalDoc> = {
     description: 'Delivery options, timings and costs.',
     sections: [
       { heading: 'Where we deliver', body: ['We currently deliver within Djibouti. Additional regions may be added in future.'] },
-      {
-        heading: 'Delivery options',
-        body: SHIPPING_METHODS.map(
-          (m) => `${m.name}: ${m.description} ${m.price === 0 ? 'Free.' : `${formatPrice(m.price)}.`} Estimated ${m.eta[0] === m.eta[1] ? `${m.eta[0]} business day` : `${m.eta[0]}–${m.eta[1]} business days`}.`,
-        ),
-      },
-      { heading: 'Free delivery', body: [`Delivery is free on selected orders, currently orders over ${formatPrice(FREE_SHIPPING_THRESHOLD)} after discounts.`] },
+      // Filled from the live shipping configuration at render time (see shippingSections).
+      { heading: 'Delivery options', body: ['Delivery options and prices are shown at checkout.'] },
+      { heading: 'Free delivery', body: ['Delivery is free on qualifying orders — the current threshold is shown in your bag.'] },
       { heading: 'Tracking', body: ['Signed-in customers can follow every order stage from Account → Orders.'] },
     ],
   },
@@ -81,15 +78,43 @@ const NAV: { key: LegalKey; label: string }[] = [
   { key: 'returns', label: 'Returns' },
 ];
 
+/** Live delivery options and free-delivery threshold from the store's shipping settings. */
+function shippingSections(cfg: ShippingMethodsResult): LegalDoc['sections'] {
+  const days = (a: number, b: number) => (a === b ? `${a} business day${a === 1 ? '' : 's'}` : `${a}–${b} business days`);
+  return [
+    {
+      heading: 'Delivery options',
+      body: cfg.methods.map((m) => `${m.name}: ${m.description} ${m.price === 0 ? 'Free.' : `${formatPrice(m.price)}.`} Estimated ${days(m.eta[0], m.eta[1])}.`),
+    },
+    {
+      heading: 'Free delivery',
+      body: [cfg.freeShippingThreshold ? `Delivery is free on orders over ${formatPrice(cfg.freeShippingThreshold)} after discounts.` : 'Delivery charges apply to all orders.'],
+    },
+  ];
+}
+
 export default function LegalPage({ doc }: { doc: LegalKey }) {
-  const content = DOCS[doc];
+  const [shipping, setShipping] = useState<ShippingMethodsResult | null>(null);
+  useEffect(() => {
+    if (doc !== 'shipping') return;
+    let alive = true;
+    shippingService.methods().then((r) => alive && setShipping(r)).catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [doc]);
+  const base = DOCS[doc];
+  const live = doc === 'shipping' && shipping ? shippingSections(shipping) : null;
+  const content: LegalDoc = live
+    ? { ...base, sections: base.sections.map((s) => live.find((l) => l.heading === s.heading) ?? s) }
+    : base;
   usePageMeta({ title: content.title, description: content.description });
 
   return (
     <>
       <PageHero eyebrow="Policies" title={content.title} description={content.description} crumbs={[{ label: content.title }]} />
-      <div className="container-site grid gap-10 pb-24 lg:grid-cols-[220px_1fr] lg:gap-16">
-        <nav aria-label="Policies" className="lg:sticky lg:top-24 lg:self-start">
+      <div className="container-site grid grid-cols-1 gap-10 pb-24 lg:grid-cols-[220px_1fr] lg:gap-16">
+        <nav aria-label="Policies" className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <ul className="scrollbar-none flex gap-2 overflow-x-auto lg:flex-col lg:gap-0.5">
             {NAV.map((n) => (
               <li key={n.key} className="shrink-0">
@@ -108,7 +133,7 @@ export default function LegalPage({ doc }: { doc: LegalKey }) {
             ))}
           </ul>
         </nav>
-        <article className="max-w-prose">
+        <article className="min-w-0 max-w-prose">
           <div className="mb-10 flex gap-3 border border-warning/20 bg-warning-50 p-4 text-sm text-warning" role="note">
             <FileWarning className="h-5 w-5 shrink-0" aria-hidden />
             <p>

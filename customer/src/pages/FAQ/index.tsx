@@ -31,7 +31,7 @@ export default function FaqPage() {
   return (
     <>
       <PageHero eyebrow="Help centre" title="Frequently asked questions" crumbs={[{ label: 'FAQ' }]} />
-      <div className="container-site grid gap-10 pb-24 lg:grid-cols-[240px_1fr] lg:gap-16">
+      <div className="container-site grid grid-cols-1 gap-10 pb-24 lg:grid-cols-[240px_1fr] lg:gap-16">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" aria-hidden />

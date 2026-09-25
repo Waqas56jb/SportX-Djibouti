@@ -27,7 +27,7 @@ export default function OrderDetailPage() {
   const canEdit = usePermission('orders:edit');
   const canApprove = usePermission('orders:approve');
   const { data: order, loading, error, reload, setData } = useAsync(async () => cloneOrder(await orderService.getOrder(id)), [id]);
-  const { changeStatus, pendingId } = useOrderActions();
+  const { changeStatus, pendingId, cancelDialog } = useOrderActions();
   const [refundOpen, setRefundOpen] = useState(false);
 
   if (loading && !order) return <OrderDetailSkeleton />;
@@ -95,8 +95,7 @@ export default function OrderDetailPage() {
               variant="secondary"
               icon={Download}
               onClick={() => {
-                downloadInvoice(order);
-                toast.success('Invoice downloaded.', { description: 'Open the file in a browser to print or save as PDF.' });
+                void downloadInvoice(order).then(() => toast.success('Invoice downloaded.', { description: 'Open the file in a browser to print or save as PDF.' }));
               }}
             >
               Invoice
@@ -130,12 +129,13 @@ export default function OrderDetailPage() {
         </div>
         <div className="min-w-0 space-y-5 print:mt-4 print:space-y-4">
           <OrderCustomerPanel order={order} />
-          <OrderPaymentPanel order={order} onRefund={() => setRefundOpen(true)} />
+          <OrderPaymentPanel order={order} onRefund={() => setRefundOpen(true)} onChange={update} />
           <OrderShippingPanel order={order} onChange={update} onStatus={(s) => void onStatus(s)} busy={busy} />
         </div>
       </div>
 
       {canApprove && <RefundModal open={refundOpen} order={order} onClose={() => setRefundOpen(false)} onDone={update} />}
+      {cancelDialog}
     </>
   );
 }

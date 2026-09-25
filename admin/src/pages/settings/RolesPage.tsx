@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Lock, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { PermissionKey, Role } from '@/types';
-import { settingsService, type RoleInput } from '@/services/settingsService';
+import { roleService, type RoleInput } from '@/services/roleService';
 import { useAsync } from '@/hooks/useAsync';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
 import { useAuthStore } from '@/store/authStore';
@@ -19,6 +19,7 @@ import { Callout, ReadOnlyBanner, SaveBar, SettingsLayout, useCanEditSettings } 
 import { PermissionMatrix } from '@/components/settings/PermissionMatrix';
 import { CreateRoleModal, RoleList } from '@/components/settings/RoleDialogs';
 import { sortPerms } from '@/components/settings/permissionRules';
+import { errorMessage, handleFormError, type FieldErrors } from '@/components/settings/formErrors';
 
 interface Draft {
   name: string;
@@ -27,13 +28,18 @@ interface Draft {
 }
 
 const toDraft = (r: Role): Draft => ({ name: r.name, description: r.description, permissions: sortPerms(r.permissions) });
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : undefined);
 
 export default function RolesPage() {
   const canEdit = useCanEditSettings();
   const session = useAuthStore((s) => s.session);
-  const updateSession = useAuthStore((s) => s.updateSession);
-  const { data: roles, loading, error, reload, setData } = useAsync(() => settingsService.getRoles(), []);
+  const restoreSession = useAuthStore((s) => s.restore);
+  const { data: roles, loading, error, reload, setData } = useAsync(() => roleService.list(), []);
+  // Server catalogue — used to flag a mismatch with the matrix built from constants/permissions.
+  const catalogue = useAsync(() => roleService.permissions(), []);
+  const unknownKeys = useMemo(() => {
+    const known = new Set<string>(ALL_PERMISSIONS);
+    return (catalogue.data ?? []).flatMap((g) => g.permissions.map((p) => p.key)).filter((k) => !known.has(k));
+  }, [catalogue.data]);
   const { filters, setFilter } = useUrlFilters({ role: '' });
   const [draft, setDraft] = useState<Draft | null>(null);
   const [nameError, setNameError] = useState<string>();
@@ -41,7 +47,7 @@ export default function RolesPage() {
   const [creating, setCreating] = useState(false);
 
   const selected = useMemo(() => roles?.find((r) => r.id === filters.role) ?? roles?.[0], [roles, filters.role]);
-  const locked = selected?.slug === 'super_admin';
+  const locked = selected?.slug === 'super_admin' || Boolean((selected as { immutable?: boolean } | undefined)?.immutable);
   const readOnly = !canEdit || locked;
 
   useEffect(() => {
@@ -62,27 +68,30 @@ export default function RolesPage() {
     if (!draft.name.trim()) return setNameError('Role name is required.');
     setSaving(true);
     try {
-      const updated = await settingsService.updateRole(selected.id, { ...draft, name: draft.name.trim(), description: draft.description.trim() });
+      const updated = await roleService.update(selected.id, { ...draft, name: draft.name.trim(), description: draft.description.trim() });
       setData((list) => list?.map((r) => (r.id === updated.id ? updated : r)));
-      if (session?.role.id === updated.id) updateSession({ role: updated, user: { ...session.user, roleName: updated.name } });
-      toast.success(`${updated.name} permissions saved.`, session?.role.id === updated.id ? { description: 'Your own access has been updated.' } : undefined);
+      const own = Boolean(session?.roles?.some((r) => r.id === updated.id) ?? session?.role.id === updated.id);
+      // Re-read the identity so permission checks use the server's effective permissions.
+      if (own) void restoreSession({ silent: true });
+      toast.success(`${updated.name} permissions saved.`, own ? { description: 'Your own access has been updated.' } : { description: 'Admins with this role get the new access on their next request.' });
     } catch (e) {
-      toast.error('Couldn’t save role', { description: errMsg(e) });
+      const errs = handleFormError(e, 'Couldn’t save role', { fields: ['name'] });
+      if (errs.name) setNameError(errs.name);
     } finally {
       setSaving(false);
     }
   };
 
-  const create = async (input: RoleInput) => {
+  const create = async (input: RoleInput): Promise<true | FieldErrors | false> => {
     try {
-      const role = await settingsService.createRole(input);
+      const role = await roleService.create(input);
       await reload(true);
       setFilter('role', role.id);
       toast.success(`${role.name} role created.`, { description: 'Review its permissions, then assign it to admins.' });
       return true;
     } catch (e) {
-      toast.error('Couldn’t create role', { description: errMsg(e) });
-      return false;
+      const errs = handleFormError(e, 'Couldn’t create role', { fields: ['name'] });
+      return Object.keys(errs).length ? errs : false;
     }
   };
 
@@ -95,12 +104,12 @@ export default function RolesPage() {
     });
     if (!ok) return;
     try {
-      await settingsService.deleteRole(selected.id);
+      await roleService.remove(selected.id);
       setFilter('role', '');
       await reload(true);
       toast.success(`${selected.name} role deleted.`);
     } catch (e) {
-      toast.error('Couldn’t delete role', { description: errMsg(e) });
+      toast.error('Couldn’t delete role', { description: errorMessage(e) });
     }
   };
 
@@ -121,7 +130,7 @@ export default function RolesPage() {
       {!canEdit && <ReadOnlyBanner />}
       {error ? (
         <div className="panel">
-          <ErrorState onRetry={() => void reload()} description="We couldn’t load roles. Please try again." />
+          <ErrorState onRetry={() => void reload()} description={error.message || 'We couldn’t load roles. Please try again.'} />
         </div>
       ) : loading || !roles ? (
         <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]" aria-busy="true" aria-label="Loading roles">
@@ -171,7 +180,7 @@ export default function RolesPage() {
                     </p>
                     <p className="mt-1 text-2xs font-semibold uppercase tracking-wider text-zinc-500">Permissions granted</p>
                   </div>
-                  {canEdit && !selected.isSystem && (
+                  {canEdit && !selected.isSystem && !locked && (
                     <Button variant="danger-ghost" size="sm" icon={Trash2} onClick={() => void remove()}>
                       Delete
                     </Button>
@@ -197,6 +206,12 @@ export default function RolesPage() {
                 </FormGrid>
               </div>
             </section>
+
+            {unknownKeys.length > 0 && (
+              <Callout tone="warning" title="The server has permissions this screen doesn’t show">
+                {unknownKeys.join(', ')} — update the admin app’s permission list before editing roles, or these grants may be removed on save.
+              </Callout>
+            )}
 
             {locked && (
               <Callout icon={Lock} tone="dark" title="Super Admin always has full access">

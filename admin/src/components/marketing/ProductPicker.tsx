@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
-import type { ProductListItem } from '@/types';
+import type { MarketingProduct } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatMoney } from '@/utils/format';
 import { ProductThumb, Segmented } from '@/components/common';
@@ -8,7 +8,7 @@ import { SearchInput } from '@/components/forms';
 import { mainImage } from './useMarketingData';
 
 /** Searchable product list with thumbnails and sale-price preview. */
-export function ProductPicker({ products, value, onChange, discountPercent, error, loading }: { products: ProductListItem[]; value: string[]; onChange: (ids: string[]) => void; discountPercent?: number; error?: string; loading?: boolean }) {
+export function ProductPicker({ products, value, onChange, discountPercent, error, loading }: { products: MarketingProduct[]; value: string[]; onChange: (ids: string[]) => void; discountPercent?: number; error?: string; loading?: boolean }) {
   const [q, setQ] = useState('');
   const [view, setView] = useState<'all' | 'selected'>('all');
   const selected = useMemo(() => new Set(value), [value]);
@@ -16,7 +16,7 @@ export function ProductPicker({ products, value, onChange, discountPercent, erro
     const s = q.trim().toLowerCase();
     return products
       .filter((p) => view === 'all' || selected.has(p.id))
-      .filter((p) => !s || p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s) || p.brandName.toLowerCase().includes(s))
+      .filter((p) => !s || [p.name, p.sku, p.brandName].some((x) => x?.toLowerCase().includes(s)))
       .slice(0, 80);
   }, [products, q, view, selected]);
   const toggle = (id: string) => onChange(selected.has(id) ? value.filter((x) => x !== id) : [...value, id]);
@@ -48,7 +48,7 @@ export function ProductPicker({ products, value, onChange, discountPercent, erro
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[0.8125rem] font-medium text-zinc-900">{p.name}</span>
                     <span className="block truncate text-xs text-zinc-500">
-                      {p.brandName} · {p.sku} · {p.totalStock} in stock
+                      {[p.brandName, p.sku, p.totalStock !== undefined ? `${p.totalStock} in stock` : undefined].filter(Boolean).join(' · ')}
                     </span>
                   </span>
                   <span className="shrink-0 text-right text-xs tabular">
@@ -73,7 +73,7 @@ export function ProductPicker({ products, value, onChange, discountPercent, erro
 }
 
 /** Overlapping product thumbnails with a "+n" chip. */
-export function ThumbStack({ products, max = 5 }: { products: ProductListItem[]; max?: number }) {
+export function ThumbStack({ products, max = 5 }: { products: MarketingProduct[]; max?: number }) {
   const shown = products.slice(0, max);
   const extra = products.length - shown.length;
   return (

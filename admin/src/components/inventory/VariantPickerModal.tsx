@@ -1,26 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronRight, SearchX } from 'lucide-react';
 import type { InventoryItem } from '@/types';
 import { STOCK_STATUS } from '@/constants/status';
 import { ColorDot, EmptyState, ProductThumb, Skeleton, StatusBadge } from '@/components/common';
 import { SearchInput } from '@/components/forms';
 import { Modal } from '@/components/modals/Overlay';
+import { inventoryService } from '@/services/inventoryService';
+import { useAsync } from '@/hooks/useAsync';
+import { useDebounce } from '@/hooks/misc';
 
 const LIMIT = 40;
 
-/** "Select a variant to adjust" — searchable list over the whole inventory. */
-export function VariantPickerModal({ open, items, loading, onClose, onSelect }: { open: boolean; items: InventoryItem[] | undefined; loading?: boolean; onClose: () => void; onSelect: (item: InventoryItem) => void }) {
+/** "Select a variant to adjust" — server-side search over the whole inventory. */
+export function VariantPickerModal({ open, onClose, onSelect }: { open: boolean; onClose: () => void; onSelect: (item: InventoryItem) => void }) {
   const [q, setQ] = useState('');
   useEffect(() => {
     if (open) setQ('');
   }, [open]);
-
-  const results = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const list = items ?? [];
-    const found = term ? list.filter((i) => [i.productName, i.sku, i.variantLabel].some((s) => s.toLowerCase().includes(term))) : list;
-    return found;
-  }, [items, q]);
+  const term = useDebounce(q.trim(), 250);
+  const { data, loading } = useAsync(
+    () => (open ? inventoryService.listInventory({ search: term || undefined, pageSize: LIMIT }) : Promise.resolve(undefined)),
+    [open, term],
+  );
+  const items = data?.data;
+  const results = items ?? [];
+  const totalMatches = data?.pagination.total ?? 0;
 
   return (
     <Modal open={open} onClose={onClose} title="Select a variant to adjust" description="Search by product name, SKU, colour or size." size="lg">
@@ -64,7 +68,7 @@ export function VariantPickerModal({ open, items, loading, onClose, onSelect }: 
           </ul>
         )}
       </div>
-      {results.length > LIMIT && <p className="mt-2 text-xs text-zinc-500">Showing {LIMIT} of {results.length} variants — refine your search to narrow the list.</p>}
+      {totalMatches > LIMIT && <p className="mt-2 text-xs text-zinc-500">Showing {LIMIT} of {totalMatches} variants — refine your search to narrow the list.</p>}
     </Modal>
   );
 }

@@ -1,4 +1,4 @@
-import type { ProductFilters, ProductListItem, ProductStatus, StockStatus, Sport, Gender } from '@/types';
+import type { ProductFilters, ProductListItem, ProductSortKey, ProductStatus, StockStatus, Sport, Gender } from '@/types';
 import type { SortState } from '@/components/tables';
 import type { CsvColumn } from '@/utils/csv';
 import { PRODUCT_STATUS, STOCK_STATUS } from '@/constants/status';
@@ -25,10 +25,13 @@ export const PRICE_RANGES = [
 export const STOCK_OPTIONS = (Object.keys(STOCK_STATUS) as StockStatus[]).map((k) => ({ value: k, label: STOCK_STATUS[k].label }));
 export const STATUS_OPTIONS = (Object.keys(PRODUCT_STATUS) as ProductStatus[]).map((k) => ({ value: k, label: PRODUCT_STATUS[k].label }));
 
-/** Maps URL filter strings onto the service filter contract. */
-export function toServiceFilters(f: ProductUrlFilters, search: string): ProductFilters {
+/** Maps URL filter strings (+ sort and page) onto the service filter contract (server-side). */
+export function toServiceFilters(f: ProductUrlFilters, search: string, sort?: SortState, page = 1, pageSize = 20): ProductFilters {
   const range = PRICE_RANGES.find((r) => r.value === f.price);
   return {
+    ...toServerSort(sort),
+    page,
+    pageSize,
     search: search || undefined,
     categoryId: f.category || undefined,
     brandId: f.brand || undefined,
@@ -41,7 +44,25 @@ export function toServiceFilters(f: ProductUrlFilters, search: string): ProductF
   };
 }
 
-// ─── Sorting ────────────────────────────────────────────────────────────────
+// ─── Sorting (server-side) ──────────────────────────────────────────────────
+/** Table sort → API `sort` + `order`. Columns without a server sort fall back to newest. */
+export function toServerSort(s?: SortState): { sort?: ProductSortKey; order?: 'asc' | 'desc' } {
+  if (!s) return { sort: 'newest' };
+  switch (s.id) {
+    case 'created':
+      return { sort: s.dir === 'asc' ? 'oldest' : 'newest' };
+    case 'product':
+      return { sort: 'name', order: s.dir };
+    case 'price':
+    case 'stock':
+    case 'sales':
+    case 'updated':
+      return { sort: s.id, order: s.dir };
+    default:
+      return { sort: 'newest' };
+  }
+}
+
 export const SORT_ACCESSORS: Record<string, (p: ProductListItem) => string | number> = {
   product: (p) => p.name.toLowerCase(),
   sku: (p) => p.sku,
@@ -101,7 +122,7 @@ export const PRODUCT_CSV: CsvColumn<ProductListItem>[] = [
   { header: 'Total stock', value: (p) => p.totalStock },
   { header: 'Stock status', value: (p) => STOCK_STATUS[p.stockStatus].label },
   { header: 'Status', value: (p) => PRODUCT_STATUS[p.status].label },
-  { header: 'Variants', value: (p) => p.variants.length },
+  { header: 'Variants', value: (p) => p.variantsCount },
   { header: 'Units sold', value: (p) => p.unitsSold },
   { header: 'Updated', value: (p) => p.updatedAt },
 ];

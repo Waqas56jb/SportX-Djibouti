@@ -46,7 +46,7 @@ export function StockMovementChart({ data, loading, error, onRetry }: Common & {
   return (
     <Panel
       title="Stock movement"
-      description="Units in vs out per week · last 8 weeks"
+      description="Units in vs out per period (restocks, sales, returns)"
       actions={
         <ChartLegend
           items={[

@@ -10,12 +10,17 @@ interface OrderSummaryProps {
   items: CartItem[];
   totals: CartTotals;
   coupon: Coupon | null;
-  onCoupon: (c: Coupon | null) => void;
+  onApplyCoupon: (code: string) => Promise<void>;
+  onRemoveCoupon: () => Promise<void> | void;
   shippingKnown: boolean;
   shippingLabel?: string;
+  /** Server is re-pricing (validate in flight). */
+  updating?: boolean;
+  /** Hide the promo form (e.g. while paying an already-created order). */
+  lockCoupon?: boolean;
 }
 
-function SummaryBody({ items, totals, coupon, onCoupon, shippingKnown, shippingLabel }: OrderSummaryProps) {
+function SummaryBody({ items, totals, coupon, onApplyCoupon, onRemoveCoupon, shippingKnown, shippingLabel, updating, lockCoupon }: OrderSummaryProps) {
   return (
     <>
       <ul className="space-y-4">
@@ -33,14 +38,18 @@ function SummaryBody({ items, totals, coupon, onCoupon, shippingKnown, shippingL
                 {i.color} · {i.size}
               </p>
             </div>
-            <p className="text-sm font-semibold tabular-nums">{formatPrice(i.unitPrice * i.quantity)}</p>
+            <p className="text-sm font-semibold tabular-nums">{formatPrice(i.lineTotal ?? i.unitPrice * i.quantity)}</p>
           </li>
         ))}
       </ul>
       <div className="my-6 border-t border-paper-200 pt-6">
-        <CouponForm subtotal={totals.subtotal} coupon={coupon} onApply={onCoupon} />
+        {lockCoupon ? (
+          coupon && <p className="text-sm text-ink-500">Promo code {coupon.code} applied.</p>
+        ) : (
+          <CouponForm coupon={coupon} onApply={onApplyCoupon} onRemove={onRemoveCoupon} signedIn />
+        )}
       </div>
-      <TotalsList totals={totals} coupon={coupon} shippingKnown={shippingKnown} shippingLabel={shippingLabel} />
+      <TotalsList totals={totals} coupon={coupon} shippingKnown={shippingKnown} shippingLabel={shippingLabel} updating={updating} />
     </>
   );
 }

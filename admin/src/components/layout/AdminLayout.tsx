@@ -65,7 +65,7 @@ export function AdminLayout() {
           </RouteErrorBoundary>
         </main>
         <footer className="no-print border-t border-zinc-200/70 px-4 py-4 text-2xs text-zinc-400 sm:px-8">
-          SPORTX Admin · Place Menelik, Rue de Ras Makonnen, Djibouti · Frontend demo with mock data
+          SPORTX Admin · Place Menelik, Rue de Ras Makonnen, Djibouti
         </footer>
       </div>
       <CommandPalette />

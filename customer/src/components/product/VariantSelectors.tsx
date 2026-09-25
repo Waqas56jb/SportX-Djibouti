@@ -74,7 +74,9 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
       <div className={cn('grid gap-2', wide ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-4 sm:grid-cols-5')} role="radiogroup" aria-label="Size" aria-invalid={error || undefined}>
         {product.sizes.map((s) => {
           const available = color ? isSizeAvailable(product, color, s) : false;
-          const low = color ? (product.variants.find((v) => v.color === color && v.size === s)?.stock ?? 0) : 0;
+          const v = color ? product.variants.find((x) => x.color === color && x.size === s) : undefined;
+          const low = v?.stock ?? 0;
+          const isLow = v?.stockStatus ? v.stockStatus === 'LOW_STOCK' : low <= LOW_STOCK_THRESHOLD;
           const selected = value === s;
           return (
             <button
@@ -83,7 +85,7 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
               role="radio"
               aria-checked={selected}
               aria-disabled={!available}
-              aria-label={`${s}${!available ? ' — sold out' : low <= LOW_STOCK_THRESHOLD ? ` — only ${low} left` : ''}`}
+              aria-label={`${s}${!available ? ' — sold out' : isLow ? ` — only ${low} left` : ''}`}
               onClick={() => available && onChange(s)}
               className={cn(
                 'relative flex h-12 items-center justify-center border text-sm font-medium transition-all duration-150',
@@ -96,7 +98,7 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
               )}
             >
               {s}
-              {available && low <= LOW_STOCK_THRESHOLD && !selected && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
+              {available && isLow && !selected && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
             </button>
           );
         })}
@@ -110,7 +112,7 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
   );
 }
 
-export function StockIndicator({ stock, sizeChosen }: { stock: number; sizeChosen: boolean }) {
+export function StockIndicator({ stock, sizeChosen, status }: { stock: number; sizeChosen: boolean; status?: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' }) {
   if (stock <= 0) {
     return (
       <p className="flex items-center gap-2 text-sm font-medium text-danger">
@@ -118,7 +120,7 @@ export function StockIndicator({ stock, sizeChosen }: { stock: number; sizeChose
       </p>
     );
   }
-  if (stock <= LOW_STOCK_THRESHOLD) {
+  if (status ? status === 'LOW_STOCK' : stock <= LOW_STOCK_THRESHOLD) {
     return (
       <p className="flex items-center gap-2 text-sm font-medium text-warning">
         <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden /> Only {stock} left{sizeChosen ? ' in this size' : ''}

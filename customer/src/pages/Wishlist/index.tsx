@@ -3,13 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { AccountSection } from '@/components/account/AccountLayout';
 import { Breadcrumbs, Button, ButtonLink, EmptyState, ErrorState, InlineAlert, Price, SmartImage } from '@/components/common';
 import { ProductGridSkeleton } from '@/components/product';
-import { CATEGORY_LABELS } from '@/constants/labels';
 import { ROUTES, productPath } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { useProductsByIds } from '@/hooks/useProducts';
 import { useWishlist } from '@/hooks/useWishlist';
+import { categoryLabel } from '@/services/productService';
 import { useUiStore } from '@/store/uiStore';
 import type { Product } from '@/types';
 import { formatDate, pluralize } from '@/utils/format';
@@ -19,17 +19,17 @@ function WishlistItem({ product, addedAt }: { product: Product; addedAt?: string
   const { remove } = useWishlist();
   const { addProduct } = useCart();
   const openQuickView = useUiStore((s) => s.openQuickView);
-  const state = stockState(product.stock);
+  const state = product.stockStatus === 'OUT_OF_STOCK' ? 'out-of-stock' : product.stockStatus === 'LOW_STOCK' ? 'low-stock' : product.stockStatus ? 'in-stock' : stockState(product.stock);
 
   const add = () => {
-    if (requiresSizeSelection(product) || product.colors.length > 1) openQuickView(product.slug);
-    else addProduct(product, { color: firstAvailableColor(product) });
+    if (!product.variants.length || requiresSizeSelection(product) || product.colors.length > 1) openQuickView(product.slug);
+    else void addProduct(product, { color: firstAvailableColor(product) });
   };
 
   return (
     <li className="group flex flex-col">
       <Link to={productPath(product.slug)} className="relative block aspect-[4/5] overflow-hidden bg-paper-100">
-        <SmartImage src={product.images[0].url} alt={product.images[0].alt} sizes="(min-width: 1024px) 25vw, 50vw" wrapperClassName="absolute inset-0" className="transition-transform duration-700 ease-premium group-hover:scale-105" />
+        <SmartImage src={product.images[0]?.url ?? ''} alt={product.images[0]?.alt ?? product.name} sizes="(min-width: 1024px) 25vw, 50vw" wrapperClassName="absolute inset-0" className="transition-transform duration-700 ease-premium group-hover:scale-105" />
       </Link>
       <button
         type="button"
@@ -40,7 +40,7 @@ function WishlistItem({ product, addedAt }: { product: Product; addedAt?: string
         <Trash2 className="h-4 w-4" />
       </button>
       <div className="mt-3 flex flex-1 flex-col">
-        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-ink-500">{CATEGORY_LABELS[product.category]}</p>
+        <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-ink-500">{categoryLabel(product)}</p>
         <Link to={productPath(product.slug)} className="mt-1 text-[15px] font-semibold leading-snug hover:underline">
           {product.name}
         </Link>

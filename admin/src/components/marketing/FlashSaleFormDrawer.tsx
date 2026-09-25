@@ -8,7 +8,7 @@ import { discountService } from '@/services/discountService';
 import { toast } from '@/store/toastStore';
 import { ProductPicker } from './ProductPicker';
 import type { MarketingCatalog } from './useMarketingData';
-import { errorMessage, formatDuration, fromLocalInput, toLocalDateTimeInput } from './utils';
+import { applyApiErrors, errorMessage, formatDuration, fromLocalInput, toLocalDateTimeInput } from './utils';
 
 interface FormState {
   name: string;
@@ -19,6 +19,8 @@ interface FormState {
   enabled: boolean;
 }
 type Errors = Partial<Record<keyof FormState, string>>;
+const FIELDS = ['name', 'start', 'end', 'productIds', 'discountPercent', 'enabled'] as const satisfies readonly (keyof FormState)[];
+const ALIAS: Record<string, (typeof FIELDS)[number]> = { startsAt: 'start', endsAt: 'end' };
 
 const WEEK_MS = 7 * 24 * 3_600_000;
 
@@ -83,7 +85,8 @@ export function FlashSaleFormDrawer({ open, sale, onClose, onSaved, catalog }: {
       toast.success(sale ? 'Flash sale updated.' : 'Flash sale scheduled.', { description: saved.name });
       onSaved(saved, !sale);
     } catch (err) {
-      toast.error('Couldn’t save flash sale.', { description: errorMessage(err) });
+      const flagged = applyApiErrors(err, FIELDS, (x) => setErrors((prev) => ({ ...prev, ...x })), ALIAS);
+      toast.error('Couldn’t save flash sale.', { description: flagged ? `${errorMessage(err)} Check the highlighted fields.` : errorMessage(err) });
     } finally {
       setSaving(false);
     }
@@ -109,7 +112,7 @@ export function FlashSaleFormDrawer({ open, sale, onClose, onSaved, catalog }: {
       }
     >
       <form id="flash-form" onSubmit={submit} noValidate className="space-y-5">
-        <Input label="Campaign name" required value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} maxLength={80} placeholder="e.g. Friday Night Boots Drop" data-autofocus />
+        <Input label="Campaign name" required value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} maxLength={120} placeholder="e.g. Friday Night Boots Drop" data-autofocus />
         <FormGrid cols={3}>
           <DateInput withTime label="Start" required value={form.start} onChange={(e) => set('start', e.target.value)} error={errors.start} />
           <DateInput withTime label="End" required value={form.end} min={form.start || undefined} onChange={(e) => set('end', e.target.value)} error={errors.end} help={!errors.end && duration > 0 ? `Runs for ${formatDuration(duration)}` : undefined} />

@@ -107,7 +107,7 @@ export default function TicketDetailPage() {
               <User size={14} aria-hidden /> {t.customerName}
             </Link>
             {t.orderNumber && (
-              <Link to={`/orders/${t.orderNumber}`} className="inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-zinc-600 tabular hover:text-zinc-950 hover:underline">
+              <Link to={`/orders/${t.orderId ?? t.orderNumber}`} className="inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-zinc-600 tabular hover:text-zinc-950 hover:underline">
                 <Package size={14} aria-hidden /> Order {t.orderNumber}
               </Link>
             )}

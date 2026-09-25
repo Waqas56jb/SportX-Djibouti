@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { PaymentStatus, ShippingStatus } from '@/types';
-import { PAYMENT_STATUS, SHIPPING_STATUS } from '@/constants/status';
+import type { PaymentMethod, PaymentStatus, ShippingStatus } from '@/types';
+import { PAYMENT_METHOD, PAYMENT_STATUS, SHIPPING_STATUS } from '@/constants/status';
 import { getActiveCurrency } from '@/utils/format';
 import { useDebounce } from '@/hooks/misc';
 import { DateInput, FilterSelect, SearchInput } from '@/components/forms';
@@ -14,12 +14,14 @@ export type OrderFilterValues = {
   from: string;
   to: string;
   payment: string;
+  method: string;
   shipping: string;
   min: string;
   max: string;
 };
 
 const PAYMENT_OPTIONS = (Object.keys(PAYMENT_STATUS) as PaymentStatus[]).map((v) => ({ value: v, label: PAYMENT_STATUS[v].label }));
+const METHOD_OPTIONS = (Object.keys(PAYMENT_METHOD) as PaymentMethod[]).map((v) => ({ value: v, label: PAYMENT_METHOD[v] }));
 const SHIPPING_OPTIONS = (Object.keys(SHIPPING_STATUS) as ShippingStatus[]).map((v) => ({ value: v, label: SHIPPING_STATUS[v].label }));
 
 /** URL-synced toolbar for the orders list. Text inputs are debounced before hitting the URL. */
@@ -66,6 +68,7 @@ export function OrderFilters({ filters, setFilter, activeCount, onClear }: { fil
         </div>
       )}
       <FilterSelect label="Payment" value={filters.payment} onChange={(v) => setFilter('payment', v)} options={PAYMENT_OPTIONS} />
+      <FilterSelect label="Method" allLabel="Any method" value={filters.method} onChange={(v) => setFilter('method', v)} options={METHOD_OPTIONS} />
       <FilterSelect label="Shipping" value={filters.shipping} onChange={(v) => setFilter('shipping', v)} options={SHIPPING_OPTIONS} />
       <div className="flex items-center gap-1.5" role="group" aria-label={`Order total range in ${currency}`}>
         <input type="number" min={0} inputMode="numeric" value={min} onChange={(e) => setMin(e.target.value)} placeholder={`Min ${currency}`} aria-label="Minimum total" aria-invalid={rangeInvalid || undefined} className={amountCls} />

@@ -1,4 +1,4 @@
-import { Heart, Menu, Search, ShoppingBag, User } from 'lucide-react';
+import { Bell, Heart, Menu, Search, ShoppingBag, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/common';
 import { DesktopNav } from '@/components/navigation/DesktopNav';
@@ -6,6 +6,7 @@ import { ROUTES } from '@/constants/routes';
 import { SITE } from '@/constants/site';
 import { useAuth } from '@/hooks/useAuth';
 import { useScrollHeader } from '@/hooks/useUi';
+import { useAuthStore } from '@/store/authStore';
 import { selectCartCount, useCartStore } from '@/store/cartStore';
 import { useUiStore } from '@/store/uiStore';
 import { useWishlistStore } from '@/store/wishlistStore';
@@ -64,6 +65,7 @@ export function Header() {
   const cartCount = useCartStore(selectCartCount);
   const wishCount = useWishlistStore((s) => s.items.length);
   const { user } = useAuth();
+  const unread = useAuthStore((s) => s.unreadNotifications);
 
   const accountHref = user ? ROUTES.account : ROUTES.login;
 
@@ -95,6 +97,12 @@ export function Header() {
             <User className="h-[21px] w-[21px]" />
             {user && <span className="absolute bottom-2 right-2 h-2 w-2 rounded-full border border-white bg-success" aria-hidden />}
           </Link>
+          {user && (
+            <Link to="/account/notifications" className="icon-btn hidden sm:inline-flex" aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}>
+              <Bell className="h-[21px] w-[21px]" />
+              <CountBadge count={unread} />
+            </Link>
+          )}
           <Link to={ROUTES.wishlist} className="icon-btn hidden sm:inline-flex" aria-label={`Wishlist, ${wishCount} items`}>
             <Heart className="h-[21px] w-[21px]" />
             <CountBadge count={wishCount} tone="dark" />

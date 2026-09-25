@@ -1,6 +1,6 @@
-import type { CouponType } from '@/types';
+import type { CouponType, FlashSaleStatus } from '@/types';
 import type { StatusMeta } from '@/constants/status';
-import type { FlashSaleStatus } from '@/services/discountService';
+import { ApiError } from '@/services/api';
 import { formatMoney } from '@/utils/format';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -43,7 +43,7 @@ export function generateCouponCode(): string {
   return `${prefix}-${tail}`;
 }
 
-export const COUPON_CODE_RE = /^[A-Z0-9_-]{3,20}$/;
+export const COUPON_CODE_RE = /^[A-Z0-9_-]{3,32}$/;
 
 /** "15%" or "DJF 2,000". */
 export function discountLabel(type: CouponType, value: number): string {
@@ -93,3 +93,51 @@ export function nameList(names: string[], max = 2): string {
 }
 
 export const errorMessage = (e: unknown, fallback = 'Please try again.') => (e instanceof Error && e.message ? e.message : fallback);
+
+type FlattenedZod = { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
+const isFlattened = (v: unknown): v is FlattenedZod => Boolean(v) && typeof v === 'object' && 'fieldErrors' in (v as object);
+
+/**
+ * Field-level messages from an API error. Understands the server's shapes:
+ * zod `{ body: { fieldErrors } }` / `{ fieldErrors }`, service `{ field: "message" }`,
+ * unknown-target `{ productIds: [ids] }` (uses the error message) and `409 { code: "code_taken" }`.
+ * Keys are API field paths; `alias` renames them to form keys.
+ */
+export function apiFieldErrors(err: unknown, alias: Record<string, string> = {}): Record<string, string> {
+  if (!(err instanceof ApiError) || !err.details || typeof err.details !== 'object') return {};
+  const d = err.details as Record<string, unknown>;
+  const out: Record<string, string> = {};
+  const put = (k: string, msg: string) => {
+    const key = alias[k] ?? k;
+    if (!out[key]) out[key] = msg;
+  };
+  if (err.status === 409) {
+    if (d.code === 'code_taken') put('code', err.message);
+    return out;
+  }
+  const read = (f: FlattenedZod) => Object.entries(f.fieldErrors ?? {}).forEach(([k, v]) => v?.[0] && put(k, v[0]));
+  if (isFlattened(d)) read(d);
+  for (const part of ['body', 'query', 'params']) {
+    const v = (err.details as Record<string, unknown>)[part];
+    if (isFlattened(v)) read(v);
+  }
+  if (!Object.keys(out).length) {
+    for (const [k, v] of Object.entries(d)) {
+      if (typeof v === 'string' && k !== 'field') put(k, v);
+      else if (Array.isArray(v)) put(k, err.message);
+    }
+  }
+  return out;
+}
+
+/**
+ * Applies server validation errors to a form (only keys the form knows about).
+ * Returns true when at least one field was flagged, so callers can pick the toast wording.
+ */
+export function applyApiErrors<K extends string>(err: unknown, keys: readonly K[], setErrors: (e: Partial<Record<K, string>>) => void, alias: Record<string, K> = {}): boolean {
+  const all = apiFieldErrors(err, alias);
+  const known = Object.fromEntries(Object.entries(all).filter(([k]) => (keys as readonly string[]).includes(k))) as Partial<Record<K, string>>;
+  if (!Object.keys(known).length) return false;
+  setErrors(known);
+  return true;
+}

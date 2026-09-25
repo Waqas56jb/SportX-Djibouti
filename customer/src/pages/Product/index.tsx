@@ -14,8 +14,7 @@ import {
   type ProductSelection,
 } from '@/components/product';
 import { ProductReviews } from '@/components/review/Reviews';
-import { FREE_SHIPPING_THRESHOLD } from '@/constants/commerce';
-import { CATEGORY_LABELS, SPORT_LABELS } from '@/constants/labels';
+import { SPORT_LABELS } from '@/constants/labels';
 import { ROUTES } from '@/constants/routes';
 import { SITE } from '@/constants/site';
 import { useAsync } from '@/hooks/useAsync';
@@ -23,7 +22,7 @@ import { usePageMeta } from '@/hooks/usePageMeta';
 import { useProduct, useProductsBySlugs } from '@/hooks/useProducts';
 import { useIsVisible } from '@/hooks/useUi';
 import NotFoundPage from '@/pages/NotFound';
-import { productService } from '@/services';
+import { categoryLabel, productService } from '@/services/productService';
 import { useRecentlyViewedStore } from '@/store/historyStores';
 import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
@@ -35,7 +34,7 @@ const BADGE_LABEL = { new: 'New', bestseller: 'Best Seller', limited: 'Limited',
 
 function ProductSkeleton() {
   return (
-    <div className="container-site grid gap-10 py-8 lg:grid-cols-[1.25fr_1fr] lg:gap-16" aria-busy="true" aria-label="Loading product">
+    <div className="container-site grid grid-cols-1 gap-10 py-8 lg:grid-cols-[1.25fr_1fr] lg:gap-16" aria-busy="true" aria-label="Loading product">
       <Skeleton className="aspect-[4/5] w-full" />
       <div className="space-y-5 pt-6">
         <Skeleton className="h-3 w-24" />
@@ -58,16 +57,18 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
 
   const scrollToOptions = () => document.getElementById('purchase-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-  const addToBag = () => {
-    const ok = sel.add();
+  const addToBag = async () => {
+    const ok = await sel.add();
     if (!ok) scrollToOptions();
   };
 
-  const buyNow = () => {
-    const ok = sel.add({ openDrawer: false });
+  const buyNow = async () => {
+    const ok = await sel.add({ openDrawer: false, silent: true });
     if (ok) navigate(ROUTES.checkout);
     else scrollToOptions();
   };
+  const freeFrom = product.shipping?.freeShippingThreshold;
+  const pickup = product.shipping?.methods.find((m) => !m.requiresAddress);
 
   return (
     <>
@@ -75,7 +76,7 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
         <div className="flex flex-wrap items-center gap-2">
           <p className="eyebrow text-ink">{product.brand}</p>
           <span className="text-ink-500/50">·</span>
-          <p className="eyebrow">{CATEGORY_LABELS[product.category]}</p>
+          <p className="eyebrow">{categoryLabel(product)}</p>
         </div>
         <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-[0.92] tracking-[-0.01em] sm:text-5xl xl:text-[3.5rem]">{product.name}</h1>
         <a href="#reviews" className="mt-4 inline-flex items-center gap-2 hover:underline">
@@ -90,26 +91,32 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
         <div id="purchase-options" className="mt-8 space-y-7 border-t border-paper-200 pt-8">
           <ColorSelector product={product} value={sel.color} onChange={sel.selectColor} error={sel.error === 'color'} />
           <SizeSelector product={product} color={sel.color} value={sel.size} onChange={sel.selectSize} error={sel.error === 'size'} onOpenGuide={() => setGuide(true)} />
-          <StockIndicator stock={sel.soldOut ? 0 : sel.selectedStock} sizeChosen={Boolean(sel.size) && product.sizes.length > 1} />
+          <StockIndicator
+            stock={sel.soldOut ? 0 : sel.selectedStock}
+            sizeChosen={Boolean(sel.size) && product.sizes.length > 1}
+            status={sel.soldOut ? 'OUT_OF_STOCK' : sel.size ? sel.variant?.stockStatus : undefined}
+          />
 
           <div ref={ctaRef} className="space-y-3">
             <div className="flex gap-3">
               <QuantitySelector value={sel.quantity} onChange={sel.setQuantity} max={sel.maxQuantity} disabled={disabled} className="h-14" />
-              <Button variant="primary" size="lg" className="h-14 flex-1" onClick={addToBag} disabled={disabled}>
+              <Button variant="primary" size="lg" className="h-14 min-w-0 flex-1 px-4 sm:px-8" onClick={addToBag} loading={sel.adding} disabled={disabled}>
                 {sel.soldOut ? 'Out of stock' : sel.variantSoldOut ? 'Size sold out' : 'Add to bag'}
+              </Button>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" size="lg" className="h-14 min-w-0 flex-1" onClick={buyNow} disabled={disabled} leftIcon={<Zap className="h-4 w-4" />}>
+                Buy now
               </Button>
               <WishlistButton product={product} variant="outline" />
             </div>
-            <Button variant="outline" size="lg" fullWidth className="h-14" onClick={buyNow} disabled={disabled} leftIcon={<Zap className="h-4 w-4" />}>
-              Buy now
-            </Button>
           </div>
         </div>
 
         <ul className="mt-8 grid gap-px border border-paper-200 bg-paper-200 text-sm sm:grid-cols-3">
           {[
-            { icon: Truck, title: 'Delivery', text: `Free over ${formatPrice(FREE_SHIPPING_THRESHOLD)}` },
-            { icon: Store, title: 'Store pickup', text: 'Place Menelik' },
+            { icon: Truck, title: 'Delivery', text: freeFrom ? `Free over ${formatPrice(freeFrom)}` : 'Across Djibouti' },
+            { icon: Store, title: 'Store pickup', text: pickup ? (pickup.price === 0 ? 'Free · Place Menelik' : formatPrice(pickup.price)) : 'Place Menelik' },
             { icon: RotateCcw, title: 'Easy returns', text: 'Unworn items' },
           ].map(({ icon: Icon, title, text }) => (
             <li key={title} className="flex items-center gap-3 bg-white p-4 sm:flex-col sm:items-start sm:gap-2">
@@ -145,7 +152,7 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
           <Button
             variant="primary"
             className="shrink-0"
-            onClick={() => (sel.size || product.sizes.length <= 1 ? addToBag() : scrollToOptions())}
+            onClick={() => (sel.size || product.sizes.length <= 1 ? void addToBag() : scrollToOptions())}
             disabled={sel.soldOut}
             tabIndex={ctaVisible ? -1 : 0}
           >
@@ -222,7 +229,7 @@ export default function ProductPage() {
             '@type': 'Offer',
             priceCurrency: 'DJF',
             price: product.price,
-            availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            availability: product.stockStatus !== 'OUT_OF_STOCK' && product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           },
         }
       : undefined,
@@ -260,7 +267,7 @@ export default function ProductPage() {
             activeIndex={sel.colorImageIndex ?? 0}
             badges={
               <>
-                {product.stock <= 0 && <Badge tone="neutral">Sold Out</Badge>}
+                {sel.soldOut && <Badge tone="neutral">Sold Out</Badge>}
                 {pct > 0 && <Badge tone="sale">−{pct}%</Badge>}
                 {product.badge && <Badge tone="dark">{BADGE_LABEL[product.badge]}</Badge>}
               </>

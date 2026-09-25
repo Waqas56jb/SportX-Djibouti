@@ -55,11 +55,11 @@ export function ContactPanel({ customer: c }: { customer: Customer }) {
         <ContactRow icon={Mail} label="Email" href={`mailto:${c.email}`}>
           {c.email}
         </ContactRow>
-        <ContactRow icon={Phone} label="Phone" href={`tel:${c.phone.replace(/\s/g, '')}`}>
-          {c.phone}
+        <ContactRow icon={Phone} label="Phone" href={c.phone ? `tel:${c.phone.replace(/\s/g, '')}` : undefined}>
+          {c.phone || '—'}
         </ContactRow>
         <ContactRow icon={MapPin} label="City">
-          {def ? `${def.city}, ${def.country}` : '—'}
+          {def ? `${def.city}, ${def.country}` : (c.city ?? '—')}
         </ContactRow>
       </ul>
       <div className="mt-5 border-t border-zinc-100 pt-4">

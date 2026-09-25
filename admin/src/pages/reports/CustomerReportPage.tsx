@@ -10,7 +10,8 @@ import { DataTable, type Column } from '@/components/tables';
 import { ReportHeader, rangeLabel } from '@/components/reports/ReportHeader';
 import { CustomerGrowthChart, DistributionPanel, TotalCustomersChart } from '@/components/reports/CustomerCharts';
 import { ExportButton } from '@/components/reports/ChartKit';
-import { useReportRange } from '@/components/reports/useReportRange';
+import { useGroupBy, useReportRange } from '@/components/reports/useReportRange';
+import { GroupBySelect } from '@/components/reports/RangeFilter';
 import { exportCsv } from '@/utils/csv';
 import { formatMoney, formatNumber, formatPercent } from '@/utils/format';
 
@@ -41,40 +42,36 @@ export default function CustomerReportPage() {
   const rs = useReportRange('30d');
   const navigate = useNavigate();
   const canExport = usePermission('reports:export');
-  const { data, loading, error, reload } = useAsync(() => reportService.getCustomerReport(rs.range), [rs.key]);
+  const { groupBy, setGroupBy, bucket } = useGroupBy();
+  const { data, loading, error, reload } = useAsync(() => reportService.getCustomerReport(rs.range, bucket), [rs.key, bucket]);
   const label = rangeLabel(rs);
   const t = data?.totals;
   const busy = loading || !data;
   const retry = () => void reload();
 
-  const onExport = () =>
-    data &&
-    exportCsv('customer-growth', data.growth, [
-      { header: 'Month', value: (r) => r.label },
-      { header: 'New customers', value: (r) => r.newCustomers },
-      { header: 'Returning customers', value: (r) => r.returningCustomers },
-      { header: 'Total customers', value: (r) => r.total },
-    ]);
+  // Server-generated CSV of the growth series (same range and grouping as the charts).
+  const onExport = () => reportService.exportReport('customers', rs.range, { groupBy: bucket });
 
   const onExportTop = () =>
     data &&
     exportCsv('top-customers', data.topCustomers, [
       { header: 'Customer ID', value: (r) => r.id },
       { header: 'Name', value: (r) => r.name },
+      { header: 'Email', value: (r) => r.email ?? '' },
       { header: 'Orders', value: (r) => r.orders },
       { header: 'Total spent', value: (r) => r.spent },
     ]);
 
   return (
     <div>
-      <ReportHeader title="Customer insights" description="Acquisition, loyalty and where your customers are." rangeState={rs} onExport={onExport} exportDisabled={!data} periodLabel={label} />
+      <ReportHeader title="Customer insights" description="Acquisition, loyalty and where your customers are." rangeState={rs} onExport={onExport} exportDisabled={!data} periodLabel={label} filters={<GroupBySelect value={groupBy} onChange={setGroupBy} />} />
 
       {!error && (
         <section aria-label="Key metrics" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <KpiCard label="New Customers" icon={UserPlus} loading={busy} value={t && formatNumber(t.newCustomers)} period={label} />
           <KpiCard label="Returning Customers" icon={Users} loading={busy} value={t && formatNumber(t.returningCustomers)} period={label} />
-          <KpiCard label="Repeat Rate" icon={Repeat} loading={busy} value={t && formatPercent(t.repeatRate)} period="Returning ÷ active customers" />
-          <KpiCard label="Average Spend" icon={Wallet} loading={busy} value={t && formatMoney(t.averageSpend, { compact: true })} period="Per active customer" />
+          <KpiCard label="Repeat Rate" icon={Repeat} loading={busy} value={t && formatPercent(t.repeatRate)} period="Returning ÷ buyers in period" />
+          <KpiCard label="Average Spend" icon={Wallet} loading={busy} value={t && formatMoney(t.averageSpend, { compact: true })} period="Net paid revenue per paying customer" />
           <KpiCard label="Orders per Customer" icon={ShoppingCart} loading={busy} value={t && t.ordersPerCustomer.toFixed(2)} period={label} />
         </section>
       )}
@@ -105,7 +102,7 @@ export default function CustomerReportPage() {
           toolbar={
             <div>
               <h2 className="panel-title">Top customers</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">Lifetime value, all time</p>
+              <p className="mt-0.5 text-xs text-zinc-500">Net paid revenue in the selected period</p>
             </div>
           }
           empty={<EmptyState compact icon={Users} title="No customers yet" description="Customers appear here after their first order." />}

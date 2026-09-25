@@ -1,10 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHero } from '@/components/marketing/PageHero';
 import { CatalogView } from '@/components/product/CatalogView';
 import { COLLECTIONS, getCollection, type Collection } from '@/data/collections';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import type { MultiFilterKey } from '@/hooks/useCatalogParams';
+import type { ProductQuery } from '@/types';
+import type { Crumb } from '@/components/common';
 import { pluralize } from '@/utils/format';
 import { cn } from '@/utils/cn';
 import NotFoundPage from '@/pages/NotFound';
@@ -20,13 +22,23 @@ const HIDDEN_FILTERS: Partial<Record<string, MultiFilterKey[]>> = {
 
 const QUICK_LINKS = ['men', 'women', 'kids', 'football', 'basketball', 'running', 'training', 'equipment', 'new-arrivals', 'sale'];
 
-export function CollectionView({ collection }: { collection: Collection }) {
+interface CollectionViewProps {
+  collection: Collection;
+  /** Fixed API query for this page (defaults to `{ collection: key }`). */
+  base?: Pick<ProductQuery, 'collection' | 'categories'>;
+  crumbs?: Crumb[];
+  /** Hide the collection quick links (category pages). */
+  hideQuickLinks?: boolean;
+  children?: ReactNode;
+}
+
+export function CollectionView({ collection, base, crumbs: crumbsProp, hideQuickLinks, children }: CollectionViewProps) {
   const [total, setTotal] = useState<number | null>(null);
   const onTotal = useCallback((n: number) => setTotal(n), []);
 
   usePageMeta({ title: collection.title, description: collection.description, path: collection.path, image: collection.image });
 
-  const crumbs = collection.key === 'shop' ? [{ label: 'Shop' }] : [{ label: 'Shop', href: '/shop' }, { label: collection.title }];
+  const crumbs = crumbsProp ?? (collection.key === 'shop' ? [{ label: 'Shop' }] : [{ label: 'Shop', href: '/shop' }, { label: collection.title }]);
 
   return (
     <>
@@ -38,6 +50,8 @@ export function CollectionView({ collection }: { collection: Collection }) {
         crumbs={crumbs}
         meta={total !== null ? pluralize(total, 'product') : ' '}
       />
+      {children}
+      {!hideQuickLinks && (
       <nav aria-label="Collections" className="border-b border-paper-200">
         <ul className="container-site scrollbar-none flex gap-6 overflow-x-auto">
           {QUICK_LINKS.map((key) => {
@@ -61,8 +75,9 @@ export function CollectionView({ collection }: { collection: Collection }) {
           })}
         </ul>
       </nav>
+      )}
       <div className="container-site pb-24 pt-6">
-        <CatalogView key={collection.key} base={{ collection: collection.key }} hideFilters={HIDDEN_FILTERS[collection.key]} onTotal={onTotal} />
+        <CatalogView key={collection.key} base={base ?? { collection: collection.key }} hideFilters={HIDDEN_FILTERS[collection.key]} onTotal={onTotal} />
       </div>
     </>
   );

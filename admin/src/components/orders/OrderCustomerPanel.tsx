@@ -11,10 +11,19 @@ export function OrderCustomerPanel({ order }: { order: Order }) {
       <div className="flex items-center gap-3">
         <Avatar name={order.customerName} size={40} />
         <div className="min-w-0">
-          <Link to={`/customers/${order.customerId}`} className="block truncate text-sm font-semibold text-zinc-950 hover:underline">
-            {order.customerName}
-          </Link>
-          <span className="text-xs text-zinc-500">View customer profile</span>
+          {order.customerId ? (
+            <>
+              <Link to={`/customers/${order.customerId}`} className="block truncate text-sm font-semibold text-zinc-950 hover:underline">
+                {order.customerName}
+              </Link>
+              <span className="text-xs text-zinc-500">View customer profile</span>
+            </>
+          ) : (
+            <>
+              <span className="block truncate text-sm font-semibold text-zinc-950">{order.customerName}</span>
+              <span className="text-xs text-zinc-500">Account no longer exists</span>
+            </>
+          )}
         </div>
       </div>
       <ul className="mt-4 space-y-2 text-[0.8125rem]">
@@ -45,6 +54,7 @@ export function OrderCustomerPanel({ order }: { order: Order }) {
         <p className="eyebrow mb-2 flex items-center gap-1.5">
           <MapPin size={12} aria-hidden /> Shipping address
         </p>
+        {a ? (
         <DescriptionList
           columns={2}
           items={[
@@ -57,6 +67,9 @@ export function OrderCustomerPanel({ order }: { order: Order }) {
             { label: 'Postal code', value: a.postalCode, hidden: !a.postalCode },
           ]}
         />
+        ) : (
+          <p className="text-[0.8125rem] text-zinc-500">No delivery address — {order.shipping.method}.</p>
+        )}
       </div>
     </Panel>
   );

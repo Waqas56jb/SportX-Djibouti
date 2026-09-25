@@ -5,7 +5,8 @@ import type { SupportTicket, TicketCategory, TicketPriority, TicketStatus } from
 import { Button, EmptyState, PageHeader, Tabs } from '@/components/common';
 import { FilterSelect, SearchInput } from '@/components/forms';
 import { ClearFiltersButton, DataTable } from '@/components/tables';
-import { TicketSummaryStrip, countSummary, type SummaryKey } from '@/components/support/TicketSummaryStrip';
+import { useServerList } from '@/components/customers/useServerList';
+import { TicketSummaryStrip, summaryFrom, type SummaryKey } from '@/components/support/TicketSummaryStrip';
 import { ticketColumns } from '@/components/support/ticketColumns';
 import { TICKET_CATEGORIES } from '@/constants/catalog';
 import { TICKET_PRIORITY, TICKET_STATUS } from '@/constants/status';
@@ -25,28 +26,28 @@ export default function SupportPage() {
   const { filters, setFilter, activeCount } = useUrlFilters({ status: '', priority: '', assignee: '', category: '', search: '' });
   const search = useDebounce(filters.search, 250);
 
-  // Status is applied client-side so tabs and summary can show counts for the remaining filters.
-  const { data, loading, error, reload } = useAsync(
-    () =>
-      supportService.getTickets({
-        search,
-        priority: filters.priority as TicketPriority | '',
-        assignedToId: filters.assignee || undefined,
-        category: filters.category as TicketCategory | '',
-      }),
-    [search, filters.priority, filters.assignee, filters.category],
+  const tab: TabValue = STATUSES.includes(filters.status as TicketStatus) ? (filters.status as TicketStatus) : 'all';
+  const baseFilters = { assignedToId: filters.assignee || undefined, category: filters.category as TicketCategory | '' };
+
+  // Everything is server-side; the per-status counts ignore the status filter so tabs show totals.
+  const list = useServerList(
+    (q) => supportService.getTickets({ ...q, search, filters: { ...baseFilters, status: tab === 'all' ? '' : tab, priority: filters.priority as TicketPriority | '' } }),
+    [search, tab, filters.priority, filters.assignee, filters.category],
+    { initialSort: { id: 'updated', dir: 'desc' } },
   );
+  const { loading, error, reload } = list;
+  const rows = list.data?.data;
+  const counts = list.data?.counts;
+  // Unresolved urgent tickets for the summary tile (same search / assignee / category filters).
+  const urgent = useAsync(() => supportService.getTickets({ pageSize: 1, search, filters: { ...baseFilters, priority: 'urgent' } }), [search, filters.assignee, filters.category]);
   const assignees = useAsync(() => supportService.getAssignees(), []);
   const assigneeOptions = useMemo(() => [{ value: 'unassigned', label: 'Unassigned' }, ...(assignees.data ?? []).map((a) => ({ value: a.id, label: a.name }))], [assignees.data]);
 
-  const tab: TabValue = STATUSES.includes(filters.status as TicketStatus) ? (filters.status as TicketStatus) : 'all';
-  const counts = useMemo(() => {
-    const c = { all: data?.length ?? 0 } as Record<TabValue, number>;
-    for (const s of STATUSES) c[s] = data?.filter((t) => t.status === s).length ?? 0;
-    return c;
-  }, [data]);
-  const summary = useMemo(() => (data ? countSummary(data) : undefined), [data]);
-  const rows = useMemo(() => (tab === 'all' ? data : data?.filter((t) => t.status === tab)), [data, tab]);
+  const summary = useMemo(() => {
+    if (!counts || !urgent.data) return undefined;
+    const u = urgent.data.counts;
+    return summaryFrom(counts, u.open + u.in_progress + u.waiting_customer);
+  }, [counts, urgent.data]);
 
   const activeTile: SummaryKey | null = tab === 'open' || tab === 'in_progress' || tab === 'waiting_customer' ? tab : !filters.status && filters.priority === 'urgent' ? 'urgent' : null;
 
@@ -79,14 +80,14 @@ export default function SupportPage() {
     <div>
       <PageHeader title="Support" description="Customer conversations, assignments and service levels." />
 
-      <TicketSummaryStrip counts={loading ? undefined : summary} active={activeTile} onSelect={onTile} />
+      <TicketSummaryStrip counts={summary} active={activeTile} onSelect={onTile} />
 
       <Tabs<TabValue>
         ariaLabel="Ticket status"
         className="mb-4"
         value={tab}
         onChange={(v) => setFilter('status', v === 'all' ? '' : v)}
-        items={[{ value: 'all', label: 'All', count: loading ? undefined : counts.all }, ...STATUSES.map((s) => ({ value: s, label: TICKET_STATUS[s].label, count: loading ? undefined : counts[s] }))]}
+        items={[{ value: 'all', label: 'All', count: counts?.all }, ...STATUSES.map((s) => ({ value: s, label: TICKET_STATUS[s].label, count: counts?.[s] }))]}
       />
 
       <DataTable
@@ -98,7 +99,7 @@ export default function SupportPage() {
         loading={loading}
         error={error}
         onRetry={() => void reload()}
-        initialSort={{ id: 'created', dir: 'desc' }}
+        {...list.table}
         onRowClick={(t) => navigate(`/support/${t.id}`)}
         rowClassName={(t) => (t.priority === 'urgent' && t.status !== 'resolved' && t.status !== 'closed' ? 'shadow-[inset_3px_0_0_#dc2626]' : undefined)}
         toolbar={

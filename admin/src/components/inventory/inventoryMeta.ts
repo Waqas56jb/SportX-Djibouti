@@ -1,6 +1,6 @@
-import type { InventoryItem, StockAction } from '@/types';
+import type { InventoryItem, MovementReason, StockAction } from '@/types';
 import type { StatusMeta } from '@/constants/status';
-import { STOCK_REASONS, PRODUCT_TYPES, labelOf } from '@/constants/catalog';
+import { PRODUCT_TYPES, labelOf } from '@/constants/catalog';
 import { formatDateTime } from '@/utils/format';
 import type { CsvColumn } from '@/utils/csv';
 import type { StockMovement } from '@/types';
@@ -15,6 +15,18 @@ export const STOCK_ACTION: Record<StockAction, StatusMeta> = {
 
 export type AdjustMode = 'add' | 'remove' | 'set';
 
+/** Labels for every API movement reason (manual adjustments + order-driven changes). */
+export const MOVEMENT_REASONS: { value: MovementReason; label: string }[] = [
+  { value: 'RESTOCK', label: 'Restock' },
+  { value: 'MANUAL_ADJUSTMENT', label: 'Manual adjustment' },
+  { value: 'DAMAGED', label: 'Damaged' },
+  { value: 'RETURNED', label: 'Returned' },
+  { value: 'ORDER', label: 'Order (sale)' },
+  { value: 'ORDER_CANCELLED', label: 'Order cancelled' },
+  { value: 'REFUND', label: 'Refund restock' },
+  { value: 'OTHER', label: 'Other' },
+];
+
 export const INVENTORY_CSV: CsvColumn<InventoryItem>[] = [
   { header: 'Product', value: (r) => r.productName },
   { header: 'Type', value: (r) => labelOf(PRODUCT_TYPES, r.productType) },
@@ -26,7 +38,7 @@ export const INVENTORY_CSV: CsvColumn<InventoryItem>[] = [
   { header: 'Threshold', value: (r) => r.threshold },
   { header: 'Status', value: (r) => r.status },
   { header: 'Unit cost', value: (r) => r.unitCost },
-  { header: 'Stock value', value: (r) => r.unitCost * r.stock },
+  { header: 'Stock value (cost)', value: (r) => r.unitCost * r.stock },
 ];
 
 export const MOVEMENT_CSV: CsvColumn<StockMovement>[] = [
@@ -38,7 +50,8 @@ export const MOVEMENT_CSV: CsvColumn<StockMovement>[] = [
   { header: 'Quantity', value: (m) => m.quantity },
   { header: 'Previous stock', value: (m) => m.previousStock },
   { header: 'New stock', value: (m) => m.newStock },
-  { header: 'Reason', value: (m) => labelOf(STOCK_REASONS, m.reason) },
+  { header: 'Reason', value: (m) => labelOf(MOVEMENT_REASONS, m.reason) },
+  { header: 'Order', value: (m) => m.orderNumber ?? '' },
   { header: 'Notes', value: (m) => m.notes ?? '' },
   { header: 'Admin', value: (m) => m.adminName },
 ];

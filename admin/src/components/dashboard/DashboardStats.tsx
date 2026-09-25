@@ -43,8 +43,8 @@ export function AttentionRow({ stats, loading, error }: Omit<Props, 'period' | '
       </h2>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <AttentionStat label="Pending Orders" hint="Awaiting fulfilment" icon={Clock3} tone={n(stats?.pendingOrders) > 0 ? 'warning' : 'neutral'} value={n(stats?.pendingOrders)} loading={busy} to="/orders?status=pending" />
-        <AttentionStat label="Low Stock" hint="Variants at or below threshold" icon={AlertTriangle} tone={n(stats?.lowStock) > 0 ? 'warning' : 'neutral'} value={n(stats?.lowStock)} loading={busy} to="/inventory?status=low_stock" />
-        <AttentionStat label="Refund Requests" hint="Awaiting a decision" icon={RotateCcw} tone={n(stats?.refundRequests) > 0 ? 'danger' : 'neutral'} value={n(stats?.refundRequests)} loading={busy} to="/orders?status=refunded" />
+        <AttentionStat label="Low Stock" hint={stats?.outOfStock ? `At or below threshold · ${stats.outOfStock} out of stock` : 'Variants at or below threshold'} icon={AlertTriangle} tone={n(stats?.lowStock) > 0 ? 'warning' : 'neutral'} value={n(stats?.lowStock)} loading={busy} to="/inventory?status=low_stock" />
+        <AttentionStat label="Refund Requests" hint="Awaiting a decision" icon={RotateCcw} tone={n(stats?.refundRequests) > 0 ? 'danger' : 'neutral'} value={n(stats?.refundRequests)} loading={busy} to="/orders?status=refund_requested" />
         <AttentionStat label="Open Support Tickets" hint="Customers waiting on a reply" icon={LifeBuoy} tone={n(stats?.openTickets) > 0 ? 'info' : 'neutral'} value={n(stats?.openTickets)} loading={busy} to="/support?status=open" />
       </div>
     </section>

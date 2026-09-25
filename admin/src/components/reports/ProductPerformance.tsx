@@ -4,7 +4,6 @@ import type { TopProduct } from '@/types';
 import { EmptyState, ErrorState, Panel, ProductThumb, Skeleton } from '@/components/common';
 import { formatNumber, formatPercent } from '@/utils/format';
 import { ChartFrame, HBarChart } from './ChartKit';
-import type { ProductIndexEntry } from './useProductIndex';
 
 interface Props {
   rows: TopProduct[] | undefined;
@@ -29,12 +28,9 @@ export function BestSellersPanel({ rows, loading, error, onRetry }: Props) {
   );
 }
 
-/** Lowest unit sales among published products — candidates for promotion or markdown. */
-export function WorstPerformersPanel({ rows, loading, error, onRetry, index }: Props & { index: Map<string, ProductIndexEntry> }) {
-  const worst = [...(rows ?? [])]
-    .filter((r) => (index.size ? index.get(r.productId)?.status === 'published' : true))
-    .sort((a, b) => a.unitsSold - b.unitsSold || a.revenue - b.revenue)
-    .slice(0, 6);
+/** Lowest unit sales among published products (server-ranked) — candidates for promotion or markdown. */
+export function WorstPerformersPanel({ rows, loading, error, onRetry }: Props) {
+  const worst = (rows ?? []).slice(0, 6);
   return (
     <Panel flush title="Worst performers" description="Lowest units among published products" className="xl:col-span-2">
       {error ? (
@@ -55,7 +51,7 @@ export function WorstPerformersPanel({ rows, loading, error, onRetry, index }: P
         <ul>
           {worst.map((r) => (
             <li key={r.productId} className="flex items-center gap-3 border-b border-zinc-100 px-5 py-2.5 last:border-0">
-              <ProductThumb src={index.get(r.productId)?.image} alt={r.name} size={36} />
+              <ProductThumb src={r.image} alt={r.name} size={36} />
               <div className="min-w-0 flex-1">
                 <Link to={`/products/${r.productId}`} className="block truncate text-[0.8125rem] font-semibold text-zinc-900 hover:underline">
                   {r.name}

@@ -1,289 +1,255 @@
 import type {
-  ActivityLog,
   AdminUser,
   NotificationPreference,
-  PaymentProvider,
-  PaymentProviderId,
-  PermissionKey,
-  Role,
+  PaymentSettings,
   ShippingMethod,
   ShippingMethodInput,
   ShippingZone,
   StoreSettings,
+  StoreSettingsInput,
 } from '@/types';
-import { appConfig } from '@/constants/config';
-import { uid } from '@/utils/id';
-import { slugify } from '@/utils/format';
-import { api, ApiError } from './http';
-import { audit, db, delay, getActor, matches, NotFoundError, now } from './mock/db';
+import { adminApi } from './api';
+import { staffService, type AdminUserInput } from './staffService';
+import { roleService, type RoleInput } from './roleService';
+import { activityService, type ActivityFilters } from './activityService';
 
-export interface ActivityFilters {
-  search?: string;
-  adminId?: string;
-  module?: string;
-  action?: string;
-  from?: string;
-  to?: string;
+export type { AdminUserInput, RoleInput, ActivityFilters };
+
+// ─── DTOs (server/src/modules/settings + shipping) ─────────────────────────────
+
+interface StoreSettingsDto {
+  storeName: string;
+  tagline: string;
+  supportEmail: string | null;
+  email?: string | null;
+  phone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  country: string;
+  currency: StoreSettings['currency'];
+  timezone: string;
+  logoUrl: string | null;
+  taxRate: number;
+  taxInclusive: boolean;
+  freeShippingThreshold: number | null;
+  orderPrefix: string;
+  lowStockDefault: number;
+  pendingPaymentTtlMinutes: number;
+  maxQuantityPerLine: number;
+  updatedAt: string;
 }
 
-export type AdminUserInput = Pick<AdminUser, 'name' | 'email' | 'phone' | 'roleId'>;
-export type RoleInput = Pick<Role, 'name' | 'description' | 'permissions'>;
+interface ShippingMethodDto {
+  id: string;
+  zoneId: string;
+  code: string;
+  name: string;
+  description: string;
+  price: number;
+  freeShippingThreshold: number | null;
+  minDays: number;
+  maxDays: number;
+  estimatedDelivery: string;
+  requiresAddress: boolean;
+  carrier: string | null;
+  enabled: boolean;
+  sortOrder: number;
+}
 
-/** Mask anything that looks like a credential so it can never be echoed back. */
-const maskProvider = (p: PaymentProvider): PaymentProvider => ({
-  ...p,
-  fields: p.fields.map((f) => (f.secret ? { ...f, value: f.value ? `••••${f.value.slice(-4)}` : '' } : f)),
+interface ShippingZoneDto {
+  id: string;
+  name: string;
+  regions: string[];
+  enabled: boolean;
+  sortOrder: number;
+  methods: ShippingMethodDto[];
+}
+
+const toStore = (d: StoreSettingsDto): StoreSettings => ({
+  storeName: d.storeName,
+  logoUrl: d.logoUrl ?? undefined,
+  tagline: d.tagline ?? '',
+  email: d.supportEmail ?? d.email ?? '',
+  phone: d.phone ?? '',
+  addressLine1: d.addressLine1 ?? '',
+  addressLine2: d.addressLine2 ?? '',
+  city: d.city ?? '',
+  country: d.country ?? '',
+  currency: d.currency,
+  timezone: d.timezone,
+  taxRate: Number(d.taxRate),
+  lowStockDefault: d.lowStockDefault,
+  taxInclusive: d.taxInclusive,
+  freeShippingThreshold: d.freeShippingThreshold,
+  orderPrefix: d.orderPrefix,
+  pendingPaymentTtlMinutes: d.pendingPaymentTtlMinutes,
+  maxQuantityPerLine: d.maxQuantityPerLine,
+  updatedAt: d.updatedAt,
 });
+
+/** Frontend form → PATCH body. Empty optional text is sent as null so it can be cleared. */
+function toStoreBody(s: StoreSettingsInput) {
+  const nullable = (v: string | undefined) => (v === undefined ? undefined : v.trim() || null);
+  return {
+    storeName: s.storeName?.trim(),
+    tagline: s.tagline?.trim(),
+    supportEmail: s.email === undefined ? undefined : s.email.trim() || null,
+    phone: nullable(s.phone),
+    addressLine1: nullable(s.addressLine1),
+    addressLine2: nullable(s.addressLine2),
+    city: nullable(s.city),
+    country: s.country?.trim(),
+    currency: s.currency,
+    timezone: s.timezone,
+    taxRate: s.taxRate,
+    taxInclusive: s.taxInclusive,
+    freeShippingThreshold: s.freeShippingThreshold,
+    orderPrefix: s.orderPrefix?.trim() || undefined,
+    lowStockDefault: s.lowStockDefault,
+    pendingPaymentTtlMinutes: s.pendingPaymentTtlMinutes,
+    maxQuantityPerLine: s.maxQuantityPerLine,
+  };
+}
+
+const toMethod = (m: ShippingMethodDto): ShippingMethod => ({
+  id: m.id,
+  zoneId: m.zoneId,
+  code: m.code,
+  name: m.name,
+  description: m.description ?? '',
+  price: m.price,
+  freeShippingThreshold: m.freeShippingThreshold ?? undefined,
+  estimatedDelivery: m.estimatedDelivery,
+  minDays: m.minDays,
+  maxDays: m.maxDays,
+  requiresAddress: m.requiresAddress,
+  carrier: m.carrier,
+  enabled: m.enabled,
+  sortOrder: m.sortOrder,
+});
+
+const toZone = (z: ShippingZoneDto): ShippingZone => ({ id: z.id, name: z.name, regions: z.regions ?? [], enabled: z.enabled, sortOrder: z.sortOrder, methods: (z.methods ?? []).map(toMethod) });
+
+function toMethodBody(m: Partial<ShippingMethodInput>) {
+  return {
+    zoneId: m.zoneId,
+    code: m.code,
+    name: m.name,
+    description: m.description,
+    price: m.price,
+    // null clears the threshold; undefined would keep the stored value.
+    freeShippingThreshold: 'freeShippingThreshold' in m ? m.freeShippingThreshold ?? null : undefined,
+    minDays: m.minDays,
+    maxDays: m.maxDays,
+    estimatedDelivery: m.estimatedDelivery,
+    requiresAddress: m.requiresAddress,
+    carrier: m.carrier,
+    enabled: m.enabled,
+    sortOrder: m.sortOrder,
+  };
+}
+
+// ─── Notification events (the server stores whatever list the admin saves) ────
+
+export const NOTIFICATION_EVENTS: Omit<NotificationPreference, 'channels'>[] = [
+  { event: 'new_order', label: 'New order', description: 'A customer places an order.' },
+  { event: 'payment_failed', label: 'Payment failure', description: 'A payment is declined or fails to capture.' },
+  { event: 'low_stock', label: 'Low stock', description: 'A variant falls below its low-stock threshold.' },
+  { event: 'refund_requested', label: 'Refund request', description: 'A customer requests a refund.' },
+  { event: 'new_customer', label: 'New customer', description: 'A new customer account is created.' },
+  { event: 'review_pending', label: 'New review', description: 'A review is submitted and awaits moderation.' },
+  { event: 'new_ticket', label: 'Support ticket', description: 'A new support ticket is opened or escalated.' },
+];
+
+const DEFAULT_CHANNELS = { email: false, sms: false, in_app: true };
+
+/** Merges the stored list with the known events so new events appear with defaults. */
+function mergePreferences(stored: Partial<NotificationPreference>[]): NotificationPreference[] {
+  const byEvent = new Map(stored.filter((p) => p.event).map((p) => [p.event as string, p]));
+  return NOTIFICATION_EVENTS.map((e) => {
+    const s = byEvent.get(e.event);
+    return { ...e, channels: { ...DEFAULT_CHANNELS, ...(s?.channels ?? {}) } };
+  });
+}
 
 export const settingsService = {
   // ─── Store ────────────────────────────────────────────────────────────────
-  /** GET /settings/store */
+  /** GET /admin/settings — store identity, contact, currency, tax, order defaults (no secrets). */
   async getStoreSettings(): Promise<StoreSettings> {
-    if (!appConfig.useMocks) return api.get<StoreSettings>('/settings/store');
-    return delay(db.storeSettings);
+    return toStore(await adminApi.get<StoreSettingsDto>('/settings'));
   },
 
-  /** PUT /settings/store */
-  async updateStoreSettings(input: StoreSettings): Promise<StoreSettings> {
-    if (!appConfig.useMocks) return api.put<StoreSettings>('/settings/store', input);
-    db.storeSettings = { ...input };
-    audit('Store settings updated', 'Settings', input.storeName, '/settings/store');
-    return delay(db.storeSettings, 600);
+  /** PATCH /admin/settings — partial update; returns the saved settings. */
+  async updateStoreSettings(input: StoreSettingsInput): Promise<StoreSettings> {
+    return toStore(await adminApi.patch<StoreSettingsDto>('/settings', toStoreBody(input)));
+  },
+
+  /** POST /admin/settings/logo (multipart "file"; JPEG/PNG/WebP/AVIF, ≤ 5 MB). */
+  async uploadLogo(file: File): Promise<StoreSettings> {
+    return toStore(await adminApi.upload<StoreSettingsDto>('/settings/logo', file));
   },
 
   // ─── Shipping ─────────────────────────────────────────────────────────────
-  /** GET /settings/shipping/zones */
+  /** GET /admin/shipping/zones — zones with their methods. */
   async getShippingZones(): Promise<ShippingZone[]> {
-    if (!appConfig.useMocks) return api.get<ShippingZone[]>('/settings/shipping/zones');
-    return delay(db.shippingZones);
+    return (await adminApi.get<ShippingZoneDto[]>('/shipping/zones')).map(toZone);
   },
 
-  /** POST /settings/shipping/zones */
-  async createZone(input: Pick<ShippingZone, 'name' | 'regions'>): Promise<ShippingZone> {
-    if (!appConfig.useMocks) return api.post<ShippingZone>('/settings/shipping/zones', input);
-    const zone: ShippingZone = { ...input, id: uid('zone'), enabled: true, methods: [] };
-    db.shippingZones.push(zone);
-    audit('Shipping zone created', 'Settings', zone.name, '/settings/shipping');
-    return delay(zone);
+  /** POST /admin/shipping/zones */
+  async createZone(input: Pick<ShippingZone, 'name' | 'regions'> & { enabled?: boolean }): Promise<ShippingZone> {
+    return toZone(await adminApi.post<ShippingZoneDto>('/shipping/zones', input));
   },
 
-  /** PATCH /settings/shipping/zones/:id */
-  async updateZone(id: string, patch: Partial<Pick<ShippingZone, 'name' | 'regions' | 'enabled'>>): Promise<ShippingZone> {
-    if (!appConfig.useMocks) return api.patch<ShippingZone>(`/settings/shipping/zones/${id}`, patch);
-    const z = db.shippingZones.find((x) => x.id === id);
-    if (!z) throw new NotFoundError('Shipping zone');
-    Object.assign(z, patch);
-    audit('Shipping zone updated', 'Settings', z.name, '/settings/shipping');
-    return delay(z, 250);
+  /** PATCH /admin/shipping/zones/:id */
+  async updateZone(id: string, patch: Partial<Pick<ShippingZone, 'name' | 'regions' | 'enabled' | 'sortOrder'>>): Promise<ShippingZone> {
+    return toZone(await adminApi.patch<ShippingZoneDto>(`/shipping/zones/${id}`, patch));
   },
 
-  /** DELETE /settings/shipping/zones/:id */
+  /** DELETE /admin/shipping/zones/:id (deletes its methods too). */
   async deleteZone(id: string): Promise<void> {
-    if (!appConfig.useMocks) return api.delete(`/settings/shipping/zones/${id}`);
-    const z = db.shippingZones.find((x) => x.id === id);
-    if (!z) throw new NotFoundError('Shipping zone');
-    db.shippingZones = db.shippingZones.filter((x) => x.id !== id);
-    audit('Shipping zone deleted', 'Settings', z.name);
-    await delay(null);
+    await adminApi.delete(`/shipping/zones/${id}`);
   },
 
-  /** POST /settings/shipping/methods */
+  /** POST /admin/shipping/methods */
   async createMethod(input: ShippingMethodInput): Promise<ShippingMethod> {
-    if (!appConfig.useMocks) return api.post<ShippingMethod>('/settings/shipping/methods', input);
-    const zone = db.shippingZones.find((z) => z.id === input.zoneId);
-    if (!zone) throw new NotFoundError('Shipping zone');
-    const m: ShippingMethod = { ...input, id: uid('shm') };
-    zone.methods.push(m);
-    audit('Shipping method created', 'Settings', `${zone.name} · ${m.name}`, '/settings/shipping');
-    return delay(m);
+    return toMethod(await adminApi.post<ShippingMethodDto>('/shipping/methods', toMethodBody(input)));
   },
 
-  /** PUT /settings/shipping/methods/:id */
-  async updateMethod(id: string, input: ShippingMethodInput): Promise<ShippingMethod> {
-    if (!appConfig.useMocks) return api.put<ShippingMethod>(`/settings/shipping/methods/${id}`, input);
-    for (const z of db.shippingZones) {
-      const idx = z.methods.findIndex((m) => m.id === id);
-      if (idx >= 0) {
-        const updated = { ...input, id };
-        z.methods.splice(idx, 1);
-        const target = db.shippingZones.find((x) => x.id === input.zoneId) ?? z;
-        target.methods.push(updated);
-        audit('Shipping method updated', 'Settings', updated.name, '/settings/shipping');
-        return delay(updated);
-      }
-    }
-    throw new NotFoundError('Shipping method');
+  /** PATCH /admin/shipping/methods/:id — partial update. */
+  async updateMethod(id: string, input: Partial<ShippingMethodInput>): Promise<ShippingMethod> {
+    return toMethod(await adminApi.patch<ShippingMethodDto>(`/shipping/methods/${id}`, toMethodBody(input)));
   },
 
-  /** DELETE /settings/shipping/methods/:id */
+  /** DELETE /admin/shipping/methods/:id */
   async deleteMethod(id: string): Promise<void> {
-    if (!appConfig.useMocks) return api.delete(`/settings/shipping/methods/${id}`);
-    for (const z of db.shippingZones) {
-      const m = z.methods.find((x) => x.id === id);
-      if (m) {
-        z.methods = z.methods.filter((x) => x.id !== id);
-        audit('Shipping method deleted', 'Settings', m.name);
-        return delay(undefined);
-      }
-    }
-    throw new NotFoundError('Shipping method');
+    await adminApi.delete(`/shipping/methods/${id}`);
   },
 
   // ─── Payments ─────────────────────────────────────────────────────────────
-  /** GET /settings/payments — secret values are always masked by the API. */
-  async getPaymentProviders(): Promise<PaymentProvider[]> {
-    if (!appConfig.useMocks) return api.get<PaymentProvider[]>('/settings/payments');
-    return delay(db.paymentProviders.map(maskProvider));
-  },
-
   /**
-   * PATCH /settings/payments/:id
-   * Only non-secret fields and toggles are accepted from the browser. Secret credentials are
-   * configured through server environment variables and are never sent from or to the frontend.
+   * GET /admin/settings/payments — read-only provider status. Keys and secrets are configured in
+   * the API server environment; the response only says whether each one is present.
    */
-  async updatePaymentProvider(id: PaymentProviderId, patch: { enabled?: boolean; mode?: 'test' | 'live'; fields?: Record<string, string> }): Promise<PaymentProvider> {
-    if (!appConfig.useMocks) return api.patch<PaymentProvider>(`/settings/payments/${id}`, patch);
-    const p = db.paymentProviders.find((x) => x.id === id);
-    if (!p) throw new NotFoundError('Payment provider');
-    if (patch.enabled !== undefined) p.enabled = patch.enabled;
-    if (patch.mode) p.mode = patch.mode;
-    if (patch.fields) {
-      for (const f of p.fields) {
-        if (f.secret) continue;
-        if (patch.fields[f.key] !== undefined) f.value = patch.fields[f.key].trim();
-      }
-    }
-    p.configured = p.fields.filter((f) => !f.secret).every((f) => f.value);
-    audit('Payment settings updated', 'Settings', p.name, '/settings/payments');
-    return delay(maskProvider(p), 500);
+  async getPaymentSettings(): Promise<PaymentSettings> {
+    return adminApi.get<PaymentSettings>('/settings/payments');
   },
 
   // ─── Notification preferences ─────────────────────────────────────────────
-  /** GET /settings/notifications */
+  /** GET /admin/settings/notifications (store-wide alert channels per event). */
   async getNotificationPreferences(): Promise<NotificationPreference[]> {
-    if (!appConfig.useMocks) return api.get<NotificationPreference[]>('/settings/notifications');
-    return delay(db.notificationPreferences);
+    return mergePreferences(await adminApi.get<Partial<NotificationPreference>[]>('/settings/notifications'));
   },
 
-  /** PUT /settings/notifications */
+  /** PUT /admin/settings/notifications */
   async updateNotificationPreferences(prefs: NotificationPreference[]): Promise<NotificationPreference[]> {
-    if (!appConfig.useMocks) return api.put<NotificationPreference[]>('/settings/notifications', prefs);
-    db.notificationPreferences = prefs;
-    audit('Notification settings updated', 'Settings', 'Notification channels', '/settings/notifications');
-    return delay(prefs, 500);
+    const body = prefs.map((p) => ({ event: p.event, label: p.label, description: p.description, channels: p.channels }));
+    return mergePreferences(await adminApi.put<Partial<NotificationPreference>[]>('/settings/notifications', body));
   },
 
-  // ─── Admin users ──────────────────────────────────────────────────────────
-  /** GET /admin-users */
-  async getAdminUsers(search?: string): Promise<AdminUser[]> {
-    if (!appConfig.useMocks) return api.get<AdminUser[]>('/admin-users', { search });
-    return delay(db.adminUsers.filter((u) => matches([u.name, u.email, u.roleName], search)));
-  },
-
-  /** POST /admin-users — sends an invitation email server-side. */
-  async inviteAdmin(input: AdminUserInput): Promise<AdminUser> {
-    if (!appConfig.useMocks) return api.post<AdminUser>('/admin-users', input);
-    if (db.adminUsers.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) throw new ApiError('An admin with this email already exists.', 409);
-    const role = db.roles.find((r) => r.id === input.roleId);
-    if (!role) throw new NotFoundError('Role');
-    const user: AdminUser = { ...input, id: uid('adm'), roleName: role.name, status: 'invited', createdAt: now() };
-    db.adminUsers.push(user);
-    role.userCount++;
-    audit('Admin invited', 'Settings', user.email, '/settings/admin-users');
-    return delay(user, 600);
-  },
-
-  /** PATCH /admin-users/:id */
-  async updateAdmin(id: string, input: AdminUserInput): Promise<AdminUser> {
-    if (!appConfig.useMocks) return api.patch<AdminUser>(`/admin-users/${id}`, input);
-    const u = db.adminUsers.find((x) => x.id === id);
-    if (!u) throw new NotFoundError('Admin user');
-    const role = db.roles.find((r) => r.id === input.roleId);
-    if (!role) throw new NotFoundError('Role');
-    if (u.roleId === 'role_super_admin' && input.roleId !== 'role_super_admin' && db.adminUsers.filter((x) => x.roleId === 'role_super_admin' && x.status === 'active').length <= 1)
-      throw new ApiError('At least one active Super Admin is required.', 400);
-    Object.assign(u, input, { roleName: role.name });
-    for (const r of db.roles) r.userCount = db.adminUsers.filter((x) => x.roleId === r.id).length;
-    audit('Admin updated', 'Settings', u.email, '/settings/admin-users');
-    return delay(u);
-  },
-
-  /** PATCH /admin-users/:id/status */
-  async setAdminStatus(id: string, status: AdminUser['status']): Promise<AdminUser> {
-    if (!appConfig.useMocks) return api.patch<AdminUser>(`/admin-users/${id}/status`, { status });
-    const u = db.adminUsers.find((x) => x.id === id);
-    if (!u) throw new NotFoundError('Admin user');
-    if (u.id === getActor().id && status === 'deactivated') throw new ApiError('You cannot deactivate your own account.', 400);
-    u.status = status;
-    audit(status === 'deactivated' ? 'Admin deactivated' : 'Admin reactivated', 'Settings', u.email, '/settings/admin-users');
-    return delay(u);
-  },
-
-  /** POST /admin-users/:id/reset-access — revokes sessions and emails a reset link. */
-  async resetAccess(id: string): Promise<void> {
-    if (!appConfig.useMocks) return api.post(`/admin-users/${id}/reset-access`);
-    const u = db.adminUsers.find((x) => x.id === id);
-    if (!u) throw new NotFoundError('Admin user');
-    audit('Admin access reset', 'Settings', u.email, '/settings/admin-users');
-    await delay(null, 600);
-  },
-
-  // ─── Roles ────────────────────────────────────────────────────────────────
-  /** GET /roles */
-  async getRoles(): Promise<Role[]> {
-    if (!appConfig.useMocks) return api.get<Role[]>('/roles');
-    for (const r of db.roles) r.userCount = db.adminUsers.filter((x) => x.roleId === r.id).length;
-    return delay(db.roles);
-  },
-
-  /** POST /roles */
-  async createRole(input: RoleInput): Promise<Role> {
-    if (!appConfig.useMocks) return api.post<Role>('/roles', input);
-    const slug = slugify(input.name).replace(/-/g, '_');
-    if (db.roles.some((r) => r.slug === slug)) throw new ApiError('A role with this name already exists.', 409);
-    const role: Role = { ...input, id: uid('role'), slug, isSystem: false, userCount: 0, updatedAt: now() };
-    db.roles.push(role);
-    audit('Role created', 'Settings', role.name, '/settings/roles');
-    return delay(role);
-  },
-
-  /** PUT /roles/:id */
-  async updateRole(id: string, input: RoleInput): Promise<Role> {
-    if (!appConfig.useMocks) return api.put<Role>(`/roles/${id}`, input);
-    const role = db.roles.find((r) => r.id === id);
-    if (!role) throw new NotFoundError('Role');
-    if (role.slug === 'super_admin') throw new ApiError('Super Admin permissions cannot be modified.', 400);
-    Object.assign(role, { ...input, permissions: [...new Set<PermissionKey>(input.permissions)] }, { updatedAt: now() });
-    for (const u of db.adminUsers) if (u.roleId === id) u.roleName = role.name;
-    audit('Role permissions updated', 'Settings', role.name, '/settings/roles');
-    return delay(role, 500);
-  },
-
-  /** DELETE /roles/:id */
-  async deleteRole(id: string): Promise<void> {
-    if (!appConfig.useMocks) return api.delete(`/roles/${id}`);
-    const role = db.roles.find((r) => r.id === id);
-    if (!role) throw new NotFoundError('Role');
-    if (role.isSystem) throw new ApiError('Default roles cannot be deleted.', 400);
-    if (db.adminUsers.some((u) => u.roleId === id)) throw new ApiError('Reassign admins using this role before deleting it.', 409);
-    db.roles = db.roles.filter((r) => r.id !== id);
-    audit('Role deleted', 'Settings', role.name);
-    await delay(null);
-  },
-
-  // ─── Activity log ─────────────────────────────────────────────────────────
-  /** GET /activity */
-  async getActivityLogs(filters: ActivityFilters = {}): Promise<ActivityLog[]> {
-    if (!appConfig.useMocks) return api.get<ActivityLog[]>('/activity', { ...filters });
-    return delay(
-      db.activityLogs
-        .filter((a) => matches([a.action, a.record, a.adminName, a.module], filters.search))
-        .filter((a) => !filters.adminId || a.adminId === filters.adminId)
-        .filter((a) => !filters.module || a.module === filters.module)
-        .filter((a) => !filters.action || a.action === filters.action)
-        .filter((a) => !filters.from || a.createdAt >= filters.from)
-        .filter((a) => !filters.to || a.createdAt <= filters.to)
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    );
-  },
+  // ─── Compatibility shims (prefer staffService / roleService / activityService) ──
+  /** First 100 staff accounts, e.g. for filter dropdowns. */
+  getAdminUsers: (search?: string): Promise<AdminUser[]> => staffService.listAll(search),
+  getRoles: () => roleService.list(),
+  getActivityLogs: (filters: ActivityFilters = {}) => activityService.list(filters).then((r) => r.data),
 };

@@ -38,8 +38,8 @@ export function MediaSection({ images, update, error, productName }: { images: P
         if (!next.some((i) => i.role === 'main') && next[0]) next = assign(next, next[0].id, 'main');
         return next;
       });
-    } catch {
-      toast.error('Upload failed.', { description: 'Please try again.' });
+    } catch (e) {
+      toast.error('Could not add image.', { description: e instanceof Error ? e.message : 'Please try again.' });
     } finally {
       setUploading((u) => ({ ...u, [role]: u[role] - batch.length }));
     }
@@ -126,7 +126,7 @@ export function MediaSection({ images, update, error, productName }: { images: P
 
       <p className="flex items-start gap-2 rounded-lg bg-zinc-50 px-3 py-2.5 text-xs text-zinc-500">
         <Info size={14} className="mt-px shrink-0" aria-hidden />
-        Images are local previews in this demo. Once storage (S3 / Supabase) is connected they upload through presigned URLs.
+        New images upload when you save the product (JPEG, PNG, WebP or AVIF). Publishing requires a main image.
       </p>
 
       <ImagePreview images={previewList} index={preview} onClose={() => setPreview(null)} onIndexChange={setPreview} />

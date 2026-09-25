@@ -1,11 +1,9 @@
 /**
- * Service-layer configuration.
- *
- * While `USE_MOCK_API` is true every service resolves against the in-browser
- * mock database. Once the Node.js + Supabase API is live, set
- * VITE_USE_MOCK_API=false and VITE_API_URL — each service already contains the
- * matching HTTP call, so no UI code needs to change.
+ * Service-layer configuration. Every service talks to the SPORTX REST API through
+ * `services/api.ts`; the base URL comes from VITE_API_URL.
  */
+export { API_BASE, API_ORIGIN } from './api';
+
+/** @deprecated Use API_BASE from './api'. Kept for older imports. */
 export const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
-export const USE_MOCK_API = (import.meta.env.VITE_USE_MOCK_API as string | undefined) !== 'false' || !API_URL;

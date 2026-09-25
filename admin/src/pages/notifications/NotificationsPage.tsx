@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BellOff, CheckCheck, ChevronRight, Mail, MailOpen, Settings2, Trash2 } from 'lucide-react';
 import type { AdminNotification, NotificationType } from '@/types';
@@ -7,6 +8,9 @@ import { Checkbox, FilterSelect } from '@/components/forms';
 import { NOTIFICATION_ICON } from '@/components/navigation/Topbar';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
 import { useNotificationStore } from '@/store/notificationStore';
+import { notificationService } from '@/services/notificationService';
+import { useAsync } from '@/hooks/useAsync';
+import { Pagination } from '@/components/tables';
 import { confirm } from '@/store/confirmStore';
 import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
@@ -27,7 +31,7 @@ const plural = (n: number) => `${n} notification${n === 1 ? '' : 's'}`;
 const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
 
 function NotificationRow({ n, selected, onSelect, onOpen, onRead, onDelete }: { n: AdminNotification; selected: boolean; onSelect: (on: boolean) => void; onOpen: () => void; onRead: (read: boolean) => void; onDelete: () => void }) {
-  const meta = NOTIFICATION_ICON[n.type];
+  const meta = NOTIFICATION_ICON[n.type] ?? { icon: Bell, cls: 'bg-zinc-100 text-zinc-600' };
   return (
     <li className={cn('group flex items-start gap-3 px-4 py-3.5 transition-colors sm:px-5', selected ? 'bg-volt/[0.08]' : n.read ? 'hover:bg-zinc-50' : 'bg-volt/[0.04] hover:bg-volt/[0.08]')}>
       <Checkbox className="mt-2.5" ariaLabel={`Select “${n.title}”`} checked={selected} onChange={onSelect} />
@@ -42,7 +46,7 @@ function NotificationRow({ n, selected, onSelect, onOpen, onRead, onDelete }: { 
           </span>
           <span className={cn('mt-0.5 block text-[0.8125rem] leading-snug', n.read ? 'text-zinc-500' : 'text-zinc-700')}>{n.message}</span>
           <span className="mt-1.5 flex items-center gap-2 text-xs text-zinc-500">
-            <span className="rounded bg-zinc-100 px-1.5 py-px font-medium text-zinc-600">{TYPE_LABEL[n.type]}</span>
+            <span className="rounded bg-zinc-100 px-1.5 py-px font-medium text-zinc-600">{TYPE_LABEL[n.type] ?? n.type}</span>
             <time dateTime={n.createdAt} title={formatDateTime(n.createdAt)}>
               {formatRelative(n.createdAt)}
             </time>
@@ -63,18 +67,26 @@ function NotificationRow({ n, selected, onSelect, onOpen, onRead, onDelete }: { 
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  const { items, loaded, loading, error, load, setRead, markAllRead, remove } = useNotificationStore();
-  const { filters, setFilter, resetFilters } = useUrlFilters({ view: 'all', type: '' });
+  const { unreadCount, setRead, markAllRead, remove } = useNotificationStore();
+  const { filters, setFilter: setUrlFilter, setFilters, resetFilters } = useUrlFilters({ view: 'all', type: '', page: '' });
+  const setFilter = (k: 'view' | 'type', v: string) => setFilters({ [k]: v, page: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!loaded && !loading) void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [pageSize, setPageSize] = useState(20);
 
   const view = filters.view === 'unread' ? 'unread' : 'all';
-  const unreadCount = items.filter((n) => !n.read).length;
-  const visible = useMemo(() => items.filter((n) => (view === 'all' || !n.read) && (!filters.type || n.type === filters.type)), [items, view, filters.type]);
+  const page = Math.max(1, Number(filters.page) || 1);
+  const list = useAsync(() => notificationService.list({ page, pageSize, unread: view === 'unread', type: (filters.type as NotificationType) || '' }), [page, pageSize, view, filters.type]);
+  const { error } = list;
+  const loaded = Boolean(list.data);
+  const total = list.data?.total ?? 0;
+  const items = useMemo(() => list.data?.data ?? [], [list.data]);
+  const patchRows = (fn: (rows: AdminNotification[]) => AdminNotification[]) => list.setData((prev) => (prev ? { ...prev, data: fn(prev.data) } : prev));
+  const load = () => list.reload();
+  // In the Unread view, rows that become read drop out — refetch so the page stays full.
+  const refetchIfFiltered = () => {
+    if (view === 'unread') void list.reload(true);
+  };
+  const visible = items;
   const groups = useMemo(
     () =>
       [
@@ -106,6 +118,8 @@ export default function NotificationsPage() {
   const doRead = async (ids: string[], read: boolean, announce = true) => {
     try {
       await setRead(ids, read);
+      patchRows((rows) => rows.map((n) => (ids.includes(n.id) ? { ...n, read } : n)));
+      refetchIfFiltered();
       if (announce) toast.success(`${plural(ids.length)} marked as ${read ? 'read' : 'unread'}.`);
       setSelected(new Set());
     } catch {
@@ -116,6 +130,8 @@ export default function NotificationsPage() {
     if (ids.length > 1 && !(await confirm({ title: `Delete ${plural(ids.length)}?`, description: 'Deleted notifications can’t be restored.', confirmLabel: 'Delete', tone: 'danger' }))) return;
     try {
       await remove(ids);
+      if (ids.length >= items.length && page > 1) setUrlFilter('page', String(page - 1));
+      else void list.reload(true);
       toast.success(`${ids.length === 1 ? 'Notification' : plural(ids.length)} deleted.`);
       setSelected(new Set());
     } catch {
@@ -126,6 +142,8 @@ export default function NotificationsPage() {
   const doMarkAll = async () => {
     try {
       await markAllRead();
+      patchRows((rows) => rows.map((n) => ({ ...n, read: true })));
+      refetchIfFiltered();
       toast.success('All notifications marked as read.');
     } catch {
       toast.error('Could not mark notifications as read.');
@@ -133,7 +151,7 @@ export default function NotificationsPage() {
     }
   };
   const open = (n: AdminNotification) => {
-    if (!n.read) void setRead([n.id], true).catch(() => undefined);
+    if (!n.read) void setRead([n.id], true).then(() => patchRows((rows) => rows.map((x) => (x.id === n.id ? { ...x, read: true } : x)))).catch(() => undefined);
     if (n.link) navigate(n.link);
   };
 
@@ -168,7 +186,7 @@ export default function NotificationsPage() {
             value={view}
             onChange={(v) => setFilter('view', v)}
             items={[
-              { value: 'all', label: 'All', count: items.length },
+              { value: 'all', label: 'All', count: view === 'all' && !filters.type && loaded ? total : undefined },
               { value: 'unread', label: 'Unread', count: unreadCount },
             ]}
           />
@@ -250,6 +268,20 @@ export default function NotificationsPage() {
               </ul>
             </section>
           ))
+        )}
+        {loaded && total > 0 && (
+          <Pagination
+            page={page}
+            pageCount={Math.max(1, Math.ceil(total / pageSize))}
+            pageSize={pageSize}
+            total={total}
+            sizes={[10, 20, 50]}
+            onPageChange={(p) => setUrlFilter('page', p <= 1 ? '' : String(p))}
+            onPageSizeChange={(n) => {
+              setPageSize(n);
+              setUrlFilter('page', '');
+            }}
+          />
         )}
       </div>
     </div>

@@ -5,8 +5,8 @@ import { Avatar, DescriptionList, Panel, SkeletonText, StatusBadge } from '@/com
 import { Select } from '@/components/forms';
 import { TICKET_CATEGORIES, labelOf } from '@/constants/catalog';
 import { ORDER_STATUS, TICKET_PRIORITY, TICKET_STATUS } from '@/constants/status';
-import type { TicketPatch } from '@/services/supportService';
-import { orderService } from '@/services/orderService';
+import type { SupportAssignee, TicketPatch } from '@/services/supportService';
+import { customerService } from '@/services/customerService';
 import { useAsync } from '@/hooks/useAsync';
 import { formatDate, formatDateTime, formatMoney, formatRelative } from '@/utils/format';
 
@@ -15,14 +15,14 @@ const PRIORITY_OPTIONS = (Object.keys(TICKET_PRIORITY) as TicketPriority[]).map(
 
 export interface TicketSidebarProps {
   ticket: SupportTicket;
-  assignees: { id: string; name: string; roleName: string }[] | undefined;
+  assignees: SupportAssignee[] | undefined;
   onPatch: (patch: TicketPatch) => void;
   saving: boolean;
   canEdit: boolean;
 }
 
 function CustomerCard({ ticket: t }: { ticket: SupportTicket }) {
-  const orders = useAsync(() => orderService.getOrders({ customerId: t.customerId }), [t.customerId]);
+  const orders = useAsync(() => customerService.getCustomerOrders(t.customerId, { pageSize: 3 }), [t.customerId]);
   return (
     <Panel title="Customer" flush>
       <div className="flex items-center gap-3 px-5 py-4">
@@ -45,11 +45,11 @@ function CustomerCard({ ticket: t }: { ticket: SupportTicket }) {
           <SkeletonText lines={3} />
         ) : orders.error ? (
           <p className="text-[0.8125rem] text-zinc-500">Couldn’t load orders.</p>
-        ) : !orders.data?.length ? (
+        ) : !orders.data?.data.length ? (
           <p className="text-[0.8125rem] text-zinc-500">No orders yet.</p>
         ) : (
           <ul className="-mx-2 space-y-0.5">
-            {orders.data.slice(0, 3).map((o) => (
+            {orders.data.data.map((o) => (
               <li key={o.id}>
                 <Link to={`/orders/${o.id}`} className={`flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-zinc-50 ${o.number === t.orderNumber ? 'bg-volt/[0.12]' : ''}`}>
                   <span className="min-w-0 flex-1">
@@ -83,7 +83,7 @@ export function TicketSidebar({ ticket: t, assignees, onPatch, saving, canEdit }
         <div className="space-y-4">
           <Select label="Status" value={t.status} disabled={!canEdit || saving} onChange={(e) => onPatch({ status: e.target.value as TicketStatus })} options={STATUS_OPTIONS} />
           <Select label="Priority" value={t.priority} disabled={!canEdit || saving} onChange={(e) => onPatch({ priority: e.target.value as TicketPriority })} options={PRIORITY_OPTIONS} />
-          <Select label="Assigned to" value={t.assignedToId ?? ''} disabled={!canEdit || saving || !assignees} onChange={(e) => onPatch({ assignedToId: e.target.value })} options={assigneeOptions} />
+          <Select label="Assigned to" value={t.assignedToId ?? ''} disabled={!canEdit || saving || !assignees} onChange={(e) => onPatch({ assignedToId: e.target.value || null })} options={assigneeOptions} />
         </div>
       </Panel>
 
@@ -97,7 +97,7 @@ export function TicketSidebar({ ticket: t, assignees, onPatch, saving, canEdit }
             {
               label: 'Linked order',
               value: t.orderNumber ? (
-                <Link to={`/orders/${t.orderNumber}`} className="inline-flex items-center gap-1 font-medium text-zinc-900 hover:underline">
+                <Link to={`/orders/${t.orderId ?? t.orderNumber}`} className="inline-flex items-center gap-1 font-medium text-zinc-900 hover:underline">
                   {t.orderNumber} <ArrowUpRight size={13} aria-hidden />
                 </Link>
               ) : (

@@ -1,7 +1,7 @@
 import { Eye, ShoppingBag, Star, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ProductListItem } from '@/types';
-import { DemoBadge, Panel, Rating } from '@/components/common';
+import { Panel, Rating } from '@/components/common';
 import { formatMoney, formatNumber } from '@/utils/format';
 import { discountPercent } from '../PriceTag';
 
@@ -9,12 +9,12 @@ export function PerformanceStats({ p }: { p: ProductListItem }) {
   const conversion = p.views ? (p.unitsSold / p.views) * 100 : 0;
   const tiles: { label: string; value: string; icon: LucideIcon; foot?: React.ReactNode }[] = [
     { label: 'Units sold', value: formatNumber(p.unitsSold), icon: ShoppingBag, foot: `${conversion.toFixed(1)}% view-to-sale` },
-    { label: 'Revenue', value: formatMoney(p.revenue, { compact: true }), icon: Wallet, foot: p.unitsSold ? `${formatMoney(p.revenue / p.unitsSold)} avg. per unit` : 'No sales yet' },
-    { label: 'Product views', value: formatNumber(p.views, { compact: true }), icon: Eye, foot: 'Last 90 days' },
+    { label: 'Revenue', value: formatMoney(p.revenue, { compact: true }), icon: Wallet, foot: p.unitsSold && p.revenue ? `${formatMoney(p.revenue / p.unitsSold)} avg. per unit` : p.unitsSold ? 'See the product report for revenue' : 'No sales yet' },
+    { label: 'Product views', value: formatNumber(p.views, { compact: true }), icon: Eye, foot: 'All time' },
     { label: 'Rating', value: p.rating ? p.rating.toFixed(1) : '—', icon: Star, foot: p.reviewCount ? <Rating value={p.rating} size={12} /> : 'No reviews yet' },
   ];
   return (
-    <Panel title="Performance" actions={<DemoBadge />}>
+    <Panel title="Performance" description="Lifetime totals">
       <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((t) => (
           <div key={t.label} className="rounded-xl border border-zinc-200/80 p-4">

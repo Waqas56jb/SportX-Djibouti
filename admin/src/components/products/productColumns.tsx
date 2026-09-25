@@ -7,7 +7,7 @@ import { formatDateTime, formatNumber, formatRelative } from '@/utils/format';
 import { PriceTag } from './PriceTag';
 import { SORT_ACCESSORS } from './productListConfig';
 
-const mainImage = (p: ProductListItem) => p.images.find((i) => i.role === 'main') ?? p.images[0];
+const mainImage = (p: ProductListItem) => (p.image ? { url: p.image } : p.images.find((i) => i.role === 'main') ?? p.images[0]);
 
 export const productColumns: Column<ProductListItem>[] = [
   {
@@ -40,11 +40,10 @@ export const productColumns: Column<ProductListItem>[] = [
   {
     id: 'sku',
     header: 'SKU',
-    sortValue: SORT_ACCESSORS.sku,
     mobile: 'subtitle',
     cell: (p) => <span className="whitespace-nowrap font-mono text-xs text-zinc-600">{p.sku}</span>,
   },
-  { id: 'category', header: 'Category', sortValue: SORT_ACCESSORS.category, cell: (p) => <span className="text-zinc-700">{p.categoryName}</span> },
+  { id: 'category', header: 'Category', cell: (p) => <span className="text-zinc-700">{p.categoryName}</span> },
   {
     id: 'price',
     header: 'Price',
@@ -64,7 +63,7 @@ export const productColumns: Column<ProductListItem>[] = [
       </div>
     ),
   },
-  { id: 'status', header: 'Status', sortValue: SORT_ACCESSORS.status, mobile: 'aside', cell: (p) => <StatusBadge map={PRODUCT_STATUS} value={p.status} /> },
+  { id: 'status', header: 'Status', mobile: 'aside', cell: (p) => <StatusBadge map={PRODUCT_STATUS} value={p.status} /> },
   {
     id: 'updated',
     header: 'Updated',

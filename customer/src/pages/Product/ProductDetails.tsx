@@ -5,7 +5,6 @@ import { SITE } from '@/constants/site';
 import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/format';
-import { FREE_SHIPPING_THRESHOLD } from '@/constants/commerce';
 
 type TabKey = 'description' | 'features' | 'specifications' | 'size-guide' | 'shipping';
 
@@ -32,7 +31,7 @@ function Panel({ tab, product }: { tab: TabKey; product: Product }) {
     case 'specifications':
       return (
         <dl className="max-w-2xl divide-y divide-paper-200 border-y border-paper-200">
-          {[{ label: 'Brand', value: product.brand }, ...product.specifications, { label: 'SKU', value: product.variants[0]?.sku.split('-').slice(0, 3).join('-') ?? '—' }].map((s) => (
+          {[{ label: 'Brand', value: product.brand }, ...product.specifications, { label: 'SKU', value: product.variants[0]?.sku.split('-').slice(0, 3).join('-') || '—' }].map((s) => (
             <div key={s.label} className="grid grid-cols-[140px_1fr] gap-4 py-3.5 text-sm sm:grid-cols-[200px_1fr]">
               <dt className="font-semibold text-ink">{s.label}</dt>
               <dd className="text-ink-600">{s.value}</dd>
@@ -48,8 +47,22 @@ function Panel({ tab, product }: { tab: TabKey; product: Product }) {
           <div>
             <h3 className="heading-sm text-ink">Delivery</h3>
             <p className="mt-3">
-              We deliver across Djibouti. Delivery is free on orders over {formatPrice(FREE_SHIPPING_THRESHOLD)}; options and timings are confirmed at checkout.
+              We deliver across Djibouti.
+              {product.shipping?.freeShippingThreshold ? ` Delivery is free on orders over ${formatPrice(product.shipping.freeShippingThreshold)}.` : ''} Options and timings are confirmed at checkout.
             </p>
+            {product.shipping && product.shipping.methods.length > 0 && (
+              <ul className="mt-3 space-y-1.5 text-sm">
+                {product.shipping.methods.map((m) => (
+                  <li key={m.code} className="flex justify-between gap-4">
+                    <span>
+                      <span className="font-semibold text-ink">{m.name}</span>
+                      {m.maxDays > 0 && <span className="text-ink-500"> · {m.minDays === m.maxDays ? `${m.minDays} day` : `${m.minDays}–${m.maxDays} days`}</span>}
+                    </span>
+                    <span className="tabular-nums">{m.price === 0 ? 'Free' : formatPrice(m.price)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="mt-3">Prefer to collect? Choose Store Pickup and collect from {SITE.contact.addressLines.slice(0, 2).join(', ')}.</p>
           </div>
           <div>

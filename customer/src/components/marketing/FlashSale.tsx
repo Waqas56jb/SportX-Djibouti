@@ -33,7 +33,7 @@ export function FlashSale() {
 
   return (
     <section className="bg-ink text-white" aria-labelledby="flash-title">
-      <div className="container-site grid gap-12 py-16 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16">
+      <div className="container-site grid grid-cols-1 gap-12 py-16 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16">
         <div>
           <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-accent">
             <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden /> Limited release

@@ -29,14 +29,16 @@ function computeSteps(o: Order) {
   const flowIdx = (k: string) => ORDER_FLOW.indexOf(k as OrderStatus);
   const reached = Math.max(flowIdx(o.status), ...o.timeline.map((e) => flowIdx(e.kind)));
   const paid = ['paid', 'partially_refunded', 'refunded', 'authorized'].includes(o.payment.status);
-  return STEPS.map((s) => {
+  // Cash on delivery is collected at the door — the payment step is tracked in the payment panel instead.
+  const steps = o.payment.method === 'cash_on_delivery' ? STEPS.filter((s) => s.key !== 'payment_confirmed') : STEPS;
+  return steps.map((s) => {
     const ev = s.key === 'created' ? (lastEvent(o, 'created') ?? { createdAt: o.createdAt, actor: o.customerName, actorType: 'customer' as const }) : lastEvent(o, s.key);
     const done = s.key === 'created' || (s.key === 'payment_confirmed' ? Boolean(ev) || paid : flowIdx(s.key) <= reached);
     return { ...s, done, ev };
   });
 }
 
-/** Fulfilment stepper + "Update status" control (only ORDER_TRANSITIONS moves are offered). */
+/** Fulfilment stepper + "Update status" control (only the server's allowed transitions are offered). */
 export function OrderProgressPanel({ order, onStatus, busy }: { order: Order; onStatus: (s: OrderStatus, note?: string) => Promise<boolean>; busy?: boolean }) {
   const canEdit = usePermission('orders:edit');
   const steps = computeSteps(order);
@@ -73,7 +75,7 @@ export function OrderProgressPanel({ order, onStatus, busy }: { order: Order; on
         </div>
       ) : null}
 
-      <ol className="relative grid gap-0 md:grid-cols-7 md:gap-2" aria-label="Order progress">
+      <ol className={cn('relative grid gap-0 md:gap-2', steps.length === 7 ? 'md:grid-cols-7' : 'md:grid-cols-6')} aria-label="Order progress">
         {steps.map((s, i) => {
           const isCurrent = i === current && !closed;
           const nextDone = steps[i + 1]?.done;

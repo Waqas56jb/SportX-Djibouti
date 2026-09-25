@@ -1,153 +1,418 @@
-import type { Order, OrderFilters, OrderStatus, OrderTimelineEvent, RefundInput, ShippingUpdateInput } from '@/types';
-import { appConfig } from '@/constants/config';
-import { ORDER_STATUS, SHIPPING_STATUS } from '@/constants/status';
-import { uid } from '@/utils/id';
-import { formatMoney } from '@/utils/format';
-import { api, ApiError } from './http';
-import { audit, db, delay, getActor, matches, NotFoundError, now } from './mock/db';
+import type {
+  CancelOrderInput,
+  Order,
+  OrderCounts,
+  OrderFilters,
+  OrderItem,
+  OrderStatus,
+  OrderTimelineEvent,
+  Paginated,
+  PaymentMethod,
+  PaymentStatus,
+  Refund,
+  RefundInput,
+  RefundReason,
+  ShippingAddress,
+  ShippingStatus,
+  ShippingUpdateInput,
+  TimelineEventKind,
+} from '@/types';
+import { ORDER_STATUS } from '@/constants/status';
+import { adminApi, request } from './api';
 
-/** Allowed manual transitions. The backend must enforce the same rules. */
+/**
+ * Manual transitions staff may request (mirrors the server's ORDER_TRANSITIONS ∩ MANUAL_STATUSES).
+ * Used only for list rows; the detail view uses the server's `allowedTransitions`, and the
+ * server always has the final say.
+ */
 export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ['processing', 'cancelled'],
-  processing: ['packed', 'cancelled'],
+  payment_pending: ['cancelled'],
+  payment_confirmed: ['processing', 'cancelled', 'refund_requested'],
+  processing: ['packed', 'cancelled', 'refund_requested'],
   packed: ['shipped', 'processing', 'cancelled'],
   shipped: ['out_for_delivery', 'delivered'],
   out_for_delivery: ['delivered'],
-  delivered: [],
+  delivered: ['refund_requested'],
+  refund_requested: ['delivered', 'processing'],
   cancelled: [],
   refunded: [],
 };
 
-function find(id: string): Order {
-  const o = db.orders.find((x) => x.id === id || x.number === id);
-  if (!o) throw new NotFoundError('Order');
-  return o;
+// ─── DTOs (server shapes) ──────────────────────────────────────────────────
+
+interface OrderSummaryDto {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  shippingStatus: string;
+  customer: { id: string | null; firstName: string; lastName: string; email: string; phone: string };
+  itemsCount: number;
+  currency: string;
+  grandTotal: number;
+  refundedTotal: number;
+  shippingMethod: string;
+  image: string | null;
+  placedAt: string;
+  updatedAt: string;
 }
 
-function pushEvent(o: Order, ev: Omit<OrderTimelineEvent, 'id' | 'createdAt' | 'actor' | 'actorType'> & Partial<Pick<OrderTimelineEvent, 'actorType'>>) {
-  const actor = getActor();
-  o.timeline.push({ id: uid('ev'), actor: actor.name, actorType: ev.actorType ?? 'admin', createdAt: now(), ...ev });
-  o.updatedAt = now();
+interface OrderDetailDto extends OrderSummaryDto {
+  items: {
+    id: string;
+    productId: string;
+    variantId: string;
+    productName: string;
+    productSlug: string | null;
+    brandName: string | null;
+    sku: string;
+    color: string | null;
+    size: string | null;
+    imageUrl: string | null;
+    quantity: number;
+    originalUnitPrice: number;
+    unitPrice: number;
+    discountTotal: number;
+    lineTotal: number;
+  }[];
+  totals: { subtotal: number; productDiscount: number; couponCode: string | null; couponDiscount: number; shipping: number; tax: number; grandTotal: number; refunded: number; net: number };
+  shipping: {
+    methodCode: string;
+    methodName: string;
+    carrier: string | null;
+    trackingNumber: string | null;
+    status: string;
+    cost: number;
+    estimatedDeliveryAt: string | null;
+    shippedAt: string | null;
+    deliveredAt: string | null;
+    address: Record<string, string | null> | null;
+  };
+  payment: {
+    id: string;
+    provider: string;
+    method: string;
+    status: string;
+    amount: number;
+    refundedAmount: number;
+    currency: string;
+    cardBrand: string | null;
+    cardLast4: string | null;
+    paidAt: string | null;
+    failureReason: string | null;
+    providerPaymentId?: string | null;
+  } | null;
+  timeline: { status: string; timestamp: string; actorType: string; note: string | null; actor: string }[];
+  refunds: { id: string; amount: number; reason: string; status: string; createdAt: string; note?: string | null; providerReference?: string | null; restock?: boolean; requestedBy?: string | null; failureReason?: string | null }[];
+  events: { id: string; kind: string; title: string; description: string | null; actor: string; actorType: string; createdAt: string }[];
+  allowedTransitions: string[];
+  customerNote: string | null;
+  paymentExpiresAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  createdAt: string;
 }
+
+// ─── Mapping ───────────────────────────────────────────────────────────────
+
+const lower = <T extends string>(v: string | null | undefined, fallback: T): T => (v ? (v.toLowerCase() as T) : fallback);
+const upper = (v: string | undefined | null) => (v ? v.toUpperCase() : undefined);
+const opt = <T>(v: T | null | undefined): T | undefined => (v === null ? undefined : v);
+const actorType = (v: string | null | undefined): OrderTimelineEvent['actorType'] => (v === 'ADMIN' ? 'admin' : v === 'CUSTOMER' ? 'customer' : 'system');
+
+function mapAddress(a: Record<string, string | null> | null): ShippingAddress | null {
+  if (!a) return null;
+  return {
+    fullName: [a.firstName, a.lastName].filter(Boolean).join(' '),
+    phone: a.phone ?? '',
+    line1: a.addressLine1 ?? '',
+    line2: a.addressLine2 ?? undefined,
+    district: a.district ?? undefined,
+    city: a.city ?? '',
+    country: a.country ?? '',
+    postalCode: a.postalCode ?? undefined,
+  };
+}
+
+function mapSummary(d: OrderSummaryDto): Order {
+  const method = lower<PaymentMethod>(d.paymentMethod, 'card');
+  return {
+    id: d.id,
+    number: d.orderNumber,
+    customerId: d.customer.id,
+    customerName: `${d.customer.firstName ?? ''} ${d.customer.lastName ?? ''}`.trim() || d.customer.email,
+    customerEmail: d.customer.email,
+    customerPhone: d.customer.phone ?? '',
+    items: [],
+    itemsCount: d.itemsCount,
+    image: opt(d.image),
+    subtotal: d.grandTotal,
+    discount: 0,
+    productDiscount: 0,
+    couponDiscount: 0,
+    shippingCost: 0,
+    tax: 0,
+    total: d.grandTotal,
+    refundedTotal: d.refundedTotal,
+    currency: d.currency,
+    status: lower<OrderStatus>(d.status, 'pending'),
+    payment: {
+      id: '',
+      method,
+      provider: '',
+      status: lower<PaymentStatus>(d.paymentStatus, 'pending'),
+      amount: d.grandTotal,
+      refundedAmount: d.refundedTotal,
+      currency: d.currency,
+      transactionRef: '',
+    },
+    shipping: { method: d.shippingMethod, status: lower<ShippingStatus>(d.shippingStatus, 'pending'), cost: 0, address: null },
+    timeline: [],
+    refunds: [],
+    summary: true,
+    createdAt: d.placedAt,
+    updatedAt: d.updatedAt,
+  };
+}
+
+/** Merges status history and order events (payments, tracking, refunds, notes) into one feed. */
+function mapTimeline(d: OrderDetailDto): OrderTimelineEvent[] {
+  const history: OrderTimelineEvent[] = d.timeline.map((h, i) => {
+    const status = lower<OrderStatus>(h.status, 'pending');
+    const first = i === 0;
+    return {
+      id: `h${i}-${h.timestamp}`,
+      kind: first && (status === 'pending' || status === 'payment_pending') ? 'created' : status,
+      title: first && (status === 'pending' || status === 'payment_pending') ? 'Order placed' : ORDER_STATUS[status]?.label ?? h.status,
+      description: h.note ?? undefined,
+      actor: h.actor,
+      actorType: actorType(h.actorType),
+      createdAt: h.timestamp,
+    };
+  });
+  const EVENT_KIND: Record<string, TimelineEventKind> = { note: 'note', tracking: 'tracking_added', payment: 'payment', refund: 'refund_completed' };
+  const events: OrderTimelineEvent[] = (d.events ?? []).map((e) => ({
+    id: e.id,
+    kind: e.kind === 'payment' && /fail/i.test(e.title) ? 'payment_failed' : (EVENT_KIND[e.kind] ?? 'note'),
+    title: e.title,
+    description: e.description ?? undefined,
+    actor: e.actor,
+    actorType: actorType(e.actorType),
+    createdAt: e.createdAt,
+  }));
+  return [...history, ...events].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+function mapDetail(d: OrderDetailDto): Order {
+  const base = mapSummary(d);
+  const t = d.totals;
+  const items: OrderItem[] = d.items.map((i) => ({
+    id: i.id,
+    productId: i.productId,
+    variantId: i.variantId,
+    productName: i.productName,
+    productSlug: opt(i.productSlug),
+    brandName: opt(i.brandName),
+    variantLabel: [i.color, i.size].filter(Boolean).join(' / ') || 'Default',
+    sku: i.sku,
+    image: opt(i.imageUrl),
+    quantity: i.quantity,
+    originalUnitPrice: i.originalUnitPrice,
+    unitPrice: i.unitPrice,
+    discount: i.discountTotal,
+    subtotal: i.lineTotal,
+  }));
+  const p = d.payment;
+  const refunds: Refund[] = d.refunds.map((r) => ({
+    id: r.id,
+    orderId: d.id,
+    amount: r.amount,
+    reason: lower<RefundReason>(r.reason, 'other'),
+    note: opt(r.note),
+    status: lower<Refund['status']>(r.status, 'requested'),
+    restock: r.restock,
+    providerReference: opt(r.providerReference),
+    failureReason: opt(r.failureReason),
+    requestedBy: r.requestedBy ?? 'Staff',
+    createdAt: r.createdAt,
+  }));
+  return {
+    ...base,
+    summary: false,
+    items,
+    subtotal: t.subtotal,
+    productDiscount: t.productDiscount,
+    couponDiscount: t.couponDiscount,
+    discount: t.productDiscount + t.couponDiscount,
+    couponCode: opt(t.couponCode),
+    shippingCost: t.shipping,
+    tax: t.tax,
+    total: t.grandTotal,
+    refundedTotal: t.refunded,
+    payment: p
+      ? {
+          id: p.id,
+          method: lower<PaymentMethod>(p.method, base.payment.method),
+          provider: p.provider,
+          // The order-level payment status is authoritative for the badge/actions.
+          status: base.payment.status,
+          amount: p.amount,
+          refundedAmount: p.refundedAmount,
+          currency: p.currency,
+          transactionRef: p.providerPaymentId ?? '',
+          cardBrand: opt(p.cardBrand),
+          cardLast4: opt(p.cardLast4),
+          paidAt: opt(p.paidAt),
+          failureReason: opt(p.failureReason),
+        }
+      : { ...base.payment, amount: t.grandTotal, refundedAmount: t.refunded },
+    shipping: {
+      method: d.shipping.methodName,
+      methodCode: d.shipping.methodCode,
+      carrier: opt(d.shipping.carrier),
+      trackingNumber: opt(d.shipping.trackingNumber),
+      status: lower<ShippingStatus>(d.shipping.status, 'pending'),
+      cost: d.shipping.cost,
+      estimatedDelivery: opt(d.shipping.estimatedDeliveryAt),
+      shippedAt: opt(d.shipping.shippedAt),
+      deliveredAt: opt(d.shipping.deliveredAt),
+      address: mapAddress(d.shipping.address),
+    },
+    timeline: mapTimeline(d),
+    refunds,
+    customerNote: opt(d.customerNote),
+    cancelReason: opt(d.cancelReason),
+    cancelledAt: opt(d.cancelledAt),
+    paymentExpiresAt: opt(d.paymentExpiresAt),
+    allowedTransitions: d.allowedTransitions.map((s) => lower<OrderStatus>(s, 'pending')),
+    createdAt: d.placedAt ?? d.createdAt,
+  };
+}
+
+function toQuery(f: OrderFilters) {
+  return {
+    page: f.page ?? 1,
+    limit: f.pageSize ?? 20,
+    search: f.search || undefined,
+    status: upper(f.status),
+    payment_status: upper(f.paymentStatus),
+    shipping_status: upper(f.shippingStatus),
+    payment_method: upper(f.paymentMethod),
+    customer_id: f.customerId,
+    date_from: f.from,
+    date_to: f.to,
+    min_total: f.minTotal,
+    max_total: f.maxTotal,
+    sort: f.sortBy,
+    order: f.sortDir,
+  };
+}
+
+// ─── Service ───────────────────────────────────────────────────────────────
 
 export const orderService = {
-  /** GET /orders */
+  /** GET /admin/orders — one server page of summary rows. */
+  async listOrders(filters: OrderFilters = {}, signal?: AbortSignal): Promise<Paginated<Order>> {
+    const res = await adminApi.page<OrderSummaryDto>('/orders', toQuery(filters), signal);
+    return { data: res.data.map(mapSummary), total: res.pagination.total, page: res.pagination.page, pageSize: res.pagination.limit };
+  },
+
+  /** Convenience for widgets: first page of summary rows (default 20). */
   async getOrders(filters: OrderFilters = {}): Promise<Order[]> {
-    if (!appConfig.useMocks) return api.get<Order[]>('/orders', { ...filters });
-    const list = db.orders
-      .filter((o) => matches([o.number, o.customerName, o.customerEmail, o.customerPhone, o.customerPhone.replace(/\s/g, '')], filters.search))
-      .filter((o) => !filters.status || o.status === filters.status || (filters.status === 'shipped' && o.status === 'out_for_delivery'))
-      .filter((o) => !filters.paymentStatus || o.payment.status === filters.paymentStatus)
-      .filter((o) => !filters.shippingStatus || o.shipping.status === filters.shippingStatus)
-      .filter((o) => !filters.from || o.createdAt >= filters.from)
-      .filter((o) => !filters.to || o.createdAt <= filters.to)
-      .filter((o) => filters.minTotal === undefined || o.total >= filters.minTotal)
-      .filter((o) => filters.maxTotal === undefined || o.total <= filters.maxTotal)
-      .filter((o) => !filters.customerId || o.customerId === filters.customerId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return delay(list);
+    return (await orderService.listOrders(filters)).data;
   },
 
-  /** GET /orders/:id (accepts id or order number) */
+  /** GET /admin/orders/:id (accepts id or order number) */
   async getOrder(id: string): Promise<Order> {
-    if (!appConfig.useMocks) return api.get<Order>(`/orders/${id}`);
-    return delay(find(id));
+    return mapDetail(await adminApi.get<OrderDetailDto>(`/orders/${encodeURIComponent(id)}`));
   },
 
-  /** GET /orders/counts — per-status counts for tabs. */
-  async getStatusCounts(): Promise<Record<OrderStatus | 'all', number>> {
-    if (!appConfig.useMocks) return api.get('/orders/counts');
-    const counts = { all: db.orders.length } as Record<OrderStatus | 'all', number>;
-    for (const s of Object.keys(ORDER_STATUS) as OrderStatus[]) counts[s] = db.orders.filter((o) => o.status === s).length;
-    return delay(counts, 150);
+  /** GET /admin/orders/counts — per-status counts for tabs. */
+  async getStatusCounts(): Promise<OrderCounts> {
+    const raw = await adminApi.get<Record<string, number>>('/orders/counts');
+    return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v])) as OrderCounts;
   },
 
-  /** PATCH /orders/:id/status */
+  /** PATCH /admin/orders/:id/status — the server validates the transition and applies side effects. */
   async updateOrderStatus(id: string, status: OrderStatus, note?: string): Promise<Order> {
-    if (!appConfig.useMocks) return api.patch<Order>(`/orders/${id}/status`, { status, note });
-    const o = find(id);
-    if (!ORDER_TRANSITIONS[o.status].includes(status)) throw new ApiError(`Cannot move an order from ${ORDER_STATUS[o.status].label} to ${ORDER_STATUS[status].label}.`, 400, 'invalid_transition');
-    o.status = status;
-    if (status === 'shipped') {
-      o.shipping.status = 'in_transit';
-      o.shipping.shippedAt = now();
-      if (o.payment.status === 'authorized') o.payment.status = 'paid';
-    }
-    if (status === 'packed') o.shipping.status = 'label_created';
-    if (status === 'out_for_delivery') o.shipping.status = 'out_for_delivery';
-    if (status === 'delivered') {
-      o.shipping.status = 'delivered';
-      o.shipping.deliveredAt = now();
-      if (o.payment.method === 'cash_on_delivery' && o.payment.status === 'pending') {
-        o.payment.status = 'paid';
-        o.payment.paidAt = now();
-      }
-    }
-    if (status === 'cancelled') {
-      o.shipping.status = 'not_shipped';
-      // Release reserved stock back to available.
-      for (const it of o.items) {
-        const v = db.products.flatMap((p) => p.variants).find((x) => x.id === it.variantId);
-        if (v) v.reserved = Math.max(0, v.reserved - it.quantity);
-      }
-      if (o.payment.status === 'authorized') o.payment.status = 'refunded';
-    }
-    pushEvent(o, { kind: status, title: ORDER_STATUS[status].label, description: note || undefined });
-    audit('Order status changed', 'Orders', `${o.number} → ${ORDER_STATUS[status].label}`, `/orders/${o.id}`);
-    return delay(o, 500);
+    return mapDetail(await adminApi.patch<OrderDetailDto>(`/orders/${id}/status`, { status: status.toUpperCase(), note: note || undefined }));
   },
 
-  /** POST /orders/:id/refunds — frontend phase records the request only; no money moves. */
-  async createRefund(input: RefundInput): Promise<Order> {
-    if (!appConfig.useMocks) return api.post<Order>(`/orders/${input.orderId}/refunds`, input);
-    const o = find(input.orderId);
-    const refundable = o.payment.amount - o.payment.refundedAmount;
-    if (!['paid', 'partially_refunded', 'refund_pending'].includes(o.payment.status)) throw new ApiError('Only captured payments can be refunded.', 400);
-    if (input.amount <= 0 || input.amount > refundable) throw new ApiError(`Refund amount must be between 1 and ${formatMoney(refundable)}.`, 400);
-    const actor = getActor();
-    o.refunds.push({ id: uid('rf'), orderId: o.id, amount: input.amount, reason: input.reason, note: input.note, status: 'completed', requestedBy: actor.name, createdAt: now() });
-    o.payment.refundedAmount += input.amount;
-    const full = o.payment.refundedAmount >= o.payment.amount;
-    o.payment.status = full ? 'refunded' : 'partially_refunded';
-    for (const r of o.refunds) if (r.status === 'requested') r.status = 'completed';
-    if (full) o.status = 'refunded';
-    if (input.restock) {
-      for (const it of o.items) {
-        const v = db.products.flatMap((p) => p.variants).find((x) => x.id === it.variantId);
-        if (v) v.stock += it.quantity;
-      }
-    }
-    pushEvent(o, { kind: 'refund_completed', title: full ? 'Refund issued (full)' : 'Partial refund issued', description: `${formatMoney(input.amount)}${input.note ? ` — ${input.note}` : ''}` });
-    audit('Refund issued', 'Orders', `${o.number} (${formatMoney(input.amount)})`, `/orders/${o.id}`);
-    return delay(o, 700);
+  /** POST /admin/orders/:id/cancel — releases or restocks inventory; optionally refunds captured payments. */
+  async cancelOrder(id: string, input: CancelOrderInput): Promise<Order> {
+    return mapDetail(await adminApi.post<OrderDetailDto>(`/orders/${id}/cancel`, input));
   },
 
-  /** PATCH /orders/:id/shipping */
+  /** POST /admin/orders/:id/refund — idempotent via Idempotency-Key. Returns the refund status and the updated order. */
+  async createRefund(input: RefundInput): Promise<{ order: Order; refundStatus: Refund['status'] }> {
+    const res = await adminApi.post<{ refund: { status: string }; order: OrderDetailDto }>(
+      `/orders/${input.orderId}/refund`,
+      {
+        type: input.type,
+        amount: input.type === 'partial' ? input.amount : undefined,
+        reason: input.reason.toUpperCase(),
+        note: input.note || undefined,
+        restock: input.restock,
+      },
+      { idempotencyKey: input.idempotencyKey },
+    );
+    return { order: mapDetail(res.order), refundStatus: lower<Refund['status']>(res.refund.status, 'processing') };
+  },
+
+  /** PATCH /admin/orders/:id/payment-status — offline methods (COD, bank transfer) only. */
+  async setPaymentStatus(id: string, status: 'paid' | 'failed', note?: string): Promise<Order> {
+    return mapDetail(await adminApi.patch<OrderDetailDto>(`/orders/${id}/payment-status`, { status: status.toUpperCase(), note: note || undefined }));
+  },
+
+  /** PATCH /admin/orders/:id/shipping — carrier, tracking number, ETA. */
   async updateShipping(id: string, input: ShippingUpdateInput): Promise<Order> {
-    if (!appConfig.useMocks) return api.patch<Order>(`/orders/${id}/shipping`, input);
-    const o = find(id);
-    const hadTracking = Boolean(o.shipping.trackingNumber);
-    Object.assign(o.shipping, Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)));
-    if (input.trackingNumber && !hadTracking) {
-      pushEvent(o, { kind: 'tracking_added', title: 'Tracking number added', description: `${input.carrier ?? o.shipping.carrier ?? 'Carrier'} · ${input.trackingNumber}` });
-      audit('Tracking number added', 'Orders', o.number, `/orders/${o.id}`);
-    } else if (input.status) {
-      pushEvent(o, { kind: 'note', title: `Shipping: ${SHIPPING_STATUS[input.status].label}` });
-      audit('Shipping updated', 'Orders', o.number, `/orders/${o.id}`);
-    }
-    return delay(o);
+    return mapDetail(
+      await adminApi.patch<OrderDetailDto>(`/orders/${id}/shipping`, {
+        carrier: input.carrier || undefined,
+        trackingNumber: input.trackingNumber || undefined,
+        estimatedDeliveryAt: input.estimatedDelivery,
+      }),
+    );
   },
 
-  /** POST /orders/:id/notes */
+  /** POST /admin/orders/:id/notes — internal note on the activity feed. */
   async addNote(id: string, note: string): Promise<Order> {
-    if (!appConfig.useMocks) return api.post<Order>(`/orders/${id}/notes`, { note });
-    const o = find(id);
-    pushEvent(o, { kind: 'note', title: 'Internal note', description: note });
-    return delay(o, 250);
-  },
-
-  /** GET /orders/:id/invoice — backend will return a PDF. Frontend phase prints the page. */
-  invoiceUrl(id: string) {
-    return `${appConfig.apiBaseUrl}/orders/${id}/invoice.pdf`;
+    return mapDetail(await adminApi.post<OrderDetailDto>(`/orders/${id}/notes`, { note }));
   },
 };
+
+/** Offline payment methods whose payment status staff may set manually. Card/mobile money are provider-confirmed. */
+export const isOfflinePayment = (method: PaymentMethod) => method === 'cash_on_delivery' || method === 'bank_transfer';
+
+// ─── Invoice branding ──────────────────────────────────────────────────────
+
+export interface InvoiceBrand {
+  name: string;
+  tagline: string;
+  addressLines: string[];
+  phone: string;
+  email: string;
+  country: string;
+  logoUrl: string | null;
+}
+
+let brandCache: { at: number; value: InvoiceBrand } | null = null;
+
+/** Store identity for printed invoices, from the public GET /store settings (cached 5 min). */
+export async function getInvoiceBrand(): Promise<InvoiceBrand> {
+  if (brandCache && Date.now() - brandCache.at < 300_000) return brandCache.value;
+  const s = await request<{ storeName: string; tagline: string | null; supportEmail: string | null; phone: string | null; address: string[]; country: string | null; logoUrl: string | null }>('/store');
+  const value: InvoiceBrand = {
+    name: s.storeName,
+    tagline: s.tagline ?? '',
+    addressLines: [...(s.address ?? []), s.country].filter((x): x is string => Boolean(x)),
+    phone: s.phone ?? '',
+    email: s.supportEmail ?? '',
+    country: s.country ?? '',
+    logoUrl: s.logoUrl,
+  };
+  brandCache = { at: Date.now(), value };
+  return value;
+}

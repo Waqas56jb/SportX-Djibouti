@@ -58,3 +58,12 @@ export function useReportRange(defaultPreset: DateRangePreset = '30d') {
 }
 
 export type ReportRangeState = ReturnType<typeof useReportRange>;
+
+export type GroupBy = '' | 'hour' | 'day' | 'week' | 'month';
+
+/** Optional bucket override (`?groupBy=week`); '' lets the API pick one for the range. */
+export function useGroupBy() {
+  const { filters, setFilter } = useUrlFilters({ groupBy: '' });
+  const value = (['hour', 'day', 'week', 'month'].includes(filters.groupBy) ? filters.groupBy : '') as GroupBy;
+  return { groupBy: value, setGroupBy: (v: GroupBy) => setFilter('groupBy', v), bucket: (value || undefined) as Exclude<GroupBy, ''> | undefined };
+}

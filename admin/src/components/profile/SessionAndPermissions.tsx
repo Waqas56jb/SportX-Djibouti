@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Check, LogOut, Minus, Monitor, Smartphone } from 'lucide-react';
+import { useMemo } from 'react';
+import { Check, Minus, Monitor, Smartphone } from 'lucide-react';
 import type { AuthSession, PermissionAction } from '@/types';
-import { Badge, Button, Panel } from '@/components/common';
+import { Badge, Panel } from '@/components/common';
 import { PERMISSION_ACTIONS, PERMISSION_MODULES } from '@/constants/permissions';
-import { confirm } from '@/store/confirmStore';
-import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 import { formatDateTime } from '@/utils/format';
 
@@ -14,11 +12,6 @@ function describeDevice(): { name: string; mobile: boolean } {
   const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Unknown OS';
   return { name: `${browser} on ${os}`, mobile: /Android|iPhone|iPad/.test(ua) };
 }
-
-const OTHER_SESSIONS = [
-  { id: 's2', device: 'Safari on iOS', place: 'Djibouti City · demo', last: 'Active 2h ago', mobile: true },
-  { id: 's3', device: 'Chrome on macOS', place: 'Djibouti City · demo', last: 'Active 3d ago', mobile: false },
-];
 
 function SessionRow({ mobile, title, sub, current }: { mobile: boolean; title: string; sub: string; current?: boolean }) {
   const Icon = mobile ? Smartphone : Monitor;
@@ -38,39 +31,20 @@ function SessionRow({ mobile, title, sub, current }: { mobile: boolean; title: s
   );
 }
 
+/**
+ * Current device only: the API has no endpoint to list or revoke individual sessions. Changing the
+ * password signs out every other device; an admin with settings access can reset someone's access.
+ */
 export function SessionsPanel({ session }: { session: AuthSession }) {
   const device = useMemo(describeDevice, []);
-  const [others, setOthers] = useState(OTHER_SESSIONS);
-  const [pending, setPending] = useState(false);
-
-  const signOutOthers = async () => {
-    if (!(await confirm({ title: 'Sign out of other sessions?', description: 'Every other browser and device will need to sign in again. This device stays signed in.', confirmLabel: 'Sign out others' }))) return;
-    setPending(true);
-    // Frontend phase: API → POST /auth/sessions/revoke-others
-    await new Promise((r) => setTimeout(r, 500));
-    const n = others.length;
-    setOthers([]);
-    setPending(false);
-    toast.success(`Signed out of ${n} other session${n === 1 ? '' : 's'}.`);
-  };
-
   return (
-    <Panel
-      title="Active sessions"
-      description="Where your account is signed in."
-      actions={
-        <Button size="sm" variant="secondary" icon={LogOut} loading={pending} disabled={!others.length} onClick={() => void signOutOthers()}>
-          Sign out of other sessions
-        </Button>
-      }
-    >
+    <Panel title="Sessions" description="Where you are signed in right now.">
       <ul className="-my-3 divide-y divide-zinc-100">
-        <SessionRow current mobile={device.mobile} title={device.name} sub={`Active now · session expires ${formatDateTime(session.expiresAt)}`} />
-        {others.map((s) => (
-          <SessionRow key={s.id} mobile={s.mobile} title={s.device} sub={`${s.place} · ${s.last}`} />
-        ))}
+        <SessionRow current mobile={device.mobile} title={device.name} sub={session.expiresAt ? `Active now · access token renews automatically (current one expires ${formatDateTime(session.expiresAt)})` : 'Active now'} />
       </ul>
-      {!others.length && <p className="mt-4 text-xs text-zinc-500">No other active sessions.</p>}
+      <p className="mt-4 text-xs text-zinc-500">
+        To sign out of every other device, <a href="#password" className="font-medium text-zinc-700 underline-offset-2 hover:underline">change your password</a>. Other active sessions aren’t listed here.
+      </p>
     </Panel>
   );
 }

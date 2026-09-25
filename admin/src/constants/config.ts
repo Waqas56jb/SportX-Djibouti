@@ -1,10 +1,13 @@
+import { API_BASE } from '@/services/api';
+
 /**
  * Public runtime configuration. Only VITE_* variables are exposed to the browser,
  * so this file must never read or contain secrets.
+ *
+ * The admin talks to the real SPORTX API (VITE_API_URL). `useMocks` is always false.
  */
 export const appConfig = {
-  apiBaseUrl: (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '',
-  useMocks: (import.meta.env.VITE_USE_MOCKS as string | undefined) !== 'false',
-  /** Simulated network latency for mock services, in ms. */
-  mockLatency: 350,
+  /** e.g. http://localhost:4100/api/v1 */
+  apiBaseUrl: API_BASE,
+  useMocks: false,
 } as const;

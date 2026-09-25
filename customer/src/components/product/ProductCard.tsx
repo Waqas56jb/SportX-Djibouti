@@ -2,9 +2,9 @@ import { Eye, ShoppingBag } from 'lucide-react';
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Price, Rating, SmartImage } from '@/components/common';
-import { CATEGORY_LABELS } from '@/constants/labels';
 import { productPath } from '@/constants/routes';
 import { useCart } from '@/hooks/useCart';
+import { categoryLabel } from '@/services/productService';
 import { useUiStore } from '@/store/uiStore';
 import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
@@ -37,22 +37,23 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
   const [activeColor, setActiveColor] = useState<string | undefined>(undefined);
 
   const pct = discountPercent(product.price, product.compareAtPrice);
-  const soldOut = product.stock <= 0;
-  const state = stockState(product.stock);
-  const sizesInStock = availableSizes(product);
+  const hasVariants = product.variants.length > 0;
+  const soldOut = product.stockStatus ? product.stockStatus === 'OUT_OF_STOCK' : product.stock <= 0;
+  const state = product.stockStatus === 'LOW_STOCK' ? 'low-stock' : soldOut ? 'out-of-stock' : product.stockStatus ? 'in-stock' : stockState(product.stock);
+  const sizesInStock = hasVariants ? availableSizes(product) : product.sizes;
   const colorImage = activeColor ? product.images[product.colors.find((c) => c.name === activeColor)?.imageIndex ?? 0] : undefined;
-  const primary = colorImage ?? product.images[0];
+  const primary = colorImage ?? product.images[0] ?? { url: '', alt: product.name };
   const secondary = product.images.find((img) => img.url !== primary.url);
   const href = productPath(product.slug);
   const dark = tone === 'dark';
 
   const handleQuickAdd = () => {
-    // Items needing a size choice go through Quick View; one-size items add directly.
-    if (requiresSizeSelection(product) || product.colors.length > 1) {
+    // List items carry no variant data, and sized / multi-colour items need a choice: use Quick View.
+    if (!hasVariants || requiresSizeSelection(product) || product.colors.length > 1) {
       openQuickView(product.slug);
       return;
     }
-    addProduct(product, { color: firstAvailableColor(product) });
+    void addProduct(product, { color: firstAvailableColor(product) });
   };
 
   return (
@@ -128,7 +129,7 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
       <div className="flex flex-1 flex-col pt-4">
         <div className="flex items-center justify-between gap-2">
           <p className={cn('truncate text-2xs font-semibold uppercase tracking-[0.14em]', dark ? 'text-white/60' : 'text-ink-500')}>
-            {CATEGORY_LABELS[product.category]}
+            {categoryLabel(product)}
           </p>
           {product.colors.length > 1 && (
             <div className="relative z-10 flex items-center gap-1" aria-label={`${product.colors.length} colours available`}>
@@ -144,7 +145,7 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
                     'relative h-3.5 w-3.5 rounded-full border transition-transform after:absolute after:-inset-2 hover:scale-125',
                     dark ? 'border-white/30' : 'border-ink/15',
                     activeColor === c.name && 'ring-1 ring-current ring-offset-1',
-                    stockFor(product, c.name) === 0 && 'opacity-40',
+                    hasVariants && stockFor(product, c.name) === 0 && 'opacity-40',
                   )}
                   style={{ backgroundColor: c.hex }}
                 />
@@ -168,7 +169,9 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
             : state === 'low-stock'
               ? `Only ${product.stock} left`
               : requiresSizeSelection(product)
-                ? `${sizesInStock.length} of ${product.sizes.length} sizes available`
+                ? hasVariants
+                  ? `${sizesInStock.length} of ${product.sizes.length} sizes available`
+                  : `${product.sizes.length} sizes`
                 : 'In stock'}
         </p>
       </div>

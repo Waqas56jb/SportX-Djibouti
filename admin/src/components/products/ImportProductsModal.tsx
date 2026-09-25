@@ -88,12 +88,10 @@ export function ImportProductsModal({ open, onClose }: { open: boolean; onClose:
 
   const submit = async () => {
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
     setSubmitting(false);
-    toast.info(`${validCount} product rows queued for import.`, {
-      description: 'Frontend demo: nothing was created. The backend will process the file and notify you when done.',
+    toast.info('Server-side CSV import is not available yet.', {
+      description: `${validCount} valid row(s) checked — nothing was created. Add products one by one for now.`,
     });
-    onClose();
   };
 
   return (
@@ -113,7 +111,7 @@ export function ImportProductsModal({ open, onClose }: { open: boolean; onClose:
             Cancel
           </Button>
           <Button variant="primary" disabled={!canImport} loading={submitting} onClick={() => void submit()}>
-            Import {canImport ? `${validCount} rows` : ''}
+            {canImport ? `Check ${validCount} rows` : 'Import'}
           </Button>
         </>
       }
@@ -133,8 +131,8 @@ export function ImportProductsModal({ open, onClose }: { open: boolean; onClose:
           <div className="flex gap-3 rounded-xl bg-zinc-50 p-4 text-[0.8125rem] text-zinc-600">
             <Info size={16} className="mt-0.5 shrink-0 text-zinc-400" aria-hidden />
             <p>
-              Required columns: {REQUIRED.map((r) => <code key={r} className="mx-0.5 rounded bg-white px-1 py-px font-mono text-xs text-zinc-800 ring-1 ring-zinc-200">{r}</code>)}. The file is validated here; the
-              import itself runs on the server once the backend is connected.
+              Required columns: {REQUIRED.map((r) => <code key={r} className="mx-0.5 rounded bg-white px-1 py-px font-mono text-xs text-zinc-800 ring-1 ring-zinc-200">{r}</code>)}. The file is validated here.
+              Bulk import on the server is not available yet — this preview only checks your file.
             </p>
           </div>
         </div>

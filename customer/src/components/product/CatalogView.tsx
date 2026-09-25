@@ -11,7 +11,7 @@ import { ActiveFilters, FilterPanel } from './filters/FilterPanel';
 import { ProductGrid, ProductGridSkeleton } from './ProductGrid';
 
 interface CatalogViewProps {
-  base: Pick<ProductQuery, 'collection' | 'q'>;
+  base: Pick<ProductQuery, 'collection' | 'q' | 'categories'>;
   hideFilters?: MultiFilterKey[];
   /** Rendered when no products match. */
   emptyState?: ReactNode;
@@ -25,7 +25,7 @@ interface CatalogViewProps {
 export function CatalogView({ base, hideFilters, emptyState, onTotal }: CatalogViewProps) {
   const catalog = useCatalogParams();
   const query = catalog.toQuery(base);
-  const { data, loading, error, reload } = useProducts(query);
+  const { data, loading, loadingMore, error, reload } = useProducts(query);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [desktopFilters, setDesktopFilters] = useState(true);
 
@@ -35,7 +35,7 @@ export function CatalogView({ base, hideFilters, emptyState, onTotal }: CatalogV
 
   const total = data?.total ?? 0;
   const firstLoad = loading && !data;
-  const refreshing = loading && Boolean(data);
+  const refreshing = loading && Boolean(data) && !loadingMore;
 
   const sortSelect = (
     <div className="relative">
@@ -103,7 +103,7 @@ export function CatalogView({ base, hideFilters, emptyState, onTotal }: CatalogV
         <div className="min-w-0">
           <ActiveFilters facets={data?.facets} catalog={catalog} />
           <div className={cn('transition-opacity duration-300', catalog.activeCount > 0 && 'mt-6', refreshing && 'opacity-50')} aria-busy={loading}>
-            {error ? (
+            {error && !data ? (
               <ErrorState message={error} onRetry={reload} />
             ) : firstLoad ? (
               <ProductGridSkeleton count={9} columns={desktopFilters ? 3 : 4} />
@@ -132,8 +132,9 @@ export function CatalogView({ base, hideFilters, emptyState, onTotal }: CatalogV
                   <div className="h-[2px] w-48 bg-paper-200">
                     <div className="h-full bg-ink transition-[width] duration-500" style={{ width: `${((data?.items.length ?? 0) / Math.max(total, 1)) * 100}%` }} />
                   </div>
+                  {error && <p className="text-sm text-danger">{error} <button type="button" className="font-semibold underline" onClick={reload}>Retry</button></p>}
                   {data?.hasMore && (
-                    <Button variant="outline" size="lg" onClick={catalog.loadMore} loading={refreshing} className="mt-2 min-w-[220px]">
+                    <Button variant="outline" size="lg" onClick={catalog.loadMore} loading={loadingMore} disabled={loading} className="mt-2 min-w-[220px]">
                       Load more
                     </Button>
                   )}
