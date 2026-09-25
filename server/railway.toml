@@ -1,7 +1,7 @@
 # Do not set builder here — the Railway dashboard already has the service's build settings.
 # Forcing NIXPACKS previously fought those settings and left the API unreachable.
 [deploy]
-startCommand = "node dist/src/server.js"
+startCommand = "node start.mjs"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
