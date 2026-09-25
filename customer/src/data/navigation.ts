@@ -1,137 +1,87 @@
+import { t } from '@/i18n';
 import type { NavLink } from '@/types';
 import { IMG } from './images';
 
-export const MAIN_NAV: NavLink[] = [
-  { label: 'Home', href: '/' },
+const cat = (slug: 'football-boots' | 'turf-shoes' | 'jerseys' | 'team-kits' | 'polo-shirts' | 't-shirts' | 'shorts' | 'tracksuits' | 'socks' | 'bags' | 'goalkeeper-gloves' | 'balls') => ({
+  label: t(`common.category.${slug}`),
+  href: `/categories/${slug}`,
+});
+
+/** Main navigation. A function so labels follow the selected language. `key` is language-independent. */
+export const getMainNav = (): NavLink[] => [
   {
-    label: 'Men',
-    href: '/men',
+    key: 'football',
+    label: t('layout.nav.football'),
+    href: '/football',
     mega: {
       columns: [
-        {
-          title: 'Footwear',
-          links: [
-            { label: 'Football Boots', href: '/men?category=football-boots' },
-            { label: 'Basketball Shoes', href: '/men?category=basketball-shoes' },
-            { label: 'Running Shoes', href: '/men?category=running-shoes' },
-            { label: 'Training Shoes', href: '/men?category=training-shoes' },
-            { label: 'Lifestyle', href: '/men?category=lifestyle-shoes' },
-          ],
-        },
-        {
-          title: 'Apparel',
-          links: [
-            { label: 'Jerseys', href: '/men?category=jerseys' },
-            { label: 'T-Shirts & Tops', href: '/men?category=tees' },
-            { label: 'Shorts', href: '/men?category=shorts' },
-            { label: 'Tracksuits', href: '/men?category=tracksuits' },
-            { label: 'Hoodies', href: '/men?category=hoodies' },
-          ],
-        },
-        {
-          title: 'Shop by Sport',
-          links: [
-            { label: 'Football', href: '/men?sport=football' },
-            { label: 'Basketball', href: '/men?sport=basketball' },
-            { label: 'Running', href: '/men?sport=running' },
-            { label: 'Training', href: '/men?sport=training' },
-          ],
-        },
+        { title: t('layout.nav.colFootwear'), links: [cat('football-boots'), cat('turf-shoes')] },
+        { title: t('layout.nav.colTeamwear'), links: [cat('jerseys'), cat('team-kits'), cat('shorts'), cat('socks')] },
+        { title: t('layout.nav.colEquipment'), links: [cat('balls'), cat('goalkeeper-gloves'), cat('bags')] },
       ],
       feature: {
-        title: 'Engineered for performance',
-        subtitle: 'Shop men’s training',
-        image: IMG.trCurl,
-        href: '/men?sport=training',
+        title: t('layout.nav.featureFootballTitle'),
+        subtitle: t('layout.nav.featureFootballSub'),
+        image: IMG.bootsOrangeCorner,
+        href: '/categories/football-boots',
       },
     },
   },
   {
-    label: 'Women',
-    href: '/women',
+    key: 'clothing',
+    label: t('layout.nav.clothing'),
+    href: '/categories/apparel',
     mega: {
       columns: [
-        {
-          title: 'Footwear',
-          links: [
-            { label: 'Running Shoes', href: '/women?category=running-shoes' },
-            { label: 'Training Shoes', href: '/women?category=training-shoes' },
-            { label: 'Lifestyle', href: '/women?category=lifestyle-shoes' },
-            { label: 'Basketball Shoes', href: '/women?category=basketball-shoes' },
-          ],
-        },
-        {
-          title: 'Apparel',
-          links: [
-            { label: 'Sports Bras', href: '/women?category=sports-bras' },
-            { label: 'Leggings & Tights', href: '/women?category=leggings' },
-            { label: 'Tracksuits', href: '/women?category=tracksuits' },
-            { label: 'Jackets', href: '/women?category=jackets' },
-            { label: 'Hoodies', href: '/women?category=hoodies' },
-          ],
-        },
-        {
-          title: 'Shop by Sport',
-          links: [
-            { label: 'Running', href: '/women?sport=running' },
-            { label: 'Training', href: '/women?sport=training' },
-            { label: 'Football', href: '/women?sport=football' },
-            { label: 'Lifestyle', href: '/women?sport=lifestyle' },
-          ],
-        },
+        { title: t('layout.nav.colTops'), links: [cat('polo-shirts'), cat('t-shirts'), cat('jerseys')] },
+        { title: t('layout.nav.colTraining'), links: [cat('tracksuits'), cat('shorts'), cat('team-kits')] },
+        { title: t('layout.nav.colAccessories'), links: [cat('socks'), cat('bags')] },
       ],
       feature: {
-        title: 'Strength in motion',
-        subtitle: 'Shop women’s running',
-        image: IMG.runLeggings,
-        href: '/women?sport=running',
+        title: t('layout.nav.featureClothingTitle'),
+        subtitle: t('layout.nav.featureClothingSub'),
+        image: IMG.poloModel,
+        href: '/categories/polo-shirts',
       },
     },
   },
-  { label: 'Kids', href: '/kids' },
-  { label: 'Football', href: '/football' },
-  { label: 'Basketball', href: '/basketball' },
-  { label: 'Training', href: '/training' },
-  { label: 'Equipment', href: '/equipment' },
-  { label: 'New Arrivals', href: '/new-arrivals' },
-  { label: 'Sale', href: '/sale', highlight: true },
+  { key: 'boots', label: t('layout.nav.boots'), href: '/categories/football-boots' },
+  { key: 'kits', label: t('layout.nav.teamKits'), href: '/categories/team-kits' },
+  { key: 'polos', label: t('layout.nav.polos'), href: '/categories/polo-shirts' },
+  { key: 'bags', label: t('layout.nav.bags'), href: '/categories/bags' },
+  { key: 'new', label: t('layout.nav.newArrivals'), href: '/new-arrivals' },
+  { key: 'sale', label: t('layout.nav.sale'), href: '/sale', highlight: true },
 ];
 
-export const FOOTER_NAV = {
+export const getFooterNav = () => ({
   shop: [
-    { label: 'Men', href: '/men' },
-    { label: 'Women', href: '/women' },
-    { label: 'Kids', href: '/kids' },
-    { label: 'Football', href: '/football' },
-    { label: 'Basketball', href: '/basketball' },
-    { label: 'Training', href: '/training' },
-    { label: 'Equipment', href: '/equipment' },
-    { label: 'New Arrivals', href: '/new-arrivals' },
-    { label: 'Sale', href: '/sale' },
+    { label: t('layout.nav.football'), href: '/football' },
+    cat('football-boots'),
+    cat('team-kits'),
+    cat('jerseys'),
+    cat('polo-shirts'),
+    cat('t-shirts'),
+    cat('socks'),
+    cat('bags'),
+    { label: t('layout.nav.newArrivals'), href: '/new-arrivals' },
+    { label: t('layout.nav.sale'), href: '/sale' },
   ],
   customer: [
-    { label: 'My Account', href: '/account' },
-    { label: 'Orders', href: '/account/orders' },
-    { label: 'Wishlist', href: '/wishlist' },
-    { label: 'Shipping', href: '/shipping' },
-    { label: 'Returns', href: '/returns' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'FAQ', href: '/faq' },
+    { label: t('layout.footer.myAccount'), href: '/account' },
+    { label: t('layout.footer.orders'), href: '/account/orders' },
+    { label: t('layout.footer.wishlist'), href: '/wishlist' },
+    { label: t('layout.footer.shipping'), href: '/shipping' },
+    { label: t('layout.footer.returns'), href: '/returns' },
+    { label: t('layout.footer.contact'), href: '/contact' },
+    { label: t('layout.footer.faq'), href: '/faq' },
   ],
   company: [
-    { label: 'About SPORTX', href: '/about' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'Privacy', href: '/privacy' },
-    { label: 'Terms', href: '/terms' },
+    { label: t('layout.footer.about', { name: 'SPORTX' }), href: '/about' },
+    { label: t('layout.footer.ourCeo'), href: '/about#ceo' },
+    { label: t('layout.footer.contact'), href: '/contact' },
+    { label: t('layout.footer.privacy'), href: '/privacy' },
+    { label: t('layout.footer.terms'), href: '/terms' },
   ],
-};
+});
 
-export const POPULAR_SEARCHES = [
-  'Football boots',
-  'Running shoes',
-  'Match football',
-  'Training tee',
-  'Tracksuit',
-  'Backpack',
-  'Basketball',
-];
+export const getPopularSearches = () => t('layout.search.popular').split('|');

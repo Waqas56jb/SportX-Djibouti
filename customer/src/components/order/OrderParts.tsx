@@ -7,6 +7,8 @@ import type { Order, OrderItem, OrderStatus, PaymentStatus } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatDate, formatDateTime, formatPrice } from '@/utils/format';
 import { SummaryRow } from '@/components/cart';
+import { RichText } from '@/components/cart/RichText';
+import { useT } from '@/i18n';
 
 const STATUS_TONE: Record<OrderStatus, BadgeTone> = {
   pending: 'neutral',
@@ -46,6 +48,7 @@ export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
 
 /** Vertical fulfilment timeline: completed, current and upcoming stages. */
 export function OrderTimeline({ order }: { order: Order }) {
+  const { t } = useT();
   if (ORDER_EXCEPTION_STATUSES.includes(order.status)) {
     return (
       <ol className="space-y-6">
@@ -68,13 +71,13 @@ export function OrderTimeline({ order }: { order: Order }) {
   return (
     <ol className="relative">
       {ORDER_FLOW.map((status, i) => {
-        const event = [...order.timeline].reverse().find((t) => t.status === status || (status === 'pending' && t.status === 'payment-pending'));
+        const event = [...order.timeline].reverse().find((e) => e.status === status || (status === 'pending' && e.status === 'payment-pending'));
         const done = i < currentIdx || (i === currentIdx && status === 'delivered');
         const current = i === currentIdx && status !== 'delivered';
         const last = i === ORDER_FLOW.length - 1;
         return (
           <li key={status} className="relative flex gap-4 pb-7 last:pb-0" aria-current={current ? 'step' : undefined}>
-            {!last && <span className={cn('absolute left-4 top-8 h-[calc(100%-2rem)] w-px -translate-x-1/2', i < currentIdx ? 'bg-ink' : 'bg-paper-300')} aria-hidden />}
+            {!last && <span className={cn('absolute start-4 top-8 h-[calc(100%-2rem)] w-px -translate-x-1/2 rtl:translate-x-1/2', i < currentIdx ? 'bg-ink' : 'bg-paper-300')} aria-hidden />}
             <span
               className={cn(
                 'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2',
@@ -86,7 +89,7 @@ export function OrderTimeline({ order }: { order: Order }) {
             <div className="pt-1">
               <p className={cn('text-sm font-semibold', !done && !current && 'text-ink-500')}>{ORDER_STATUS_LABELS[status]}</p>
               <p className="text-xs text-ink-500">
-                {event ? formatDateTime(event.date) : current ? (order.status === 'payment-pending' ? 'Awaiting payment' : 'In progress') : status === 'delivered' && order.shipping.expectedDelivery ? `Expected ${formatDate(order.shipping.expectedDelivery)}` : 'Pending'}
+                {event ? formatDateTime(event.date) : current ? (order.status === 'payment-pending' ? t('orders.parts.awaitingPayment') : t('orders.parts.inProgress')) : status === 'delivered' && order.shipping.expectedDelivery ? t('orders.parts.expected', { date: formatDate(order.shipping.expectedDelivery) }) : t('orders.parts.pending')}
               </p>
             </div>
           </li>
@@ -97,10 +100,11 @@ export function OrderTimeline({ order }: { order: Order }) {
 }
 
 export function OrderItemsList({ items, compact }: { items: OrderItem[]; compact?: boolean }) {
+  const { t } = useT();
   return (
     <ul className="divide-y divide-paper-200">
       {items.map((i) => (
-        <li key={i.id} className="flex gap-4 py-4">
+        <li key={i.id} className="flex gap-3 py-4 sm:gap-4">
           <Link to={productPath(i.slug)} className={cn('relative shrink-0 overflow-hidden bg-paper-100', compact ? 'w-14' : 'w-20')}>
             <div className="aspect-[4/5]">
               <SmartImage src={i.image} alt={i.name} sizes="80px" maxWidth={320} wrapperClassName="absolute inset-0" />
@@ -111,11 +115,11 @@ export function OrderItemsList({ items, compact }: { items: OrderItem[]; compact
               {i.name}
             </Link>
             <p className="mt-1 text-xs text-ink-500">
-              {i.color} · Size {i.size} · Qty {i.quantity}
+              {t('orders.parts.itemMeta', { colour: i.color, size: i.size, quantity: i.quantity })}
             </p>
-            <p className="mt-1 text-xs text-ink-500">{formatPrice(i.unitPrice)} each</p>
+            <p className="mt-1 text-xs text-ink-500">{t('orders.parts.each', { price: formatPrice(i.unitPrice) })}</p>
           </div>
-          <p className="text-sm font-semibold tabular-nums">{formatPrice(i.lineTotal ?? i.unitPrice * i.quantity)}</p>
+          <p className="shrink-0 text-sm font-semibold tabular-nums">{formatPrice(i.lineTotal ?? i.unitPrice * i.quantity)}</p>
         </li>
       ))}
     </ul>
@@ -123,35 +127,41 @@ export function OrderItemsList({ items, compact }: { items: OrderItem[]; compact
 }
 
 export function OrderTotals({ order }: { order: Order }) {
+  const { t } = useT();
   return (
     <dl className="space-y-3">
-      <SummaryRow label="Subtotal" value={formatPrice(order.subtotal)} />
-      {order.productDiscount > 0 && <SummaryRow label="Promotions" value={`−${formatPrice(order.productDiscount)}`} accent />}
-      {order.discount > 0 && <SummaryRow label={`Promo code${order.couponCode ? ` (${order.couponCode})` : ''}`} value={`−${formatPrice(order.discount)}`} accent />}
-      <SummaryRow label={`Shipping · ${order.shipping.method.name}`} value={order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)} />
-      {order.tax > 0 && <SummaryRow label="Tax" value={formatPrice(order.tax)} />}
+      <SummaryRow label={t('common.labels.subtotal')} value={formatPrice(order.subtotal)} />
+      {order.productDiscount > 0 && <SummaryRow label={t('orders.parts.promotions')} value={<span className="ltr-text">−{formatPrice(order.productDiscount)}</span>} accent />}
+      {order.discount > 0 && <SummaryRow
+          label={order.couponCode ? <RichText text={t('orders.parts.promoCodeWith')} parts={{ code: <span className="ltr-text">{order.couponCode}</span> }} /> : t('orders.parts.promoCode')}
+          value={<span className="ltr-text">−{formatPrice(order.discount)}</span>}
+          accent
+        />}
+      <SummaryRow label={t('orders.parts.shippingWith', { method: order.shipping.method.name })} value={order.shippingCost === 0 ? t('common.labels.free') : formatPrice(order.shippingCost)} />
+      {order.tax > 0 && <SummaryRow label={t('orders.parts.tax')} value={formatPrice(order.tax)} />}
       <div className="divider !my-4" />
-      <SummaryRow label="Total" value={formatPrice(order.total)} strong />
-      {order.refunded > 0 && <SummaryRow label="Refunded" value={`−${formatPrice(order.refunded)}`} muted />}
+      <SummaryRow label={t('common.labels.total')} value={formatPrice(order.total)} strong />
+      {order.refunded > 0 && <SummaryRow label={t('orders.parts.refunded')} value={<span className="ltr-text">−{formatPrice(order.refunded)}</span>} muted />}
     </dl>
   );
 }
 
 export function PaymentSummary({ order }: { order: Order }) {
+  const { t } = useT();
   return (
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-ink-500">Method</span>
-        <span className="font-medium">{PAYMENT_METHOD_LABELS[order.payment.method] ?? order.payment.method}</span>
+        <span className="text-ink-500">{t('orders.parts.method')}</span>
+        <span className="text-end font-medium">{PAYMENT_METHOD_LABELS[order.payment.method] ?? order.payment.method}</span>
       </div>
       {order.payment.reference && (
         <div className="flex items-center justify-between gap-3">
-          <span className="text-ink-500">Reference</span>
-          <span className="font-medium">{order.payment.reference}</span>
+          <span className="text-ink-500">{t('orders.parts.reference')}</span>
+          <span className="ltr-text min-w-0 break-all font-medium">{order.payment.reference}</span>
         </div>
       )}
       <div className="flex items-center justify-between gap-3">
-        <span className="text-ink-500">Status</span>
+        <span className="text-ink-500">{t('orders.parts.status')}</span>
         <PaymentStatusBadge status={order.payment.status} />
       </div>
     </div>
@@ -172,7 +182,7 @@ export function AddressBlock({ address, title }: { address: NonNullable<Order['s
         {address.postalCode ? `, ${address.postalCode}` : ''}
       </span>
       <span className="block">{address.country}</span>
-      <span className="block">{address.phone}</span>
+      <span className="block"><span className="ltr-text">{address.phone}</span></span>
     </address>
   );
 }

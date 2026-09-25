@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/format';
 import { discountPercent } from '@/utils/product';
@@ -24,13 +25,13 @@ export function Price({ price, compareAtPrice, size = 'md', showDiscount = false
   return (
     <div className={cn('flex flex-wrap items-baseline gap-x-2 gap-y-1', className)}>
       <span className={cn('font-semibold tabular-nums', SIZES[size], onSale ? (tone === 'light' ? 'text-accent' : 'text-accent-dark') : tone === 'light' ? 'text-white' : 'text-ink')}>
-        <span className="sr-only">{onSale ? 'Sale price: ' : 'Price: '}</span>
+        <span className="sr-only">{onSale ? t('common.ui.salePrice') : t('common.ui.price')}{' '}</span>
         {formatPrice(price)}
       </span>
       {onSale && (
         <>
           <s className={cn('tabular-nums', size === 'xl' || size === 'lg' ? 'text-base' : 'text-xs', tone === 'light' ? 'text-white/50' : 'text-ink-500')}>
-            <span className="sr-only">Original price: </span>
+            <span className="sr-only">{t('common.ui.originalPrice')} </span>
             {formatPrice(compareAtPrice as number)}
           </s>
           {showDiscount && <span className={cn('text-xs font-bold uppercase tracking-wide', tone === 'light' ? 'text-accent' : 'text-accent-dark')}>−{pct}%</span>}

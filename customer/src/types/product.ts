@@ -7,25 +7,17 @@ export type Department = 'footwear' | 'apparel' | 'equipment' | 'accessories';
 /** Known category slugs (the catalogue is managed in the admin, so any slug string is accepted). */
 export type ProductCategory =
   | 'football-boots'
-  | 'basketball-shoes'
-  | 'running-shoes'
-  | 'training-shoes'
-  | 'lifestyle-shoes'
+  | 'turf-shoes'
   | 'jerseys'
-  | 'tees'
+  | 'team-kits'
+  | 'polo-shirts'
+  | 't-shirts'
   | 'shorts'
   | 'tracksuits'
-  | 'hoodies'
-  | 'jackets'
-  | 'leggings'
-  | 'sports-bras'
-  | 'balls'
-  | 'gloves'
   | 'socks'
-  | 'caps'
   | 'bags'
-  | 'gym-equipment'
-  | 'wearables';
+  | 'goalkeeper-gloves'
+  | 'balls';
 
 export type ProductBadge = 'new' | 'bestseller' | 'limited' | 'exclusive';
 

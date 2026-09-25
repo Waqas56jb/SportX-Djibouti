@@ -12,6 +12,7 @@ import { toast } from '@/store/toastStore';
 import type { Product, RatingSummary, Review, ReviewSort } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatDate, formatNumber } from '@/utils/format';
+import { t } from '@/i18n';
 
 export function RatingBreakdown({ summary }: { summary: RatingSummary }) {
   return (
@@ -20,7 +21,7 @@ export function RatingBreakdown({ summary }: { summary: RatingSummary }) {
         <p className="font-display text-7xl font-bold leading-none">{summary.average.toFixed(1)}</p>
         <div className="pb-1.5">
           <Rating value={summary.average} size="md" />
-          <p className="mt-1.5 text-sm text-ink-500">Based on {formatNumber(summary.total)} reviews</p>
+          <p className="mt-1.5 text-sm text-ink-500">{t('product.reviews.basedOn', { count: summary.total })}</p>
         </div>
       </div>
       <dl className="mt-6 space-y-2">
@@ -29,11 +30,11 @@ export function RatingBreakdown({ summary }: { summary: RatingSummary }) {
           const pct = summary.total ? (count / summary.total) * 100 : 0;
           return (
             <div key={star} className="flex items-center gap-3 text-sm">
-              <dt className="w-12 shrink-0 text-ink-600">{star} star</dt>
+              <dt className="w-16 shrink-0 whitespace-nowrap text-ink-600">{t('product.reviews.star', { count: star })}</dt>
               <dd className="h-1.5 flex-1 overflow-hidden bg-paper-200">
                 <div className="h-full bg-ink" style={{ width: `${pct}%` }} />
               </dd>
-              <dd className="w-10 shrink-0 text-right tabular-nums text-ink-500">{Math.round(pct)}%</dd>
+              <dd className="w-10 shrink-0 text-end tabular-nums text-ink-500">{Math.round(pct)}%</dd>
             </div>
           );
         })}
@@ -42,7 +43,8 @@ export function RatingBreakdown({ summary }: { summary: RatingSummary }) {
   );
 }
 
-const FIT_LABEL = { small: 'Runs small', true: 'True to size', large: 'Runs large' } as const;
+const fitLabel = (fit: NonNullable<Review['fit']>) =>
+  fit === 'small' ? t('product.reviews.fitSmall') : fit === 'large' ? t('product.reviews.fitLarge') : t('product.reviews.fitTrue');
 
 export function ReviewCard({ review }: { review: Review }) {
   return (
@@ -59,11 +61,11 @@ export function ReviewCard({ review }: { review: Review }) {
         <span className="font-semibold text-ink">{review.author}</span>
         {review.verified && (
           <span className="inline-flex items-center gap-1 text-success">
-            <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> Verified purchase
+            <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {t('product.reviews.verified')}
           </span>
         )}
-        {review.size && <span>Size: {review.size}</span>}
-        {review.fit && <span>Fit: {FIT_LABEL[review.fit]}</span>}
+        {review.size && <span>{t('product.reviews.sizeLabel', { size: review.size })}</span>}
+        {review.fit && <span>{t('product.reviews.fitLabel', { fit: fitLabel(review.fit) })}</span>}
       </div>
     </article>
   );
@@ -83,24 +85,24 @@ function ReviewForm({ product, onDone }: { product: Product; onDone: () => void 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const next: Record<string, string> = {};
-    if (!rating) next.rating = 'Select a rating';
-    if (title.trim().length < 3) next.title = 'Add a short headline';
-    if (body.trim().length < 20) next.body = 'Tell us a little more (at least 20 characters)';
+    if (!rating) next.rating = t('product.reviews.errRating');
+    if (title.trim().length < 3) next.title = t('product.reviews.errTitle');
+    if (body.trim().length < 20) next.body = t('product.reviews.errBody');
     setErrors(next);
     setFormError(null);
     if (Object.keys(next).length) return;
     setLoading(true);
     try {
       await reviewService.create({ productId: product.id, rating, title, body, fit: sized ? fit : undefined, size: sized && size ? size : undefined });
-      toast.success('Thanks for your review', { description: 'It will appear on the product page once our team has checked it.' });
+      toast.success(t('product.reviews.thanks'), { description: t('product.reviews.thanksBody') });
       onDone();
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
-        setFormError('Reviews are open to customers who have received this product. Once your order is delivered, you’ll be able to share your experience here.');
+        setFormError(t('product.reviews.notEligible'));
       } else if (err instanceof ApiError && err.status === 409) {
-        setFormError('You’ve already reviewed this product. You can edit your review from your account.');
+        setFormError(t('product.reviews.already'));
       } else {
-        setFormError(errorMessage(err, 'We couldn’t send your review. Please try again.'));
+        setFormError(errorMessage(err, t('product.reviews.sendFailed')));
       }
     } finally {
       setLoading(false);
@@ -109,14 +111,14 @@ function ReviewForm({ product, onDone }: { product: Product; onDone: () => void 
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5 px-5 py-6 sm:px-6">
-      <p className="text-sm text-ink-500">Reviews are checked by our team before they are published.</p>
+      <p className="text-sm text-ink-500">{t('product.reviews.moderated')}</p>
       <RatingInput value={rating} onChange={setRating} error={errors.rating} />
-      <TextField label="Headline" value={title} onChange={(e) => setTitle(e.target.value)} error={errors.title} maxLength={120} />
-      <TextAreaField label="Your review" value={body} onChange={(e) => setBody(e.target.value)} error={errors.body} hint="What did you like? How did it perform?" maxLength={2000} />
+      <TextField label={t('product.reviews.headline')} value={title} onChange={(e) => setTitle(e.target.value)} error={errors.title} maxLength={120} />
+      <TextAreaField label={t('product.reviews.yourReview')} value={body} onChange={(e) => setBody(e.target.value)} error={errors.body} hint={t('product.reviews.hint')} maxLength={2000} />
       {sized && (
         <>
           <fieldset>
-            <legend className="label">How does it fit?</legend>
+            <legend className="label">{t('product.reviews.fitQuestion')}</legend>
             <div className="grid grid-cols-3 gap-2">
               {(['small', 'true', 'large'] as const).map((f) => (
                 <button
@@ -124,25 +126,27 @@ function ReviewForm({ product, onDone }: { product: Product; onDone: () => void 
                   type="button"
                   onClick={() => setFit(f)}
                   aria-pressed={fit === f}
-                  className={cn('min-h-[44px] border text-sm transition-colors', fit === f ? 'border-ink bg-ink text-white' : 'border-paper-300 hover:border-ink')}
+                  className={cn('min-h-[44px] border px-1 text-sm leading-tight transition-colors', fit === f ? 'border-ink bg-ink text-white' : 'border-paper-300 hover:border-ink')}
                 >
-                  {FIT_LABEL[f]}
+                  {fitLabel(f)}
                 </button>
               ))}
             </div>
           </fieldset>
-          <SelectField label="Size purchased" value={size} onChange={(e) => setSize(e.target.value)} optional placeholder="Select size" options={product.sizes.map((s) => ({ value: s, label: s }))} />
+          <SelectField label={t('product.reviews.sizePurchased')} value={size} onChange={(e) => setSize(e.target.value)} optional placeholder={t('product.reviews.selectSize')} options={product.sizes.map((s) => ({ value: s, label: s }))} />
         </>
       )}
       {formError && <InlineAlert tone="warning">{formError}</InlineAlert>}
       <Button type="submit" variant="primary" fullWidth loading={loading}>
-        Submit review
+        {t('product.reviews.submit')}
       </Button>
     </form>
   );
 }
 
-const SORT_LABELS: Record<ReviewSort, string> = { newest: 'Most recent', highest: 'Highest rated', lowest: 'Lowest rated', helpful: 'Most helpful' };
+const SORT_KEYS: ReviewSort[] = ['newest', 'highest', 'lowest', 'helpful'];
+const sortLabel = (k: ReviewSort) =>
+  ({ newest: t('product.reviews.sortNewest'), highest: t('product.reviews.sortHighest'), lowest: t('product.reviews.sortLowest'), helpful: t('product.reviews.sortHelpful') })[k];
 
 export function ProductReviews({ product }: { product: Product }) {
   const { isAuthenticated } = useAuth();
@@ -173,7 +177,7 @@ export function ProductReviews({ product }: { product: Product }) {
       <div className="grid gap-12 lg:grid-cols-[360px_1fr] lg:gap-20">
         <div>
           <h2 id="reviews-title" className="heading-lg">
-            Reviews
+            {t('product.reviews.title')}
           </h2>
           {summary && summary.total > 0 && (
             <div className="mt-8">
@@ -183,14 +187,14 @@ export function ProductReviews({ product }: { product: Product }) {
           <div className="mt-8">
             {isAuthenticated ? (
               <Button variant="outline" fullWidth onClick={() => setWriting(true)} leftIcon={<MessageSquare className="h-4 w-4" />}>
-                Write a review
+                {t('product.reviews.write')}
               </Button>
             ) : (
               <p className="text-sm text-ink-500">
                 <Link to={`${ROUTES.login}?redirect=${encodeURIComponent(location.pathname + '#reviews')}`} className="font-semibold text-ink underline underline-offset-4">
-                  Sign in
+                  {t('product.reviews.signIn')}
                 </Link>{' '}
-                to write a review.
+                {t('product.reviews.signInSuffix')}
               </p>
             )}
           </div>
@@ -202,19 +206,19 @@ export function ProductReviews({ product }: { product: Product }) {
           ) : firstLoad ? (
             <SkeletonLoader rows={3} />
           ) : list.length === 0 ? (
-            <div className="py-10 text-ink-500">No reviews yet. Be the first to share your experience.</div>
+            <div className="py-10 text-ink-500">{t('product.reviews.none')}</div>
           ) : (
             <>
-              <div className="flex items-center justify-between border-b border-paper-200 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-paper-200 pb-4">
                 <p className="text-sm text-ink-500">
-                  Showing {list.length} of {formatNumber(total)} reviews
+                  {t('product.reviews.showing', { shown: list.length, total: formatNumber(total) })}
                 </p>
                 <label className="flex items-center gap-2 text-sm">
-                  <span className="text-ink-500">Sort</span>
-                  <select value={sort} onChange={(e) => setSort(e.target.value as ReviewSort)} className="border-0 bg-transparent py-1 pr-6 text-sm font-medium focus:outline-none">
-                    {(Object.keys(SORT_LABELS) as ReviewSort[]).map((k) => (
+                  <span className="text-ink-500">{t('product.reviews.sort')}</span>
+                  <select value={sort} onChange={(e) => setSort(e.target.value as ReviewSort)} className="border-0 bg-transparent py-1 pe-6 text-sm font-medium focus:outline-none">
+                    {SORT_KEYS.map((k) => (
                       <option key={k} value={k}>
-                        {SORT_LABELS[k]}
+                        {sortLabel(k)}
                       </option>
                     ))}
                   </select>
@@ -228,7 +232,7 @@ export function ProductReviews({ product }: { product: Product }) {
               {error && <p className="mt-4 text-sm text-danger">{error}</p>}
               {data?.pagination.hasNext && (
                 <Button variant="outline" className="mt-8" loading={loading} onClick={() => setPage((p) => p + 1)}>
-                  Load more reviews
+                  {t('product.reviews.loadMore')}
                 </Button>
               )}
             </>
@@ -236,7 +240,7 @@ export function ProductReviews({ product }: { product: Product }) {
         </div>
       </div>
 
-      <Modal open={writing} onClose={() => setWriting(false)} title={`Review: ${product.name}`}>
+      <Modal open={writing} onClose={() => setWriting(false)} title={t('product.reviews.modalTitle', { name: product.name })}>
         <ReviewForm product={product} onDone={() => setWriting(false)} />
       </Modal>
     </section>

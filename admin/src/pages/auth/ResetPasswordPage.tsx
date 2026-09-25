@@ -6,6 +6,7 @@ import { ApiError } from '@/services/api';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Inputs';
 import { useDocumentTitle } from '@/hooks/misc';
+import { authLinkToken } from '@/utils/authLink';
 import { AuthAlert, AuthShell } from './AuthShell';
 
 /** Mirrors the API rule: 8–128 characters with at least one letter and one number. */
@@ -14,7 +15,7 @@ const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,128}$/;
 export default function ResetPasswordPage() {
   useDocumentTitle('Choose a new password');
   const [params] = useSearchParams();
-  const token = params.get('token') ?? '';
+  const token = authLinkToken(params);
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPw, setConfirmPw] = useState('');

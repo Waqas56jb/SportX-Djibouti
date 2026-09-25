@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button, InlineAlert } from '@/components/common';
+import { useT } from '@/i18n';
 import { errorMessage } from '@/services';
 import { newIdempotencyKey } from '@/services/api';
 import { paymentService } from '@/services/paymentService';
@@ -13,11 +14,12 @@ import { PaymentFields, TestPaymentNotice, emptyPaymentFields, validatePaymentFi
  * method; each attempt creates a new payment on the API.
  */
 export function PaymentRetryPanel({ order, onSettled }: { order: Order; onSettled: (order: Order) => void }) {
+  const { t } = useT();
   const method = order.payment.method;
   const [fields, setFields] = useState<PaymentFieldValues>(() => emptyPaymentFields(order.customer.phone));
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [paying, setPaying] = useState(false);
-  const [error, setError] = useState<string | null>(order.paymentStatus === 'failed' ? 'Your last payment attempt was declined. Please try again.' : null);
+  const [error, setError] = useState<string | null>(order.paymentStatus === 'failed' ? t('checkout.retry.declined') : null);
   const [isTest, setIsTest] = useState(false);
   const keyRef = useRef<string | null>(null);
 
@@ -43,17 +45,19 @@ export function PaymentRetryPanel({ order, onSettled }: { order: Order; onSettle
       onSettled(paid);
     } catch (err) {
       keyRef.current = null; // a definitive failure → the next try is a new attempt
-      setError(errorMessage(err, 'Your payment could not be completed. Please try again.'));
+      setError(errorMessage(err, t('checkout.retry.failed')));
     } finally {
       setPaying(false);
     }
   };
 
   return (
-    <form onSubmit={submit} noValidate className="border border-paper-200 bg-white p-6 text-left sm:p-8">
-      <h2 className="heading-sm">Complete your payment</h2>
+    <form onSubmit={submit} noValidate className="border border-paper-200 bg-white p-5 text-start sm:p-8">
+      <h2 className="heading-sm">{t('checkout.retry.title')}</h2>
       <p className="mt-2 text-sm text-ink-600">
-        Your order is reserved{order.paymentExpiresAt ? ` until ${formatDateTime(order.paymentExpiresAt)}` : ''}. Pay {formatPrice(order.total)} to confirm it.
+        {order.paymentExpiresAt
+          ? t('checkout.retry.reservedUntil', { date: formatDateTime(order.paymentExpiresAt), amount: formatPrice(order.total) })
+          : t('checkout.retry.reserved', { amount: formatPrice(order.total) })}
       </p>
       <div className="mt-6">
         {isTest && <TestPaymentNotice />}
@@ -64,8 +68,8 @@ export function PaymentRetryPanel({ order, onSettled }: { order: Order; onSettle
           {error}
         </InlineAlert>
       )}
-      <Button type="submit" variant="primary" size="lg" fullWidth className="mt-6" loading={paying} loadingText="Processing payment…" leftIcon={<Lock className="h-4 w-4" />}>
-        Pay {formatPrice(order.total)}
+      <Button type="submit" variant="primary" size="lg" fullWidth className="mt-6" loading={paying} loadingText={t('checkout.payment.processing')} leftIcon={<Lock className="h-4 w-4" />}>
+        {t('checkout.retry.pay', { amount: formatPrice(order.total) })}
       </Button>
     </form>
   );

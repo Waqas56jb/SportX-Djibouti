@@ -2,25 +2,22 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHero } from '@/components/marketing/PageHero';
 import { CatalogView } from '@/components/product/CatalogView';
-import { COLLECTIONS, getCollection, type Collection } from '@/data/collections';
+import { getCollection, getCollections, type Collection } from '@/data/collections';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import type { MultiFilterKey } from '@/hooks/useCatalogParams';
 import type { ProductQuery } from '@/types';
 import type { Crumb } from '@/components/common';
-import { pluralize } from '@/utils/format';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 import NotFoundPage from '@/pages/NotFound';
 
 /** Facets that are redundant on a given collection. */
 const HIDDEN_FILTERS: Partial<Record<string, MultiFilterKey[]>> = {
   football: ['sport'],
-  basketball: ['sport'],
-  running: ['sport'],
   training: ['sport'],
-  kids: ['gender'],
 };
 
-const QUICK_LINKS = ['men', 'women', 'kids', 'football', 'basketball', 'running', 'training', 'equipment', 'new-arrivals', 'sale'];
+const QUICK_LINKS = ['football', 'training', 'equipment', 'new-arrivals', 'sale'];
 
 interface CollectionViewProps {
   collection: Collection;
@@ -38,7 +35,7 @@ export function CollectionView({ collection, base, crumbs: crumbsProp, hideQuick
 
   usePageMeta({ title: collection.title, description: collection.description, path: collection.path, image: collection.image });
 
-  const crumbs = crumbsProp ?? (collection.key === 'shop' ? [{ label: 'Shop' }] : [{ label: 'Shop', href: '/shop' }, { label: collection.title }]);
+  const crumbs = crumbsProp ?? (collection.key === 'shop' ? [{ label: t('catalog.crumbs.shop') }] : [{ label: t('catalog.crumbs.shop'), href: '/shop' }, { label: collection.title }]);
 
   return (
     <>
@@ -48,14 +45,14 @@ export function CollectionView({ collection, base, crumbs: crumbsProp, hideQuick
         description={collection.description}
         image={collection.image}
         crumbs={crumbs}
-        meta={total !== null ? pluralize(total, 'product') : ' '}
+        meta={total !== null ? t('common.labels.products', { count: total }) : ' '}
       />
       {children}
       {!hideQuickLinks && (
-      <nav aria-label="Collections" className="border-b border-paper-200">
+      <nav aria-label={t('catalog.toolbar.collectionsNav')} className="border-b border-paper-200">
         <ul className="container-site scrollbar-none flex gap-6 overflow-x-auto">
           {QUICK_LINKS.map((key) => {
-            const c = COLLECTIONS.find((x) => x.key === key)!;
+            const c = getCollections().find((x) => x.key === key)!;
             const active = c.key === collection.key;
             return (
               <li key={key} className="shrink-0">

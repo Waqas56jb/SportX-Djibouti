@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscape, useFocusTrap, useLockBodyScroll } from '@/hooks/useUi';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 /** Keeps content mounted during the exit animation. */
@@ -15,8 +16,8 @@ function usePresence(open: boolean, duration = 280) {
       return () => cancelAnimationFrame(raf);
     }
     setVisible(false);
-    const t = setTimeout(() => setMounted(false), duration);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setMounted(false), duration);
+    return () => clearTimeout(timer);
   }, [open, duration]);
   return { mounted, visible };
 }
@@ -65,9 +66,9 @@ export function Modal({ open, onClose, title, hideTitle, children, footer, size 
           className,
         )}
       >
-        <div className={cn('flex items-center justify-between gap-4 border-b border-paper-200 px-5 py-4 sm:px-6', hideTitle && 'absolute right-0 top-0 z-10 border-0 bg-transparent')}>
+        <div className={cn('flex items-center justify-between gap-4 border-b border-paper-200 px-5 py-4 sm:px-6', hideTitle && 'absolute end-0 top-0 z-10 border-0 bg-transparent')}>
           {title && <h2 className={cn('heading-sm', hideTitle && 'sr-only')}>{title}</h2>}
-          <button type="button" onClick={onClose} className="icon-btn -mr-2 bg-white/80" aria-label="Close dialog">
+          <button type="button" onClick={onClose} className="icon-btn -me-2 bg-white/80" aria-label={t('common.ui.closeDialog')}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -116,8 +117,9 @@ export function Drawer({ open, onClose, side = 'right', title, hideHeader, child
         tabIndex={-1}
         className={cn(
           'absolute inset-y-0 flex w-full max-w-[440px] flex-col bg-white outline-none transition-transform duration-[420ms] ease-premium',
-          side === 'right' ? 'right-0 shadow-drawer' : 'left-0 shadow-lift',
-          visible ? 'translate-x-0' : side === 'right' ? 'translate-x-full' : '-translate-x-full',
+          // `side` is the reading-direction edge: in RTL "right" (end) panels open from the left.
+          side === 'right' ? 'end-0 shadow-drawer' : 'start-0 shadow-lift',
+          visible ? 'translate-x-0' : side === 'right' ? 'translate-x-full rtl:-translate-x-full' : '-translate-x-full rtl:translate-x-full',
           className,
         )}
       >
@@ -127,7 +129,7 @@ export function Drawer({ open, onClose, side = 'right', title, hideHeader, child
               <h2 className="heading-sm">{title}</h2>
               {headerExtra}
             </div>
-            <button type="button" onClick={onClose} className="icon-btn -mr-2" aria-label={`Close ${title.toLowerCase()}`}>
+            <button type="button" onClick={onClose} className="icon-btn -me-2" aria-label={t('common.ui.closeNamed', { name: title })}>
               <X className="h-5 w-5" />
             </button>
           </div>

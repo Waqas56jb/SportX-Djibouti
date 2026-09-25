@@ -13937,6 +13937,10 @@ components:
           minimum: 0
         shippingMethod:
           type: string
+        shippingMethodCode:
+          type: string
+          nullable: true
+          description: Shipping method code (standard, express, pickup, …) — lets clients show a translated name.
         image:
           type: string
           nullable: true

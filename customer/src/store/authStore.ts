@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { t } from '@/i18n';
 import { STORAGE_KEYS } from '@/constants/storage';
 import { consumeRefreshedUser, refreshSession, setSessionExpiredHandler, tokenStore } from '@/services/api';
 import { authService } from '@/services/authService';
@@ -137,5 +138,5 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 setSessionExpiredHandler(() => {
   if (!useAuthStore.getState().session) return;
   useAuthStore.getState().clear();
-  toast.info('Your session has expired', { description: 'Please sign in again to continue.' });
+  toast.info(t('auth.session.expired'), { description: t('auth.session.expiredBody') });
 });

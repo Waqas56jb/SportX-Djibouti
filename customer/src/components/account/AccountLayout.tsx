@@ -2,6 +2,7 @@ import { Bell, CreditCard, Heart, LayoutDashboard, LifeBuoy, LogOut, MapPin, Pac
 import { Suspense, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { PageLoader } from '@/components/common';
+import { useT, type TKey } from '@/i18n';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
@@ -9,26 +10,28 @@ import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 import { initials } from '@/utils/format';
 
-export const ACCOUNT_NAV = [
-  { label: 'Overview', href: ROUTES.account, icon: LayoutDashboard, end: true },
-  { label: 'Orders', href: ROUTES.accountOrders, icon: Package },
-  { label: 'Wishlist', href: ROUTES.accountWishlist, icon: Heart },
-  { label: 'Addresses', href: ROUTES.accountAddresses, icon: MapPin },
-  { label: 'Reviews', href: ROUTES.accountReviews, icon: Star },
-  { label: 'Payment History', href: ROUTES.accountPayments, icon: CreditCard },
-  { label: 'Notifications', href: '/account/notifications', icon: Bell },
-  { label: 'Support', href: ROUTES.accountSupport, icon: LifeBuoy },
-  { label: 'Profile Settings', href: ROUTES.accountSettings, icon: Settings },
+/** Account navigation. `labelKey` is translated at render time. */
+export const ACCOUNT_NAV: { labelKey: TKey; href: string; icon: typeof Bell; end?: boolean }[] = [
+  { labelKey: 'account.nav.overview', href: ROUTES.account, icon: LayoutDashboard, end: true },
+  { labelKey: 'account.nav.orders', href: ROUTES.accountOrders, icon: Package },
+  { labelKey: 'account.nav.wishlist', href: ROUTES.accountWishlist, icon: Heart },
+  { labelKey: 'account.nav.addresses', href: ROUTES.accountAddresses, icon: MapPin },
+  { labelKey: 'account.nav.reviews', href: ROUTES.accountReviews, icon: Star },
+  { labelKey: 'account.nav.payments', href: ROUTES.accountPayments, icon: CreditCard },
+  { labelKey: 'account.nav.notifications', href: '/account/notifications', icon: Bell },
+  { labelKey: 'account.nav.support', href: ROUTES.accountSupport, icon: LifeBuoy },
+  { labelKey: 'account.nav.settings', href: ROUTES.accountSettings, icon: Settings },
 ];
 
 export function AccountLayout() {
   const { user, logout } = useAuth();
   const unread = useAuthStore((s) => s.unreadNotifications);
   const navigate = useNavigate();
+  const { t } = useT();
 
   const signOut = async () => {
     await logout();
-    toast.info('You’ve been signed out');
+    toast.info(t('account.nav.signedOut'));
     navigate(ROUTES.home);
   };
 
@@ -46,15 +49,15 @@ export function AccountLayout() {
             </span>
           )}
           <div className="min-w-0">
-            <p className="eyebrow">My account</p>
+            <p className="eyebrow">{t('account.nav.myAccount')}</p>
             <p className="truncate font-display text-3xl font-bold uppercase leading-none sm:text-4xl">
               {user.firstName} {user.lastName}
             </p>
           </div>
         </div>
         {/* Mobile / tablet tab navigation */}
-        <nav aria-label="Account" className="lg:hidden">
-          <ul className="container-site scrollbar-none flex gap-6 overflow-x-auto">
+        <nav aria-label={t('account.nav.label')} className="lg:hidden">
+          <ul className="container-site scrollbar-none flex gap-5 overflow-x-auto overscroll-x-contain sm:gap-6">
             {ACCOUNT_NAV.map((item) => (
               <li key={item.href} className="shrink-0">
                 <NavLink
@@ -62,12 +65,12 @@ export function AccountLayout() {
                   end={item.end}
                   className={({ isActive }) =>
                     cn(
-                      'relative flex h-12 items-center text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
+                      'relative flex h-12 items-center whitespace-nowrap text-xs font-semibold uppercase tracking-[0.12em] transition-colors',
                       isActive ? 'text-ink after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-ink' : 'text-ink-500',
                     )
                   }
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                   {item.href === '/account/notifications' && <UnreadDot count={unread} />}
                 </NavLink>
               </li>
@@ -78,29 +81,29 @@ export function AccountLayout() {
 
       <div className="container-site grid grid-cols-1 gap-10 py-8 sm:py-12 lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr] xl:gap-14">
         <aside className="hidden lg:block">
-          <nav aria-label="Account" className="sticky top-24">
+          <nav aria-label={t('account.nav.label')} className="sticky top-24">
             <ul className="space-y-0.5">
-              {ACCOUNT_NAV.map(({ label, href, icon: Icon, end }) => (
+              {ACCOUNT_NAV.map(({ labelKey, href, icon: Icon, end }) => (
                 <li key={href}>
                   <NavLink
                     to={href}
                     end={end}
                     className={({ isActive }) =>
                       cn(
-                        'flex min-h-[44px] items-center gap-3 border-l-2 px-4 text-sm font-medium transition-colors',
+                        'flex min-h-[44px] items-center gap-3 border-s-2 px-4 text-sm font-medium transition-colors',
                         isActive ? 'border-ink bg-white text-ink' : 'border-transparent text-ink-500 hover:bg-white hover:text-ink',
                       )
                     }
                   >
                     <Icon className="h-4 w-4" aria-hidden />
-                    {label}
-                    {href === '/account/notifications' && <UnreadDot count={unread} className="ml-auto" />}
+                    {t(labelKey)}
+                    {href === '/account/notifications' && <UnreadDot count={unread} className="ms-auto" />}
                   </NavLink>
                 </li>
               ))}
             </ul>
             <button type="button" onClick={signOut} className="mt-6 flex min-h-[44px] w-full items-center gap-3 border-t border-paper-200 px-4 pt-6 text-sm font-medium text-ink-500 hover:text-danger">
-              <LogOut className="h-4 w-4" aria-hidden /> Sign out
+              <LogOut className="h-4 w-4" aria-hidden /> {t('common.actions.signOut')}
             </button>
           </nav>
         </aside>
@@ -109,7 +112,7 @@ export function AccountLayout() {
             <Outlet />
           </Suspense>
           <button type="button" onClick={signOut} className="mt-12 flex items-center gap-2 text-sm font-medium text-ink-500 hover:text-danger lg:hidden">
-            <LogOut className="h-4 w-4" aria-hidden /> Sign out
+            <LogOut className="h-4 w-4" aria-hidden /> {t('common.actions.signOut')}
           </button>
         </div>
       </div>
@@ -118,11 +121,12 @@ export function AccountLayout() {
 }
 
 function UnreadDot({ count, className }: { count: number; className?: string }) {
+  const { t } = useT();
   if (count <= 0) return null;
   return (
-    <span className={cn('ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-ink', className)}>
+    <span className={cn('ms-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-ink', className)}>
       {count > 99 ? '99+' : count}
-      <span className="sr-only"> unread</span>
+      <span className="sr-only"> {t('account.nav.unread')}</span>
     </span>
   );
 }

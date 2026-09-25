@@ -1,5 +1,6 @@
 import { AlertOctagon, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 import { Button } from './Button';
 
@@ -10,7 +11,7 @@ export function Skeleton({ className }: { className?: string }) {
 /** Generic skeleton loader for lists of rows/cards. */
 export function SkeletonLoader({ rows = 3, className }: { rows?: number; className?: string }) {
   return (
-    <div className={cn('space-y-3', className)} role="status" aria-label="Loading">
+    <div className={cn('space-y-3', className)} role="status" aria-label={t('common.ui.loading')}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex gap-4 border border-paper-200 p-4">
           <Skeleton className="h-20 w-16 shrink-0" />
@@ -56,17 +57,17 @@ interface ErrorStateProps {
   className?: string;
 }
 
-export function ErrorState({ title = 'Something went wrong', message, onRetry, className }: ErrorStateProps) {
+export function ErrorState({ title, message, onRetry, className }: ErrorStateProps) {
   return (
     <div role="alert" className={cn('flex flex-col items-center py-16 text-center', className)}>
       <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-danger-50 text-danger" aria-hidden>
         <AlertOctagon className="h-6 w-6" />
       </div>
-      <h2 className="heading-sm">{title}</h2>
-      <p className="mt-2 max-w-md text-sm text-ink-500">{message ?? 'We could not load this content. Please check your connection and try again.'}</p>
+      <h2 className="heading-sm">{title ?? t('common.states.error')}</h2>
+      <p className="mt-2 max-w-md text-sm text-ink-500">{message ?? t('common.states.errorBody')}</p>
       {onRetry && (
         <Button variant="outline" size="sm" className="mt-6" onClick={onRetry} leftIcon={<RotateCcw className="h-4 w-4" />}>
-          Try again
+          {t('common.actions.retry')}
         </Button>
       )}
     </div>

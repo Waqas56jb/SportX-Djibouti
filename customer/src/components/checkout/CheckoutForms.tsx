@@ -1,9 +1,11 @@
 import { Banknote, Building2, CreditCard, Info, Lock, Smartphone } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { RichText } from '@/components/cart/RichText';
 import { Button, Checkbox, InlineAlert, SelectField, Skeleton, TextAreaField, TextField } from '@/components/common';
 import { COUNTRIES, DJIBOUTI_CITIES } from '@/constants/commerce';
 import { ROUTES } from '@/constants/routes';
+import { t, useT } from '@/i18n';
 import type { Address, CardDetails, CheckoutAddress, CheckoutContact, PaymentMethodOption, PaymentMethodType, ShippingOption } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/format';
@@ -24,6 +26,7 @@ function StepCard({ title, children, aside }: { title: string; children: ReactNo
 // ───────────────────────────── Information ─────────────────────────────
 
 export function InformationStep({ initial, signedIn, onSubmit }: { initial: CheckoutContact; signedIn: boolean; onSubmit: (v: CheckoutContact) => void }) {
+  const { t } = useT();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutContact, string>>>({});
   const set = (k: keyof CheckoutContact) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +36,7 @@ export function InformationStep({ initial, signedIn, onSubmit }: { initial: Chec
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const errs = validate(values, { firstName: required('Enter your first name'), lastName: required('Enter your last name'), email, phone });
+    const errs = validate(values, { firstName: required(t('checkout.contact.errors.firstName')), lastName: required(t('checkout.contact.errors.lastName')), email, phone });
     setErrors(errs);
     if (Object.keys(errs).length) {
       document.getElementById(`co-${Object.keys(errs)[0]}`)?.focus();
@@ -45,24 +48,24 @@ export function InformationStep({ initial, signedIn, onSubmit }: { initial: Chec
   return (
     <form onSubmit={submit} noValidate>
       <StepCard
-        title="Contact information"
+        title={t('checkout.contact.title')}
         aside={
           !signedIn && (
             <p className="text-sm text-ink-500">
-              Have an account?{' '}
+              {t('checkout.contact.haveAccount')}{' '}
               <Link to={`${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.checkout)}`} className="font-semibold text-ink underline underline-offset-4">
-                Sign in
+                {t('common.actions.signIn')}
               </Link>
             </p>
           )
         }
       >
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextField id="co-firstName" label="First name" autoComplete="given-name" value={values.firstName} onChange={set('firstName')} error={errors.firstName} />
-          <TextField id="co-lastName" label="Last name" autoComplete="family-name" value={values.lastName} onChange={set('lastName')} error={errors.lastName} />
+          <TextField id="co-firstName" label={t('checkout.contact.firstName')} autoComplete="given-name" value={values.firstName} onChange={set('firstName')} error={errors.firstName} />
+          <TextField id="co-lastName" label={t('checkout.contact.lastName')} autoComplete="family-name" value={values.lastName} onChange={set('lastName')} error={errors.lastName} />
           <TextField
             id="co-email"
-            label="Email"
+            label={t('checkout.contact.email')}
             type="email"
             inputMode="email"
             autoComplete="email"
@@ -70,14 +73,15 @@ export function InformationStep({ initial, signedIn, onSubmit }: { initial: Chec
             onChange={set('email')}
             error={errors.email}
             readOnly={signedIn}
-            hint={signedIn ? 'Order updates go to your account email.' : 'Your order confirmation will be sent here.'}
+            hint={signedIn ? t('checkout.contact.emailHintAccount') : t('checkout.contact.emailHintGuest')}
+            className="ltr-text"
           />
-          <TextField id="co-phone" label="Phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+253" value={values.phone} onChange={set('phone')} error={errors.phone} hint="For delivery updates." />
+          <TextField id="co-phone" label={t('checkout.contact.phone')} type="tel" inputMode="tel" autoComplete="tel" placeholder="+253" value={values.phone} onChange={set('phone')} error={errors.phone} hint={t('checkout.contact.phoneHint')} className="ltr-text" />
         </div>
       </StepCard>
       <div className="mt-6 flex justify-end">
         <Button type="submit" variant="primary" size="lg" className="w-full sm:w-auto">
-          Continue to shipping
+          {t('checkout.contact.continue')}
         </Button>
       </div>
     </form>
@@ -87,7 +91,7 @@ export function InformationStep({ initial, signedIn, onSubmit }: { initial: Chec
 // ───────────────────────────── Shipping ─────────────────────────────
 
 const etaLabel = (o: ShippingOption) =>
-  !o.maxDays ? null : o.minDays === o.maxDays ? `Est. ${o.minDays} business day${o.minDays === 1 ? '' : 's'}` : `Est. ${o.minDays}–${o.maxDays} business days`;
+  !o.maxDays ? null : o.minDays === o.maxDays ? t('checkout.delivery.eta', { count: o.minDays }) : t('checkout.delivery.etaRange', { min: o.minDays, max: o.maxDays });
 
 interface ShippingStepProps {
   initial: CheckoutAddress;
@@ -107,6 +111,7 @@ interface ShippingStepProps {
 }
 
 export function ShippingStep({ initial, initialAddressId, method, options, savedAddresses, addressesLoading, problems, onMethodChange, onBack, onSubmit, initialNote }: ShippingStepProps) {
+  const { t, tDynamic } = useT();
   const [values, setValues] = useState(initial);
   const [addressId, setAddressId] = useState<string | null>(initialAddressId);
   const [note, setNote] = useState(initialNote);
@@ -129,13 +134,13 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const errs: Partial<Record<keyof CheckoutAddress | 'method', string>> = {};
-    if (!method || !selected) errs.method = 'Choose a delivery method';
+    if (!method || !selected) errs.method = t('checkout.delivery.choose');
     if (needsAddress && !addressId) {
       Object.assign(
         errs,
         validate(values, {
-          line1: (v: string) => (v.trim().length < 3 ? 'Enter your street address' : undefined),
-          city: required('Select a city'),
+          line1: (v: string) => (v.trim().length < 3 ? t('checkout.delivery.errors.street') : undefined),
+          city: required(t('checkout.delivery.errors.city')),
         }),
       );
     }
@@ -146,23 +151,23 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
 
   return (
     <form onSubmit={submit} noValidate className="space-y-6">
-      <StepCard title="Delivery method">
+      <StepCard title={t('checkout.delivery.title')}>
         <fieldset>
-          <legend className="sr-only">Choose a delivery method</legend>
+          <legend className="sr-only">{t('checkout.delivery.choose')}</legend>
           {!options ? (
-            <div className="space-y-3" aria-busy="true" aria-label="Loading delivery options">
+            <div className="space-y-3" aria-busy="true" aria-label={t('checkout.delivery.loading')}>
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
           ) : options.length === 0 ? (
-            <InlineAlert tone="warning">No delivery options are available for this address right now. Please try another city or contact us.</InlineAlert>
+            <InlineAlert tone="warning">{t('checkout.delivery.none')}</InlineAlert>
           ) : (
             <div className="space-y-3">
               {options.map((m) => (
                 <label
                   key={m.code}
-                  className={cn('flex cursor-pointer items-start gap-4 border p-4 transition-colors sm:p-5', method === m.code ? 'border-ink bg-paper-50' : 'border-paper-300 hover:border-ink/50')}
+                  className={cn('flex cursor-pointer items-start gap-3 border p-4 sm:gap-4 transition-colors sm:p-5', method === m.code ? 'border-ink bg-paper-50' : 'border-paper-300 hover:border-ink/50')}
                 >
                   <input
                     type="radio"
@@ -175,10 +180,10 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
                     }}
                     className="mt-1 h-4 w-4 accent-ink"
                   />
-                  <span className="flex-1">
+                  <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="text-sm font-semibold">{m.name}</span>
-                      <span className="text-sm font-semibold tabular-nums">{m.isFree || m.fee === 0 ? <span className="text-success">Free</span> : formatPrice(m.fee)}</span>
+                      <span className="text-sm font-semibold tabular-nums">{m.isFree || m.fee === 0 ? <span className="text-success">{t('common.labels.free')}</span> : formatPrice(m.fee)}</span>
                     </span>
                     {m.description && <span className="mt-1 block text-sm text-ink-500">{m.description}</span>}
                     {etaLabel(m) && <span className="mt-1 block text-xs text-ink-500">{etaLabel(m)}</span>}
@@ -191,10 +196,10 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
         </fieldset>
       </StepCard>
 
-      <StepCard title={needsAddress ? 'Shipping address' : 'Collection details'}>
+      <StepCard title={needsAddress ? t('checkout.delivery.shippingAddress') : t('checkout.delivery.collectionDetails')}>
         {!needsAddress && (
           <InlineAlert className="mb-5">
-            {selected?.description || 'Your order will be ready to collect from our store.'} We’ll contact you when it’s ready. No address needed.
+            {selected?.description || t('checkout.delivery.collectDefault')} {t('checkout.delivery.collectNote')}
           </InlineAlert>
         )}
         {needsAddress && (
@@ -204,7 +209,7 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
             ) : (
               savedAddresses.length > 0 && (
                 <div className="mb-6">
-                  <p className="label">Saved addresses</p>
+                  <p className="label">{t('checkout.delivery.savedAddresses')}</p>
                   <div className="scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1">
                     {savedAddresses.map((a) => (
                       <button
@@ -212,13 +217,13 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
                         type="button"
                         onClick={() => applySaved(a)}
                         aria-pressed={addressId === a.id}
-                        className={cn('min-h-[44px] shrink-0 border px-4 py-2 text-left text-sm transition-colors', addressId === a.id ? 'border-ink bg-paper-50' : 'border-paper-300 hover:border-ink')}
+                        className={cn('min-h-[44px] max-w-[16rem] shrink-0 border px-4 py-2 text-start text-sm transition-colors', addressId === a.id ? 'border-ink bg-paper-50' : 'border-paper-300 hover:border-ink')}
                       >
                         <span className="block font-semibold">
                           {a.label || `${a.firstName} ${a.lastName}`}
-                          {a.isDefault && <span className="ml-2 text-2xs font-normal uppercase tracking-[0.12em] text-ink-500">Default</span>}
+                          {a.isDefault && <span className="ms-2 text-2xs font-normal uppercase tracking-[0.12em] text-ink-500">{t('checkout.delivery.default')}</span>}
                         </span>
-                        <span className="block text-xs text-ink-500">
+                        <span className="block truncate text-xs text-ink-500">
                           {a.line1}, {a.city}
                         </span>
                       </button>
@@ -228,22 +233,22 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
               )
             )}
             <div className="grid gap-5 sm:grid-cols-2">
-              <TextField label="Address" autoComplete="address-line1" value={values.line1} onChange={set('line1')} error={errors.line1} containerClassName="sm:col-span-2" />
-              <TextField label="Apartment, building, landmark" autoComplete="address-line2" value={values.line2} onChange={set('line2')} optional containerClassName="sm:col-span-2" />
-              <TextField label="District / quarter" value={values.district ?? ''} onChange={set('district')} optional />
-              <SelectField label="City" value={values.city} onChange={set('city')} error={errors.city} options={DJIBOUTI_CITIES.map((c) => ({ value: c, label: c }))} />
-              <SelectField label="Country" value={values.country} onChange={set('country')} options={COUNTRIES.map((c) => ({ value: c.name, label: c.name }))} hint="We currently deliver within Djibouti." />
-              <TextField label="Postal code" autoComplete="postal-code" value={values.postalCode} onChange={set('postalCode')} optional />
+              <TextField label={t('checkout.delivery.address')} autoComplete="address-line1" value={values.line1} onChange={set('line1')} error={errors.line1} containerClassName="sm:col-span-2" />
+              <TextField label={t('checkout.delivery.line2')} autoComplete="address-line2" value={values.line2} onChange={set('line2')} optional containerClassName="sm:col-span-2" />
+              <TextField label={t('checkout.delivery.district')} value={values.district ?? ''} onChange={set('district')} optional />
+              <SelectField label={t('checkout.delivery.city')} value={values.city} onChange={set('city')} error={errors.city} options={DJIBOUTI_CITIES.map((c) => ({ value: c, label: tDynamic(`checkout.cities.${c}`, c) }))} />
+              <SelectField label={t('checkout.delivery.country')} value={values.country} onChange={set('country')} options={COUNTRIES.map((c) => ({ value: c.name, label: tDynamic(`checkout.countries.${c.name}`, c.name) }))} hint={t('checkout.delivery.countryHint')} />
+              <TextField label={t('checkout.delivery.postalCode')} autoComplete="postal-code" value={values.postalCode} onChange={set('postalCode')} optional />
             </div>
           </>
         )}
         <TextAreaField
-          label="Order note"
+          label={t('checkout.delivery.note')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           optional
           maxLength={500}
-          hint="Delivery instructions or anything we should know."
+          hint={t('checkout.delivery.noteHint')}
           containerClassName="mt-5"
         />
       </StepCard>
@@ -258,10 +263,10 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         <Button variant="ghost" onClick={onBack}>
-          Back to information
+          {t('checkout.delivery.back')}
         </Button>
         <Button type="submit" variant="primary" size="lg" disabled={!options}>
-          Continue to payment
+          {t('checkout.delivery.continue')}
         </Button>
       </div>
     </form>
@@ -270,11 +275,11 @@ export function ShippingStep({ initial, initialAddressId, method, options, saved
 
 // ───────────────────────────── Payment ─────────────────────────────
 
-const METHOD_UI: Record<PaymentMethodType, { label: string; description: string; icon: typeof CreditCard }> = {
-  card: { label: 'Credit / Debit card', description: 'Visa, Mastercard and other major cards', icon: CreditCard },
-  'mobile-money': { label: 'Mobile money', description: 'Pay from your mobile wallet', icon: Smartphone },
-  'cash-on-delivery': { label: 'Cash on delivery', description: 'Pay when your order arrives', icon: Banknote },
-  'bank-transfer': { label: 'Bank transfer', description: 'We’ll send transfer details by email', icon: Building2 },
+const METHOD_UI: Record<PaymentMethodType, { label: () => string; description: () => string; icon: typeof CreditCard }> = {
+  card: { label: () => t('checkout.payment.methods.card'), description: () => t('checkout.payment.methods.cardBody'), icon: CreditCard },
+  'mobile-money': { label: () => t('checkout.payment.methods.mobileMoney'), description: () => t('checkout.payment.methods.mobileMoneyBody'), icon: Smartphone },
+  'cash-on-delivery': { label: () => t('checkout.payment.methods.cashOnDelivery'), description: () => t('checkout.payment.methods.cashOnDeliveryBody'), icon: Banknote },
+  'bank-transfer': { label: () => t('checkout.payment.methods.bankTransfer'), description: () => t('checkout.payment.methods.bankTransferBody'), icon: Building2 },
 };
 
 export interface PaymentFieldValues {
@@ -296,13 +301,15 @@ export function PaymentFields({
   errors: Record<string, string | undefined>;
   total: number;
 }) {
+  const { t } = useT();
   const setCard = (patch: Partial<CardDetails>) => onChange({ ...values, card: { ...values.card, ...patch } });
   if (method === 'card') {
     return (
       <div className="grid animate-fade-in gap-5 sm:grid-cols-2">
-        <TextField label="Name on card" autoComplete="cc-name" value={values.card.name} onChange={(e) => setCard({ name: e.target.value })} error={errors.name} containerClassName="sm:col-span-2" />
+        <TextField label={t('checkout.payment.cardName')} autoComplete="cc-name" value={values.card.name} onChange={(e) => setCard({ name: e.target.value })} error={errors.name} containerClassName="sm:col-span-2" />
         <TextField
-          label="Card number"
+          label={t('checkout.payment.cardNumber')}
+          className="ltr-text"
           inputMode="numeric"
           autoComplete="cc-number"
           placeholder="1234 5678 9012 3456"
@@ -312,8 +319,8 @@ export function PaymentFields({
           containerClassName="sm:col-span-2"
           rightSlot={<CreditCard className="h-4 w-4 text-ink-500" aria-hidden />}
         />
-        <TextField label="Expiry" inputMode="numeric" autoComplete="cc-exp" placeholder="MM / YY" value={values.card.expiry} onChange={(e) => setCard({ expiry: formatExpiry(e.target.value) })} error={errors.expiry} />
-        <TextField label="CVC" inputMode="numeric" autoComplete="cc-csc" placeholder="123" maxLength={4} value={values.card.cvc} onChange={(e) => setCard({ cvc: e.target.value.replace(/\D/g, '') })} error={errors.cvc} />
+        <TextField label={t('checkout.payment.expiry')} className="ltr-text" inputMode="numeric" autoComplete="cc-exp" placeholder={t('checkout.payment.expiryPlaceholder')} value={values.card.expiry} onChange={(e) => setCard({ expiry: formatExpiry(e.target.value) })} error={errors.expiry} />
+        <TextField label={t('checkout.payment.cvc')} className="ltr-text" inputMode="numeric" autoComplete="cc-csc" placeholder="123" maxLength={4} value={values.card.cvc} onChange={(e) => setCard({ cvc: e.target.value.replace(/\D/g, '') })} error={errors.cvc} />
       </div>
     );
   }
@@ -321,45 +328,47 @@ export function PaymentFields({
     return (
       <div className="animate-fade-in">
         <TextField
-          label="Mobile wallet number"
+          label={t('checkout.payment.wallet')}
+          className="ltr-text"
           type="tel"
           inputMode="tel"
           placeholder="+253"
           value={values.wallet}
           onChange={(e) => onChange({ ...values, wallet: e.target.value })}
           error={errors.wallet}
-          hint="You’ll receive a prompt on your phone to approve the payment."
+          hint={t('checkout.payment.walletHint')}
         />
       </div>
     );
   }
   if (method === 'cash-on-delivery') {
-    return <InlineAlert className="animate-fade-in">Pay {formatPrice(total)} in cash when your order is delivered or collected. Please have the exact amount ready.</InlineAlert>;
+    return <InlineAlert className="animate-fade-in">{t('checkout.payment.codNote', { amount: formatPrice(total) })}</InlineAlert>;
   }
-  return <InlineAlert className="animate-fade-in">We’ll email you the bank details. Your order ships once the transfer is received.</InlineAlert>;
+  return <InlineAlert className="animate-fade-in">{t('checkout.payment.bankNote')}</InlineAlert>;
 }
 
 /** Validates the storefront form for the chosen method. Returns only the failing fields. */
 export function validatePaymentFields(method: PaymentMethodType, values: PaymentFieldValues): Record<string, string> {
   const errs: Record<string, string | undefined> = {};
   if (method === 'card') {
-    if (!values.card.name.trim()) errs.name = 'Enter the name on the card';
-    if (!luhn(values.card.number)) errs.number = 'Enter a valid card number';
+    if (!values.card.name.trim()) errs.name = t('checkout.payment.errors.cardName');
+    if (!luhn(values.card.number)) errs.number = t('checkout.payment.errors.cardNumber');
     errs.expiry = cardExpiry(values.card.expiry);
-    if (!/^\d{3,4}$/.test(values.card.cvc)) errs.cvc = 'Enter the 3–4 digit code';
+    if (!/^\d{3,4}$/.test(values.card.cvc)) errs.cvc = t('checkout.payment.errors.cvc');
   }
   if (method === 'mobile-money') errs.wallet = phone(values.wallet);
   return Object.fromEntries(Object.entries(errs).filter(([, v]) => v)) as Record<string, string>;
 }
 
 export function TestPaymentNotice() {
+  const { t } = useT();
+  const strong = (s: string) => <strong className="ltr-text font-semibold">{s}</strong>;
   return (
     <InlineAlert className="mb-6">
       <span className="flex gap-2">
         <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         <span>
-          Test payments — no money is taken. Use card <strong className="font-semibold">4242 4242 4242 4242</strong> with any future expiry and CVC. A card ending in{' '}
-          <strong className="font-semibold">0002</strong> (e.g. 4000 0000 0000 0002) simulates a decline.
+          <RichText text={t('checkout.payment.testNotice')} parts={{ card: strong('4242 4242 4242 4242'), last: strong('0002'), example: <span className="ltr-text">4000 0000 0000 0002</span> }} />
         </span>
       </span>
     </InlineAlert>
@@ -389,15 +398,16 @@ interface PaymentStepProps {
 
 export function PaymentStep({ methods, method, onMethod, total, defaultPhone, placing, placingText, error, isTest, lockedMethod, canPlace, onBack, onPlace }: PaymentStepProps) {
   // Card details exist only in this component's memory — never persisted, never sent to the API.
+  const { t } = useT();
   const [fields, setFields] = useState<PaymentFieldValues>(() => emptyPaymentFields(defaultPhone));
   const [agree, setAgree] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!method) return setErrors({ method: 'Choose a payment method' });
+    if (!method) return setErrors({ method: t('checkout.payment.errors.method') });
     const errs: Record<string, string | undefined> = { ...validatePaymentFields(method, fields) };
-    if (!agree) errs.agree = 'Please accept the terms to continue';
+    if (!agree) errs.agree = t('checkout.payment.errors.agree');
     const clean = Object.fromEntries(Object.entries(errs).filter(([, v]) => v));
     setErrors(clean);
     if (Object.keys(clean).length) return;
@@ -410,19 +420,19 @@ export function PaymentStep({ methods, method, onMethod, total, defaultPhone, pl
   return (
     <form onSubmit={submit} noValidate className="space-y-6">
       <StepCard
-        title="Payment"
+        title={t('checkout.payment.title')}
         aside={
           <span className="flex items-center gap-1.5 text-xs text-ink-500">
-            <Lock className="h-3.5 w-3.5" aria-hidden /> Encrypted & secure
+            <Lock className="h-3.5 w-3.5" aria-hidden /> {t('checkout.payment.secure')}
           </span>
         }
       >
         {isTest && isOnline && <TestPaymentNotice />}
         {methods.length === 0 ? (
-          <InlineAlert tone="warning">Online payment is temporarily unavailable. Please try again shortly or contact us.</InlineAlert>
+          <InlineAlert tone="warning">{t('checkout.payment.unavailable')}</InlineAlert>
         ) : (
           <fieldset>
-            <legend className="sr-only">Payment method</legend>
+            <legend className="sr-only">{t('checkout.payment.legend')}</legend>
             <div className={cn('grid gap-3', visible.length >= 3 ? 'sm:grid-cols-3' : visible.length === 2 ? 'sm:grid-cols-2' : '')}>
               {visible.map((m) => {
                 const ui = METHOD_UI[m.type] ?? METHOD_UI.card;
@@ -445,8 +455,8 @@ export function PaymentStep({ methods, method, onMethod, total, defaultPhone, pl
                       />
                     </span>
                     <span>
-                      <span className="block text-sm font-semibold">{ui.label}</span>
-                      <span className="mt-0.5 block text-xs text-ink-500">{ui.description}</span>
+                      <span className="block text-sm font-semibold">{ui.label()}</span>
+                      <span className="mt-0.5 block text-xs text-ink-500">{ui.description()}</span>
                     </span>
                   </label>
                 );
@@ -471,17 +481,21 @@ export function PaymentStep({ methods, method, onMethod, total, defaultPhone, pl
             setErrors((x) => ({ ...x, agree: undefined }));
           }}
           label={
-            <>
-              I agree to the{' '}
-              <Link to={ROUTES.terms} target="_blank" className="underline underline-offset-2">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link to={ROUTES.privacy} target="_blank" className="underline underline-offset-2">
-                Privacy Policy
-              </Link>
-              .
-            </>
+            <RichText
+              text={t('checkout.payment.agree')}
+              parts={{
+                terms: (
+                  <Link to={ROUTES.terms} target="_blank" className="underline underline-offset-2">
+                    {t('checkout.payment.terms')}
+                  </Link>
+                ),
+                privacy: (
+                  <Link to={ROUTES.privacy} target="_blank" className="underline underline-offset-2">
+                    {t('checkout.payment.privacy')}
+                  </Link>
+                ),
+              }}
+            />
           }
         />
         {errors.agree && <p className="field-error">{errors.agree}</p>}
@@ -491,10 +505,10 @@ export function PaymentStep({ methods, method, onMethod, total, defaultPhone, pl
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         <Button variant="ghost" onClick={onBack} disabled={placing || lockedMethod}>
-          Back to shipping
+          {t('checkout.payment.back')}
         </Button>
         <Button type="submit" variant="primary" size="lg" loading={placing} loadingText={placingText} disabled={!canPlace || methods.length === 0} leftIcon={<Lock className="h-4 w-4" />}>
-          {lockedMethod ? 'Retry payment' : 'Place order'} · {formatPrice(total)}
+          {lockedMethod ? t('checkout.payment.retry') : t('checkout.payment.place')} · {formatPrice(total)}
         </Button>
       </div>
     </form>

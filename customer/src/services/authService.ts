@@ -1,5 +1,6 @@
 import type { LoginPayload, ProfileUpdate, RegisterPayload, RegisterResult, User } from '@/types';
-import { ApiError, api, request, tokenStore } from './api';
+import { t, type TKey } from '@/i18n';
+import { ApiError, api, localizeApiError, request, tokenStore } from './api';
 
 interface SessionResponse {
   user: User;
@@ -40,27 +41,56 @@ function apiFormError(error: ApiError): string | undefined {
   return details?.formErrors?.[0] ?? details?.body?.formErrors?.[0];
 }
 
+/**
+ * The API answers in English. Messages we know are mapped to the current language; anything else
+ * is shown as sent (it is usually specific and still useful).
+ */
+const KNOWN_MESSAGES: Record<string, TKey> = {
+  'Incorrect email or password.': 'auth.errors.invalidCredentials',
+  'Your current password is incorrect.': 'auth.errors.wrongCurrentPassword',
+  'Your password is incorrect.': 'auth.errors.wrongPassword',
+  'This account has been blocked.': 'auth.errors.accountBlocked',
+  'This account has been blocked. Please contact SPORTX.': 'auth.errors.accountBlocked',
+  'This account is inactive.': 'auth.errors.accountInactive',
+  'This account is inactive. Please contact SPORTX.': 'auth.errors.accountInactive',
+  'Too many requests. Please wait a moment and try again.': 'auth.errors.rateLimited',
+  'We could not reach SPORTX. Check your connection and try again.': 'auth.errors.network',
+  'Something went wrong on our side. Please try again.': 'auth.errors.server',
+  'Authentication required.': 'auth.errors.signInRequired',
+};
+
+/** Translates a known API message; returns other messages unchanged. */
+export const localizeApiMessage = (message: string): string => {
+  const key = KNOWN_MESSAGES[message.trim()];
+  return key ? t(key) : message;
+};
+
 /** Friendly, user-facing message for an API error (form banners and toasts). */
-export function friendlyError(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
-  if (!(error instanceof ApiError)) return error instanceof Error && error.message ? error.message : fallback;
+export function friendlyError(error: unknown, fallback?: string): string {
+  const fb = fallback ?? t('auth.errors.generic');
+  if (!(error instanceof ApiError)) return error instanceof Error && error.message ? localizeApiMessage(error.message) : fb;
   switch (error.code) {
     case 'UNAUTHORIZED':
-      return error.message && !/token|session/i.test(error.message) ? error.message : 'Incorrect email or password.';
+      return error.message && !/token|session/i.test(error.message) ? localizeApiMessage(error.message) : t('auth.errors.invalidCredentials');
     case 'EMAIL_NOT_VERIFIED':
-      return 'Please verify your email address before signing in. Check your inbox for the link.';
+      return t('auth.errors.emailNotVerified');
     case 'ACCOUNT_INACTIVE':
-      return error.message || 'This account is not active. Please contact SPORTX.';
+      return error.message ? localizeApiMessage(error.message) : t('auth.errors.accountInactive');
     case 'RATE_LIMITED':
-      return 'Too many attempts. Please wait a few minutes and try again.';
+      return t('auth.errors.rateLimited');
     case 'NETWORK_ERROR':
-      return error.message;
+      return t('auth.errors.network');
     case 'VALIDATION_ERROR': {
       const fields = Object.values(apiFieldErrors(error));
-      if (error.message && error.message !== 'Request validation failed.') return error.message;
-      return apiFormError(error) ?? fields[0] ?? 'Please check the highlighted fields.';
+      if (error.message && error.message !== 'Request validation failed.')
+        return KNOWN_MESSAGES[error.message.trim()] ? localizeApiMessage(error.message) : localizeApiError(error, fb);
+      return apiFormError(error) ?? fields[0] ?? t('auth.errors.checkFields');
     }
     default:
-      return error.message || fallback;
+      if (error.status >= 500) return t('auth.errors.server');
+      if (!error.message) return fb;
+      // Known auth messages first, then the shared API translator (codes/patterns) for FR/AR.
+      return KNOWN_MESSAGES[error.message.trim()] ? localizeApiMessage(error.message) : localizeApiError(error, fb);
   }
 }
 

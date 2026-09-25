@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { t } from '@/i18n';
 import { toast } from '@/store/toastStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import type { Product } from '@/types';
@@ -10,11 +11,11 @@ export function useWishlist() {
   const toggle = useCallback((product: Pick<Product, 'id' | 'name' | 'images'>) => {
     const added = useWishlistStore.getState().toggle(product.id);
     if (added) {
-      toast.success('Saved to wishlist', { description: product.name, image: product.images[0]?.url });
+      toast.success(t('product.wishlist.saved'), { description: product.name, image: product.images[0]?.url });
     } else {
-      toast.info('Removed from wishlist', {
+      toast.info(t('product.wishlist.removed'), {
         description: product.name,
-        action: { label: 'Undo', onClick: () => useWishlistStore.getState().toggle(product.id) },
+        action: { label: t('product.wishlist.undo'), onClick: () => useWishlistStore.getState().toggle(product.id) },
       });
     }
     return added;

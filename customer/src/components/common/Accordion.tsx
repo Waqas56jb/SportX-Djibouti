@@ -34,7 +34,7 @@ export function AccordionItem({ title, children, defaultOpen = false, className,
           aria-expanded={open}
           aria-controls={`${id}-panel`}
           onClick={toggle}
-          className={cn('flex w-full items-center justify-between gap-6 py-5 text-left text-[15px] font-semibold text-ink transition-colors hover:text-ink-600', titleClassName)}
+          className={cn('flex w-full items-center justify-between gap-6 py-5 text-start text-[15px] font-semibold text-ink transition-colors hover:text-ink-600', titleClassName)}
         >
           <span>{title}</span>
           <Plus className={cn('h-4 w-4 shrink-0 transition-transform duration-300 ease-premium', open && 'rotate-45')} aria-hidden />

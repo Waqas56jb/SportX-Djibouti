@@ -48,6 +48,11 @@ cd ../admin    && echo "VITE_API_URL=http://localhost:4100" > .env.local && npm 
 3. **Supabase Auth settings** (dashboard → Authentication): enable Email provider; set *Site URL* to the storefront and add `https://<storefront>/reset-password`, `https://<storefront>/verify-email`, `https://<admin>/reset-password` to *Redirect URLs*; configure SMTP for production emails. Set `EMAIL_VERIFICATION_REQUIRED=true` if customers must confirm their email.
 4. **Run migrations** — `npm run db:migrate` (or `supabase db push` with the Supabase CLI; the files live in `supabase/migrations`). Migrations are idempotent and tracked in `public.schema_migrations`. They create every table, enum, constraint, index, trigger, RLS policy, the storage bucket `sportx-media`, roles/permissions and default store & shipping settings.
 5. **Seed** (optional demo catalogue) — `npm run db:seed` (`-- --force` reloads the catalogue).
+   The demo catalogue is sports-only test data (WOLF football boots, turf shoes, jerseys, team kits, polos, tees, shorts,
+   tracksuits, socks, bags, goalkeeper gloves, balls). Photos are Unsplash URLs plus the client's own WOLF product shots in
+   `supabase/seed/media/` (referenced as `seed-media:<file>`): with `SUPABASE_SERVICE_ROLE_KEY` set they are uploaded to
+   the storage bucket under `seed/`; otherwise they are copied to `LOCAL_UPLOAD_DIR/seed` and served from `/uploads`.
+   Delete the demo products from the admin (or run `--force` with your own JSON) when real data is ready.
 6. **Create the first admin** — never hard-coded:
    ```bash
    ADMIN_EMAIL=owner@your-domain ADMIN_PASSWORD='a-strong-password-1' npm run create-admin
@@ -88,7 +93,7 @@ src/
   services/                  email (console|smtp|resend), payment providers (cod|stripe|mock), shipping provider,
                              storage (supabase|local, magic-byte image checks), notifications, audit log, job runner
   jobs/                      recurring jobs (expire unpaid orders, prune sessions)
-supabase/migrations/         reproducible schema    supabase/seed/data/   seed catalogue (JSON)
+supabase/migrations/         reproducible schema    supabase/seed/data/   seed catalogue (JSON)   supabase/seed/media/  seed product photos
 tests/integration/           business-behaviour tests (auth, orders, payments, catalog, account, ops)
 ```
 
@@ -98,7 +103,8 @@ Conventions for contributors: [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md). Endp
 
 - **One strategy for both apps.** The API issues short-lived access tokens (JWT, 15 min, `Authorization: Bearer`). Refresh tokens are opaque, stored **hashed** in `auth_sessions`, rotated on every use and delivered only in an **HttpOnly, Secure, SameSite** cookie (`sportx_rt` for the storefront, `sportx_admin_rt` for the admin, path `/api/v1`). Frontends keep the access token in memory and call `POST /auth/refresh` (`/admin/auth/refresh`) on load and when it expires.
 - Replaying an already-rotated refresh token revokes all of that user's sessions (theft signal). Password reset/change revokes other sessions.
-- **Credentials** live in Supabase Auth (`AUTH_PROVIDER=supabase`); `local` (scrypt hashes in Postgres) is for development/tests only and refused in production. Google/Apple sign-in can be enabled in Supabase Auth later without changing business code.
+- **Credentials** live in Supabase Auth (`AUTH_PROVIDER=supabase`); `local` (scrypt hashes in Postgres) is for development/tests only and refused in production. Accounts created while running with `local` are migrated automatically: on their next successful sign-in (or password reset) the legacy hash is verified once, a Supabase Auth user is created and linked, and the hash is deleted.
+- Supabase Auth emails (password recovery, confirmation) redirect back with `#access_token=…`; both frontends read it. In the Supabase dashboard set **Auth → URL Configuration**: Site URL = the storefront URL, and add `<storefront>/reset-password`, `<storefront>/verify-email` and `<admin>/reset-password` to Redirect URLs. Supabase's built-in email sender only delivers to project team members and is rate limited — configure custom SMTP (Auth → SMTP settings) before going live. Google/Apple sign-in can be enabled in Supabase Auth later without changing business code.
 - Identity always comes from the verified token; user ids in URLs/bodies are never trusted for ownership. Other users' records return `404`.
 
 ## 6. Admin roles & permissions
@@ -157,9 +163,10 @@ Error codes: `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONF
 The API is stateless apart from the in-process job runner (run jobs on one instance: `JOBS_ENABLED=false` elsewhere) and the in-memory rate-limit store (use a shared store when scaling out).
 
 - **Docker**: `docker build -t sportx-api .` → `docker run --env-file .env -p 4000:4000 sportx-api`. Release step: `docker run --env-file .env sportx-api npm run start:migrate`.
-- **Render / Railway**: build `npm ci && npm run build`, start `npm start`, pre-deploy `npm run start:migrate`, health check `/health`, `TRUST_PROXY=1`.
+- **Railway** (current hosting): service root directory `server`; `railway.json` builds the `Dockerfile` and health-checks `/health` (a failing deploy never replaces the running one). Set every variable from the production checklist below in the service's Variables tab; the frontends are separate services (`customer`, `admin`) whose `VITE_API_URL` comes from their committed `.env.production` (a Railway variable of the same name overrides it). Run migrations after schema changes with `npm run db:migrate` against the production `DATABASE_URL`.
+- **Render**: build `npm ci && npm run build`, start `npm start`, pre-deploy `npm run start:migrate`, health check `/health`, `TRUST_PROXY=1`.
 - **AWS / VPS**: run the Docker image (ECS/Fargate, App Runner, or a VM behind Nginx with TLS); set `TRUST_PROXY=1`; keep secrets in the platform's secret store.
 - **Region**: deploy the API in the same region as the Supabase project (this project: `ap-southeast-1`, Singapore). Each database round trip is ~150–190 ms from outside the region but a few ms inside it, and pages like the dashboard make several.
-- Production checklist: `NODE_ENV=production`, `AUTH_PROVIDER=supabase`, `STORAGE_PROVIDER=supabase`, strong `JWT_SECRET`, `COOKIE_SECURE=true` (and `COOKIE_SAMESITE=none` + HTTPS if the API is on a different site than the frontends), real email provider, `PAYMENT_PROVIDERS` without `mock`.
+- Production checklist: `NODE_ENV=production`, `API_BASE_URL`, `FRONTEND_URL`, `ADMIN_FRONTEND_URL` (these two are the CORS allow-list and email link bases), `DATABASE_URL` + `DATABASE_SSL=true`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (publishable key), `SUPABASE_SERVICE_ROLE_KEY` (secret key — server only), `AUTH_PROVIDER=supabase`, `STORAGE_PROVIDER=supabase`, strong `JWT_SECRET`, `COOKIE_SECURE=true` (and `COOKIE_SAMESITE=none` + HTTPS if the API is on a different site than the frontends), real email provider, `PAYMENT_PROVIDERS` without `mock`.
 
 `GET /health` → `{ status, environment, timestamp, checks: { database } }` (503 when the database is unreachable).

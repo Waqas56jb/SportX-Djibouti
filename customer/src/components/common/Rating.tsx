@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react';
+import { t, tDynamic } from '@/i18n';
 import { cn } from '@/utils/cn';
 import { formatNumber } from '@/utils/format';
 
@@ -16,7 +17,7 @@ const SIZE = { xs: 'h-3 w-3', sm: 'h-3.5 w-3.5', md: 'h-4 w-4', lg: 'h-5 w-5' } 
 export function Rating({ value, count, size = 'sm', showValue = false, className }: RatingProps) {
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
-      <div className="relative flex" role="img" aria-label={`Rated ${value.toFixed(1)} out of 5${count !== undefined ? `, ${count} reviews` : ''}`}>
+      <div className="relative flex" role="img" aria-label={count !== undefined ? t('common.rating.withCount', { rating: value.toFixed(1), count }) : t('common.a11y.rating', { rating: value.toFixed(1) })}>
         <div className="flex gap-0.5 text-paper-300">
           {Array.from({ length: 5 }, (_, i) => (
             <Star key={i} className={cn(SIZE[size], 'fill-current')} aria-hidden strokeWidth={0} />
@@ -40,21 +41,20 @@ interface RatingInputProps {
   error?: string;
 }
 
-const LABELS = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
 
 export function RatingInput({ value, onChange, error }: RatingInputProps) {
   return (
     <fieldset>
-      <legend className="label">Your rating</legend>
+      <legend className="label">{t('common.rating.yourRating')}</legend>
       <div className="flex items-center gap-3">
-        <div className="flex gap-1" role="radiogroup" aria-label="Rating">
+        <div className="flex gap-1" role="radiogroup" aria-label={t('common.rating.label')}>
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               type="button"
               role="radio"
               aria-checked={value === n}
-              aria-label={`${n} star${n > 1 ? 's' : ''}`}
+              aria-label={t('common.rating.stars', { count: n })}
               onClick={() => onChange(n)}
               className="p-1 transition-transform hover:scale-110"
             >
@@ -62,7 +62,7 @@ export function RatingInput({ value, onChange, error }: RatingInputProps) {
             </button>
           ))}
         </div>
-        <span className="text-sm font-medium text-ink-500">{LABELS[value]}</span>
+        <span className="text-sm font-medium text-ink-500">{value >= 1 && value <= 5 ? tDynamic(`common.rating.level${value}`, '') : ''}</span>
       </div>
       {error && <p className="field-error">{error}</p>}
     </fieldset>

@@ -13,6 +13,7 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createClient } from '@supabase/supabase-js';
 import { pool, queryOne, withTransaction } from '../src/config/database.js';
 import { provisionUser } from '../src/modules/auth/provisioning.js';
 
@@ -49,18 +50,17 @@ interface SeedProduct {
 }
 
 const BRANDS: Record<string, string> = {
-  SPORTX: 'Everyday performance essentials for training and lifestyle.',
-  'SPORTX PRO': 'Competition-grade footwear and apparel for serious athletes.',
-  'SPORTX ELITE': 'Our most advanced range — engineered for match day.',
-  'SPORTX ESSENTIALS': 'Durable basics and accessories for every kit bag.',
-  'SPORTX LAB': 'Experimental technology and limited releases.',
+  'WOLF ELITE': 'Our most advanced range — engineered for match day.',
+  'WOLF PRO': 'Competition-grade boots, gloves and gear for serious players.',
+  'WOLF TEAMWEAR': 'Jerseys, kits and bags made for clubs, schools and companies.',
+  'WOLF ESSENTIALS': 'Polos, tees, socks and everyday training basics.',
 };
 
 const DEPARTMENTS: { slug: string; name: string; description: string }[] = [
-  { slug: 'footwear', name: 'Footwear', description: 'Boots, court shoes, runners and trainers for every surface.' },
-  { slug: 'apparel', name: 'Apparel', description: 'Jerseys, tees, shorts, tracksuits and training layers.' },
-  { slug: 'equipment', name: 'Equipment', description: 'Balls, gloves and gym equipment.' },
-  { slug: 'accessories', name: 'Accessories', description: 'Bags, caps, socks and wearables.' },
+  { slug: 'footwear', name: 'Footwear', description: 'Football boots, turf and indoor shoes.' },
+  { slug: 'apparel', name: 'Apparel', description: 'Jerseys, team kits, polo shirts, t-shirts, shorts and tracksuits.' },
+  { slug: 'equipment', name: 'Equipment', description: 'Match and training balls.' },
+  { slug: 'accessories', name: 'Accessories', description: 'Socks, bags and goalkeeper gloves.' },
 ];
 
 const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -76,10 +76,47 @@ function genderOf(g: string[]): string {
 }
 
 const TYPE_BY_CATEGORY: Record<string, string> = {
-  'football-boots': 'footwear', 'basketball-shoes': 'footwear', 'running-shoes': 'footwear', 'training-shoes': 'footwear', 'lifestyle-shoes': 'footwear',
-  jerseys: 'jersey', tees: 'apparel', shorts: 'shorts', tracksuits: 'tracksuit', hoodies: 'apparel', jackets: 'apparel', leggings: 'apparel', 'sports-bras': 'apparel',
-  balls: 'ball', gloves: 'gloves', socks: 'socks', caps: 'apparel', bags: 'bag', 'gym-equipment': 'equipment', wearables: 'equipment',
+  'football-boots': 'footwear', 'turf-shoes': 'footwear',
+  jerseys: 'jersey', 'team-kits': 'jersey', 'polo-shirts': 'apparel', 't-shirts': 'apparel', shorts: 'shorts', tracksuits: 'tracksuit',
+  balls: 'ball', 'goalkeeper-gloves': 'gloves', socks: 'socks', bags: 'bag',
 };
+
+const MEDIA_DIR = path.join(root, 'supabase/seed/media');
+
+/**
+ * Seed product photos that ship with the repo (`supabase/seed/media`) are referenced as `seed-media:<file>`.
+ * With Supabase configured they are served from the public storage bucket (uploaded here when the service
+ * role key is available); otherwise they are copied into the local upload directory served at /uploads.
+ */
+async function resolveSeedMedia(): Promise<Map<string, string>> {
+  const urls = new Map<string, string>();
+  if (!fs.existsSync(MEDIA_DIR)) return urls;
+  const files = fs.readdirSync(MEDIA_DIR).filter((f) => /\.(jpe?g|png|webp)$/i.test(f));
+  const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, '');
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'sportx-media';
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  for (const file of files) {
+    const type = file.endsWith('.png') ? 'image/png' : file.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
+    if (supabaseUrl) {
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/seed/${file}`;
+      if (serviceKey) {
+        const client = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+        const { error } = await client.storage.from(bucket).upload(`seed/${file}`, fs.readFileSync(path.join(MEDIA_DIR, file)), { contentType: type, upsert: true, cacheControl: '31536000' });
+        if (error) console.log(`  • could not upload seed/${file} to storage (${error.message})`);
+      }
+      const head = await fetch(publicUrl, { method: 'HEAD' }).catch(() => null);
+      if (head?.ok) {
+        urls.set(file, publicUrl);
+        continue;
+      }
+    }
+    const dir = path.resolve(process.env.LOCAL_UPLOAD_DIR || 'uploads', 'seed');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.copyFileSync(path.join(MEDIA_DIR, file), path.join(dir, file));
+    urls.set(file, `${(process.env.API_BASE_URL || 'http://localhost:4000').replace(/\/$/, '')}/uploads/seed/${file}`);
+  }
+  return urls;
+}
 
 async function seedCatalog(force: boolean) {
   const existing = await queryOne<{ n: number }>(`select count(*)::int as n from public.products`);
@@ -88,7 +125,9 @@ async function seedCatalog(force: boolean) {
     return;
   }
   const products = data('products.json') as SeedProduct[];
-  const tiles = data('category-tiles.json') as { slug: string; image: string; description: string }[];
+  const tiles = data('category-tiles.json') as { slug: string; name?: string; image: string; description: string }[];
+  const media = await resolveSeedMedia();
+  const mediaUrl = (url: string) => (url.startsWith('seed-media:') ? (media.get(url.slice(11)) ?? url) : url);
   const reviews = data('reviews.json') as { productLegacyId: string; author: string; rating: number; title: string; body: string; fit: string | null; size: string | null; createdAt: string }[];
 
   await withTransaction(async (tx) => {
@@ -121,7 +160,7 @@ async function seedCatalog(force: boolean) {
     const subcats = [...new Map(products.map((p) => [p.category, p.department])).entries()];
     for (const [i, [cat, dept]] of subcats.entries()) {
       const tile = tiles.find((t) => t.slug === cat);
-      const name = titleCase(cat);
+      const name = tile?.name ?? titleCase(cat);
       const c = await queryOne<{ id: string }>(
         `insert into public.categories (name, slug, parent_id, description, image_url, sort_order, seo_title, seo_description) values ($1, $2, $3, $4, $5, $6, $7, $4) returning id`,
         [name, cat, categoryId.get(dept), tile?.description ?? `${name} at SPORTX Djibouti.`, tile?.image ?? null, i, `${name} | SPORTX Djibouti`],
@@ -151,7 +190,7 @@ async function seedCatalog(force: boolean) {
       for (const [i, img] of p.images.entries()) {
         const color = p.colors.find((c) => c.imageIndex === i && i > 0)?.name ?? null;
         await tx.query(`insert into public.product_images (product_id, url, alt, role, color, position) values ($1, $2, $3, $4, $5, $6)`, [
-          row!.id, img.url, img.alt, i === 0 ? 'MAIN' : i === 1 && !color ? 'HOVER' : 'GALLERY', color, i,
+          row!.id, mediaUrl(img.url), img.alt, i === 0 ? 'MAIN' : i === 1 && !color ? 'HOVER' : 'GALLERY', color, i,
         ]);
       }
       for (const [i, v] of p.variants.entries()) {

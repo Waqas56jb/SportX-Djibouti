@@ -6,6 +6,7 @@ import { Badge, Button, ConfirmDialog, EmptyState, ErrorState, Modal, SkeletonLo
 import { useAsync } from '@/hooks/useAsync';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { useT } from '@/i18n';
 import { addressService } from '@/services/addressService';
 import { friendlyError } from '@/services/authService';
 import { toast } from '@/store/toastStore';
@@ -13,7 +14,8 @@ import type { Address, AddressInput } from '@/types';
 import { cn } from '@/utils/cn';
 
 export default function AddressesPage() {
-  usePageMeta({ title: 'Addresses', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('account.addresses.title'), noindex: true });
   const { user } = useAuth();
   const userId = user!.id;
   const { data, loading, error, reload, setData } = useAsync(() => addressService.list(userId), [userId]);
@@ -28,7 +30,7 @@ export default function AddressesPage() {
       toast.success(success);
       return true;
     } catch (err) {
-      toast.error('Something went wrong', { description: friendlyError(err) });
+      toast.error(t('common.states.error'), { description: friendlyError(err) });
       return false;
     } finally {
       setBusy(false);
@@ -38,16 +40,16 @@ export default function AddressesPage() {
   const save = async (input: AddressInput) => {
     const ok =
       editing === 'new'
-        ? await run(() => addressService.create(userId, input), 'Address added')
+        ? await run(() => addressService.create(userId, input), t('account.addresses.added'))
         : editing
-          ? await run(() => addressService.update(userId, editing.id, input), 'Address updated')
+          ? await run(() => addressService.update(userId, editing.id, input), t('account.addresses.updated'))
           : false;
     if (ok) setEditing(null);
   };
 
   const confirmDelete = async () => {
     if (!deleting) return;
-    const ok = await run(() => addressService.remove(userId, deleting.id), 'Address deleted');
+    const ok = await run(() => addressService.remove(userId, deleting.id), t('account.addresses.deleted'));
     if (ok) setDeleting(null);
   };
 
@@ -55,12 +57,12 @@ export default function AddressesPage() {
 
   return (
     <AccountSection
-      title="Addresses"
-      description="Manage where your orders are delivered."
+      title={t('account.addresses.title')}
+      description={t('account.addresses.description')}
       action={
         addresses.length > 0 && (
           <Button variant="primary" onClick={() => setEditing('new')} leftIcon={<Plus className="h-4 w-4" />}>
-            Add address
+            {t('account.addresses.add')}
           </Button>
         )
       }
@@ -74,11 +76,11 @@ export default function AddressesPage() {
           <EmptyState
             compact
             icon={<MapPin />}
-            title="No saved addresses"
-            description="Save an address for faster checkout."
+            title={t('account.addresses.emptyTitle')}
+            description={t('account.addresses.emptyBody')}
             action={
               <Button onClick={() => setEditing('new')} leftIcon={<Plus className="h-4 w-4" />}>
-                Add address
+                {t('account.addresses.add')}
               </Button>
             }
           />
@@ -88,10 +90,10 @@ export default function AddressesPage() {
           {addresses.map((a) => (
             <li key={a.id} className={cn('flex flex-col border bg-white p-5 sm:p-6', a.isDefault ? 'border-ink' : 'border-paper-200')}>
               <div className="flex items-start justify-between gap-3">
-                <p className="flex items-center gap-2 font-display text-xl font-bold uppercase">
-                  <Home className="h-4 w-4" aria-hidden /> {a.label}
+                <p className="flex min-w-0 items-center gap-2 break-words font-display text-xl font-bold uppercase">
+                  <Home className="h-4 w-4 shrink-0" aria-hidden /> {a.label}
                 </p>
-                {a.isDefault && <Badge tone="dark">Default</Badge>}
+                {a.isDefault && <Badge tone="dark">{t('account.addresses.default')}</Badge>}
               </div>
               <address className="mt-4 flex-1 text-sm not-italic leading-relaxed text-ink-600">
                 <span className="block font-medium text-ink">
@@ -104,18 +106,18 @@ export default function AddressesPage() {
                   {a.city}
                   {a.postalCode ? `, ${a.postalCode}` : ''}, {a.country}
                 </span>
-                <span className="block">{a.phone}</span>
+                <span className="ltr-text block">{a.phone}</span>
               </address>
               <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-paper-200 pt-4">
                 <Button variant="ghost" size="sm" onClick={() => setEditing(a)} leftIcon={<Pencil className="h-3.5 w-3.5" />}>
-                  Edit
+                  {t('common.actions.edit')}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleting(a)} leftIcon={<Trash2 className="h-3.5 w-3.5" />} className="hover:text-danger">
-                  Delete
+                  {t('common.actions.delete')}
                 </Button>
                 {!a.isDefault && (
-                  <Button variant="link" size="sm" className="ml-auto" disabled={busy} onClick={() => run(() => addressService.setDefault(userId, a.id), `${a.label} is now your default address`)}>
-                    Set as default
+                  <Button variant="link" size="sm" className="ms-auto" disabled={busy} onClick={() => run(() => addressService.setDefault(userId, a.id), t('account.addresses.nowDefault', { label: a.label }))}>
+                    {t('account.addresses.setDefault')}
                   </Button>
                 )}
               </div>
@@ -124,15 +126,15 @@ export default function AddressesPage() {
         </ul>
       )}
 
-      <Modal open={editing !== null} onClose={() => !busy && setEditing(null)} title={editing === 'new' ? 'Add address' : 'Edit address'} size="lg">
+      <Modal open={editing !== null} onClose={() => !busy && setEditing(null)} title={editing === 'new' ? t('account.addresses.add') : t('account.addresses.edit')} size="lg">
         {editing !== null && <AddressForm key={editing === 'new' ? 'new' : editing.id} initial={editing === 'new' ? undefined : editing} onSubmit={save} onCancel={() => setEditing(null)} saving={busy} />}
       </Modal>
 
       <ConfirmDialog
         open={deleting !== null}
-        title="Delete address?"
-        description={`“${deleting?.label ?? ''}” will be removed from your saved addresses. This can’t be undone.`}
-        confirmLabel="Delete"
+        title={t('account.addresses.deleteTitle')}
+        description={t('account.addresses.deleteBody', { label: deleting?.label ?? '' })}
+        confirmLabel={t('common.actions.delete')}
         destructive
         loading={busy}
         onConfirm={confirmDelete}

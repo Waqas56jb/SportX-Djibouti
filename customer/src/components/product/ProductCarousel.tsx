@@ -5,6 +5,7 @@ import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
 import { ProductCard } from './ProductCard';
 import { ProductCardSkeleton } from './ProductGrid';
+import { useT } from '@/i18n';
 
 interface ProductCarouselProps {
   products: Product[] | undefined;
@@ -22,13 +23,16 @@ interface ProductCarouselProps {
  * swipe-friendly on touch; arrow buttons page through on desktop.
  */
 export function ProductCarousel({ products, loading, error, onRetry, tone = 'light', label, cardClassName }: ProductCarouselProps) {
+  const { t, rtl } = useT();
   const track = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ start: true, end: false });
 
   const update = useCallback(() => {
     const el = track.current;
     if (!el) return;
-    setEdges({ start: el.scrollLeft <= 4, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 4 });
+    // In RTL scrollLeft runs from 0 towards negative values; the magnitude is the distance from the start.
+    const pos = Math.abs(el.scrollLeft);
+    setEdges({ start: pos <= 4, end: pos + el.clientWidth >= el.scrollWidth - 4 });
   }, []);
 
   useEffect(() => {
@@ -46,7 +50,7 @@ export function ProductCarousel({ products, loading, error, onRetry, tone = 'lig
   const page = (dir: 1 | -1) => {
     const el = track.current;
     if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' });
+    el.scrollBy({ left: (rtl ? -dir : dir) * el.clientWidth * 0.85, behavior: 'smooth' });
   };
 
   if (error) return <ErrorState message={error} onRetry={onRetry} />;
@@ -60,10 +64,10 @@ export function ProductCarousel({ products, loading, error, onRetry, tone = 'lig
   return (
     <div className="relative" role="region" aria-roledescription="carousel" aria-label={label}>
       <div className="mb-5 hidden justify-end gap-2 md:flex">
-        <button type="button" className={arrow} onClick={() => page(-1)} disabled={edges.start} aria-label="Previous products">
+        <button type="button" className={arrow} onClick={() => page(-1)} disabled={edges.start} aria-label={t('product.carousel.previous')}>
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <button type="button" className={arrow} onClick={() => page(1)} disabled={edges.end} aria-label="Next products">
+        <button type="button" className={arrow} onClick={() => page(1)} disabled={edges.end} aria-label={t('product.carousel.next')}>
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>

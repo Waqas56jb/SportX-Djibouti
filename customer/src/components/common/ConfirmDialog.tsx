@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import { t } from '@/i18n';
 import { Button } from './Button';
 import { Modal } from './Overlay';
 
@@ -18,8 +19,8 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
@@ -37,7 +38,7 @@ export function ConfirmDialog({
       </div>
       <div className="flex flex-col-reverse gap-3 border-t border-paper-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <Button variant="ghost" onClick={onCancel} disabled={loading}>
-          {cancelLabel}
+          {cancelLabel ?? t('common.actions.cancel')}
         </Button>
         <Button
           variant="primary"
@@ -46,7 +47,7 @@ export function ConfirmDialog({
           className={destructive ? 'bg-danger hover:bg-danger/90' : undefined}
           data-autofocus
         >
-          {confirmLabel}
+          {confirmLabel ?? t('common.actions.confirm')}
         </Button>
       </div>
     </Modal>

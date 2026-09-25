@@ -4,7 +4,8 @@ import { Button, ButtonLink, Drawer, EmptyState, Spinner } from '@/components/co
 import { ROUTES } from '@/constants/routes';
 import { useCart } from '@/hooks/useCart';
 import { useUiStore } from '@/store/uiStore';
-import { formatPrice, pluralize } from '@/utils/format';
+import { useT } from '@/i18n';
+import { formatPrice } from '@/utils/format';
 import { CartIssuesAlert } from './CartIssues';
 import { CartLineItem } from './CartLineItem';
 import { FreeShippingMeter } from './FreeShippingMeter';
@@ -14,6 +15,7 @@ export function CartDrawer() {
   const close = useUiStore((s) => s.close);
   const { items, totals, count, setQuantity, remove, syncing, pending, issues, dismissIssues } = useCart();
   const navigate = useNavigate();
+  const { t } = useT();
 
   const go = (path: string) => {
     close();
@@ -24,21 +26,21 @@ export function CartDrawer() {
     <Drawer
       open={open}
       onClose={close}
-      title="Your Bag"
-      headerExtra={count > 0 ? <span className="text-sm text-ink-500">({pluralize(count, 'item')})</span> : undefined}
+      title={t('cart.drawer.title')}
+      headerExtra={count > 0 ? <span className="text-sm text-ink-500">({t('common.labels.items', { count })})</span> : undefined}
       footer={
         items.length > 0 && (
           <div className="space-y-4 p-5">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm font-semibold uppercase tracking-[0.1em]">{totals.estimated ? 'Subtotal' : 'Bag total'}</span>
+              <span className="text-sm font-semibold uppercase tracking-[0.1em]">{totals.estimated ? t('common.labels.subtotal') : t('cart.drawer.bagTotal')}</span>
               <span className="text-lg font-semibold tabular-nums">{formatPrice(totals.estimated ? totals.subtotal : totals.total)}</span>
             </div>
-            <p className="-mt-2 text-xs text-ink-500">{totals.estimated ? 'Shipping, promo codes and final prices confirmed at checkout.' : 'Shipping calculated at checkout.'}</p>
+            <p className="-mt-2 text-xs text-ink-500">{totals.estimated ? t('cart.drawer.estimatedNote') : t('cart.drawer.shippingNote')}</p>
             <Button variant="primary" size="lg" fullWidth onClick={() => go(ROUTES.checkout)} rightIcon={<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}>
-              Proceed to checkout
+              {t('cart.summary.checkout')}
             </Button>
             <Button variant="outline" fullWidth onClick={() => go(ROUTES.cart)}>
-              View bag
+              {t('cart.drawer.viewBag')}
             </Button>
           </div>
         )
@@ -52,11 +54,11 @@ export function CartDrawer() {
         <EmptyState
           compact
           icon={<ShoppingBag />}
-          title="Your bag is empty"
-          description="Gear up with the latest performance footwear, apparel and equipment."
+          title={t('cart.empty.title')}
+          description={t('cart.empty.drawerBody')}
           action={
             <ButtonLink to={ROUTES.shop} onClick={close} variant="primary">
-              Start shopping
+              {t('cart.empty.startShopping')}
             </ButtonLink>
           }
           className="px-6"

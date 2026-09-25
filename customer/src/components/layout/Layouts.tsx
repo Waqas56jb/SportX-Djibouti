@@ -9,6 +9,7 @@ import { QuickViewModal } from '@/components/product';
 import { ROUTES } from '@/constants/routes';
 import { SITE } from '@/constants/site';
 import { useAuth } from '@/hooks/useAuth';
+import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
 import { AnnouncementBar, Header } from './Header';
@@ -16,9 +17,10 @@ import { Footer } from './Footer';
 import { WishlistSync } from './WishlistSync';
 
 function SkipLink() {
+  const { t } = useT();
   return (
-    <a href="#main" className="sr-only z-[100] bg-ink px-4 py-3 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
-      Skip to content
+    <a href="#main" className="sr-only z-[100] bg-ink px-4 py-3 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:start-4 focus:top-4">
+      {t('common.a11y.skipToContent')}
     </a>
   );
 }
@@ -69,6 +71,7 @@ export function MainLayout() {
 
 /** Distraction-free chrome for checkout — no navigation, clear way back. */
 export function CheckoutLayout() {
+  const { t } = useT();
   return (
     <>
       <SkipLink />
@@ -77,12 +80,13 @@ export function CheckoutLayout() {
         <div className="container-site flex h-16 items-center justify-between gap-4 sm:h-20">
           <Link to={ROUTES.cart} className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-600 hover:text-ink">
             <ArrowLeft className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Back to bag</span>
+            <span className="sr-only sm:hidden">{t('pages.checkoutLayout.backToBag')}</span>
+            <span className="hidden sm:inline">{t('pages.checkoutLayout.backToBag')}</span>
           </Link>
-          <Logo />
+          <Logo surface="light" size="sm" />
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-600">
             <Lock className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Secure checkout</span>
+            <span className="hidden sm:inline">{t('pages.checkoutLayout.secure')}</span>
           </p>
         </div>
       </header>
@@ -98,13 +102,13 @@ export function CheckoutLayout() {
           </p>
           <div className="flex flex-wrap items-center gap-5">
             <a href={SITE.contact.phoneHref} className="flex items-center gap-1.5 hover:text-ink">
-              <Phone className="h-3.5 w-3.5" aria-hidden /> Need help? {SITE.contact.phone}
+              <Phone className="h-3.5 w-3.5" aria-hidden /> {t('pages.checkoutLayout.needHelp')} <span className="ltr-text">{SITE.contact.phone}</span>
             </a>
             <Link to={ROUTES.privacy} className="hover:text-ink">
-              Privacy
+              {t('pages.checkoutLayout.privacy')}
             </Link>
             <Link to={ROUTES.terms} className="hover:text-ink">
-              Terms
+              {t('pages.checkoutLayout.terms')}
             </Link>
           </div>
         </div>

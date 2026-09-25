@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { t } from '@/i18n';
 import { errorMessage } from '@/services';
 import { orderService } from '@/services/orderService';
 import { productService } from '@/services/productService';
@@ -46,12 +47,12 @@ export function useReorder() {
         }
         if (added) open('cart');
         if (skipped.length) {
-          toast.info(added ? 'Some items are unavailable' : 'Items unavailable', {
-            description: `${skipped.join(', ')} ${skipped.length > 1 ? 'are' : 'is'} no longer available in that size.`,
+          toast.info(added ? t('orders.reorder.someUnavailable') : t('orders.reorder.allUnavailable'), {
+            description: t('orders.reorder.unavailableBody', { count: skipped.length, names: skipped.join(', ') }),
           });
         }
       } catch (err) {
-        toast.error('Couldn’t reorder', { description: errorMessage(err) });
+        toast.error(t('orders.reorder.failed'), { description: errorMessage(err) });
       }
     },
     [open],

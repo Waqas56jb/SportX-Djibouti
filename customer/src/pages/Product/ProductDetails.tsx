@@ -5,6 +5,7 @@ import { SITE } from '@/constants/site';
 import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/format';
+import { t } from '@/i18n';
 
 type TabKey = 'description' | 'features' | 'specifications' | 'size-guide' | 'shipping';
 
@@ -21,8 +22,8 @@ function Panel({ tab, product }: { tab: TabKey; product: Product }) {
       return (
         <ul className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
           {product.features.map((f, i) => (
-            <li key={f} className="flex gap-4 border-t border-paper-200 pt-4">
-              <span className="font-display text-lg font-bold text-accent-dark">0{i + 1}</span>
+            <li key={f} className="flex min-w-0 gap-4 border-t border-paper-200 pt-4">
+              <span className="ltr-text font-display text-lg font-bold text-accent-dark">{String(i + 1).padStart(2, '0')}</span>
               <span className="text-[15px] text-ink-700">{f}</span>
             </li>
           ))}
@@ -31,24 +32,24 @@ function Panel({ tab, product }: { tab: TabKey; product: Product }) {
     case 'specifications':
       return (
         <dl className="max-w-2xl divide-y divide-paper-200 border-y border-paper-200">
-          {[{ label: 'Brand', value: product.brand }, ...product.specifications, { label: 'SKU', value: product.variants[0]?.sku.split('-').slice(0, 3).join('-') || '—' }].map((s) => (
-            <div key={s.label} className="grid grid-cols-[140px_1fr] gap-4 py-3.5 text-sm sm:grid-cols-[200px_1fr]">
+          {[{ label: t('product.details.brand'), value: product.brand }, ...product.specifications, { label: t('product.details.sku'), value: product.variants[0]?.sku.split('-').slice(0, 3).join('-') || '—', ltr: true }].map((s) => (
+            <div key={s.label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-3.5 text-sm sm:grid-cols-[200px_1fr]">
               <dt className="font-semibold text-ink">{s.label}</dt>
-              <dd className="text-ink-600">{s.value}</dd>
+              <dd className="break-words text-ink-600">{'ltr' in s && s.ltr ? <span className="ltr-text">{s.value}</span> : s.value}</dd>
             </div>
           ))}
         </dl>
       );
     case 'size-guide':
-      return <SizeGuideTable type={product.sizeGuide} />;
+      return <SizeGuideTable type={product.sizeGuide} category={product.category} />;
     case 'shipping':
       return (
         <div className="grid max-w-3xl gap-8 text-[15px] leading-relaxed text-ink-600 sm:grid-cols-2">
           <div>
-            <h3 className="heading-sm text-ink">Delivery</h3>
+            <h3 className="heading-sm text-ink">{t('product.details.deliveryTitle')}</h3>
             <p className="mt-3">
-              We deliver across Djibouti.
-              {product.shipping?.freeShippingThreshold ? ` Delivery is free on orders over ${formatPrice(product.shipping.freeShippingThreshold)}.` : ''} Options and timings are confirmed at checkout.
+              {t('product.details.deliveryBody')}
+              {product.shipping?.freeShippingThreshold ? ` ${t('product.details.freeOver', { price: formatPrice(product.shipping.freeShippingThreshold) })}` : ''} {t('product.details.confirmed')}
             </p>
             {product.shipping && product.shipping.methods.length > 0 && (
               <ul className="mt-3 space-y-1.5 text-sm">
@@ -56,18 +57,18 @@ function Panel({ tab, product }: { tab: TabKey; product: Product }) {
                   <li key={m.code} className="flex justify-between gap-4">
                     <span>
                       <span className="font-semibold text-ink">{m.name}</span>
-                      {m.maxDays > 0 && <span className="text-ink-500"> · {m.minDays === m.maxDays ? `${m.minDays} day` : `${m.minDays}–${m.maxDays} days`}</span>}
+                      {m.maxDays > 0 && <span className="text-ink-500"> · {m.minDays === m.maxDays ? t('product.details.days', { count: m.minDays }) : t('product.details.dayRange', { min: m.minDays, max: m.maxDays })}</span>}
                     </span>
-                    <span className="tabular-nums">{m.price === 0 ? 'Free' : formatPrice(m.price)}</span>
+                    <span className="tabular-nums">{m.price === 0 ? t('common.labels.free') : formatPrice(m.price)}</span>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="mt-3">Prefer to collect? Choose Store Pickup and collect from {SITE.contact.addressLines.slice(0, 2).join(', ')}.</p>
+            <p className="mt-3">{t('product.details.pickup', { address: SITE.contact.addressLines.slice(0, 2).join(', ') })}</p>
           </div>
           <div>
-            <h3 className="heading-sm text-ink">Returns & exchanges</h3>
-            <p className="mt-3">Unworn items in their original condition and packaging can be returned or exchanged. Visit our Returns page for full details.</p>
+            <h3 className="heading-sm text-ink">{t('product.details.returnsTitle')}</h3>
+            <p className="mt-3">{t('product.details.returnsBody')}</p>
           </div>
         </div>
       );
@@ -77,33 +78,33 @@ function Panel({ tab, product }: { tab: TabKey; product: Product }) {
 /** Tabs on desktop, accordion on mobile — same content, suited to each context. */
 export function ProductDetails({ product }: { product: Product }) {
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'description', label: 'Description' },
-    { key: 'features', label: 'Features' },
-    { key: 'specifications', label: 'Specifications' },
-    ...(product.sizeGuide !== 'none' ? [{ key: 'size-guide' as const, label: 'Size Guide' }] : []),
-    { key: 'shipping', label: 'Shipping & Returns' },
+    { key: 'description', label: t('product.details.description') },
+    { key: 'features', label: t('product.details.features') },
+    { key: 'specifications', label: t('product.details.specifications') },
+    ...(product.sizeGuide !== 'none' ? [{ key: 'size-guide' as const, label: t('product.details.sizeGuide') }] : []),
+    { key: 'shipping', label: t('product.details.shipping') },
   ];
   const [active, setActive] = useState<TabKey>('description');
 
   return (
-    <section className="border-t border-paper-200 py-12 sm:py-16" aria-label="Product details">
+    <section className="border-t border-paper-200 py-12 sm:py-16" aria-label={t('product.details.section')}>
       <div className="hidden lg:block">
-        <div role="tablist" aria-label="Product information" className="flex gap-10 border-b border-paper-200">
-          {tabs.map((t) => (
+        <div role="tablist" aria-label={t('product.details.info')} className="flex gap-10 border-b border-paper-200">
+          {tabs.map((tab) => (
             <button
-              key={t.key}
-              id={`tab-${t.key}`}
+              key={tab.key}
+              id={`tab-${tab.key}`}
               type="button"
               role="tab"
-              aria-selected={active === t.key}
-              aria-controls={`panel-${t.key}`}
-              onClick={() => setActive(t.key)}
+              aria-selected={active === tab.key}
+              aria-controls={`panel-${tab.key}`}
+              onClick={() => setActive(tab.key)}
               className={cn(
                 'relative -mb-px pb-4 text-xs font-semibold uppercase tracking-[0.14em] transition-colors',
-                active === t.key ? 'text-ink after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-ink' : 'text-ink-500 hover:text-ink',
+                active === tab.key ? 'text-ink after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-ink' : 'text-ink-500 hover:text-ink',
               )}
             >
-              {t.label}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -113,9 +114,9 @@ export function ProductDetails({ product }: { product: Product }) {
       </div>
 
       <div className="lg:hidden">
-        {tabs.map((t, i) => (
-          <AccordionItem key={t.key} title={t.label} defaultOpen={i === 0} className={i === 0 ? 'border-t' : undefined}>
-            <Panel tab={t.key} product={product} />
+        {tabs.map((tab, i) => (
+          <AccordionItem key={tab.key} title={tab.label} defaultOpen={i === 0} className={i === 0 ? 'border-t' : undefined}>
+            <Panel tab={tab.key} product={product} />
           </AccordionItem>
         ))}
       </div>

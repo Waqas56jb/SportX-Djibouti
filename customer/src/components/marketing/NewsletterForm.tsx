@@ -2,10 +2,12 @@ import { ArrowRight, Check } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Spinner } from '@/components/common';
 import { errorMessage, marketingService } from '@/services';
+import { useT } from '@/i18n';
 import { cn } from '@/utils/cn';
 import { email as validateEmail } from '@/utils/validation';
 
 export function NewsletterForm({ tone = 'light', compact = false }: { tone?: 'light' | 'dark'; compact?: boolean }) {
+  const { t } = useT();
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function NewsletterForm({ tone = 'light', compact = false }: { tone?: 'li
     try {
       const res = await marketingService.subscribeNewsletter(value);
       setStatus('success');
-      setMessage(res.alreadySubscribed ? 'You’re already part of the movement.' : 'Welcome to the movement. Watch your inbox.');
+      setMessage(res.alreadySubscribed ? t('home.newsletter.already') : t('home.newsletter.success'));
       setValue('');
     } catch (error) {
       setStatus('error');
@@ -37,7 +39,7 @@ export function NewsletterForm({ tone = 'light', compact = false }: { tone?: 'li
     <form onSubmit={submit} noValidate className="w-full">
       <div className={cn('flex border-b-2 transition-colors', dark ? 'border-white/30 focus-within:border-white' : 'border-ink/20 focus-within:border-ink', status === 'error' && 'border-danger')}>
         <label htmlFor={id} className="sr-only">
-          Email address
+          {t('home.newsletter.emailLabel')}
         </label>
         <input
           id={id}
@@ -49,7 +51,7 @@ export function NewsletterForm({ tone = 'light', compact = false }: { tone?: 'li
             setValue(e.target.value);
             if (status === 'error') setStatus('idle');
           }}
-          placeholder="Your email address"
+          placeholder={t('home.newsletter.placeholder')}
           aria-invalid={status === 'error' || undefined}
           aria-describedby={`${id}-msg`}
           className={cn(
@@ -61,15 +63,15 @@ export function NewsletterForm({ tone = 'light', compact = false }: { tone?: 'li
         <button
           type="submit"
           disabled={status === 'loading'}
-          className={cn('flex min-h-[44px] items-center gap-2 pl-4 text-xs font-semibold uppercase tracking-[0.14em] transition-colors', dark ? 'text-white hover:text-accent' : 'text-ink hover:text-accent-dark')}
+          className={cn('flex min-h-[44px] items-center gap-2 ps-4 text-xs font-semibold uppercase tracking-[0.14em] transition-colors', dark ? 'text-white hover:text-accent' : 'text-ink hover:text-accent-dark')}
         >
           {status === 'loading' ? <Spinner className="h-4 w-4" /> : status === 'success' ? <Check className="h-4 w-4" /> : null}
-          <span>{compact ? 'Join' : 'Subscribe'}</span>
+          <span>{compact ? t('home.newsletter.join') : t('home.newsletter.subscribe')}</span>
           {status !== 'loading' && status !== 'success' && <ArrowRight className="h-4 w-4" aria-hidden />}
         </button>
       </div>
       <p id={`${id}-msg`} role={status === 'error' ? 'alert' : 'status'} className={cn('mt-2 min-h-[1.25rem] text-xs', status === 'error' ? (dark ? 'text-[#FF9C8A]' : 'text-danger') : dark ? 'text-white/60' : 'text-ink-500')}>
-        {message ?? (compact ? '' : 'New releases, athlete stories and member-only offers. Unsubscribe anytime.')}
+        {message ?? (compact ? '' : t('home.newsletter.hint'))}
       </p>
     </form>
   );

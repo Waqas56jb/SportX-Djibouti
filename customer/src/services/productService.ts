@@ -141,7 +141,7 @@ const compareAt = (price: number, compare: number | null | undefined) => (compar
 
 /** Category display name: API name first, then the static label, then the slug. */
 export const categoryLabel = (p: Pick<Product, 'category' | 'categoryName'>) =>
-  p.categoryName ?? CATEGORY_LABELS[p.category as ProductCategory] ?? p.category;
+  CATEGORY_LABELS[p.category as ProductCategory] ?? p.categoryName ?? p.category;
 
 /** List/summary product → UI Product. No variants: open the detail (or Quick View) before adding to the bag. */
 export function toProductFromSummary(s: ApiProductSummary): Product {

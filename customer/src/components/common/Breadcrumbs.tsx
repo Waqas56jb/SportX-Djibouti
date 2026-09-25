@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 export interface Crumb {
@@ -8,9 +9,9 @@ export interface Crumb {
 }
 
 export function Breadcrumbs({ items, className, tone = 'dark' }: { items: Crumb[]; className?: string; tone?: 'dark' | 'light' }) {
-  const all: Crumb[] = [{ label: 'Home', href: '/' }, ...items];
+  const all: Crumb[] = [{ label: t('common.ui.home'), href: '/' }, ...items];
   return (
-    <nav aria-label="Breadcrumb" className={cn('text-xs', className)}>
+    <nav aria-label={t('common.a11y.breadcrumb')} className={cn('text-xs', className)}>
       <ol className="flex flex-wrap items-center gap-1.5">
         {all.map((c, i) => {
           const last = i === all.length - 1;

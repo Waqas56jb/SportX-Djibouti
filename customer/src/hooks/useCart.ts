@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { t } from '@/i18n';
 import { selectCartCount, selectCartItems, useCartStore } from '@/store/cartStore';
 import { toast } from '@/store/toastStore';
 import { useUiStore } from '@/store/uiStore';
@@ -54,16 +55,16 @@ export function useCart() {
       const chosenSize = size ?? (!requiresSizeSelection(product) ? product.sizes[0] : undefined);
 
       if (!chosenColor) {
-        toast.error('Select a colour', { description: 'Choose a colour before adding to your bag.' });
+        toast.error(t('cart.toast.selectColour'), { description: t('cart.toast.selectColourBody') });
         return 'color';
       }
       if (!chosenSize) {
-        toast.error('Select a size', { description: 'Choose your size before adding to your bag.' });
+        toast.error(t('cart.toast.selectSize'), { description: t('cart.toast.selectSizeBody') });
         return 'size';
       }
       const variant = findVariant(product, chosenColor, chosenSize);
       if (!variant || variant.stock <= 0) {
-        toast.error('Out of stock', { description: `${product.name} in ${chosenColor} / ${chosenSize} is sold out.` });
+        toast.error(t('cart.toast.outOfStock'), { description: t('cart.toast.soldOut', { name: product.name, colour: chosenColor, size: chosenSize }) });
         return 'stock';
       }
 
@@ -85,16 +86,16 @@ export function useCart() {
       };
       const result = await store.getState().add(line);
       if (!result.ok) {
-        toast.error('Couldn’t add to bag', { description: result.reason });
+        toast.error(t('cart.toast.addFailed'), { description: result.reason });
         return 'limit';
       }
       if (!silent) {
         if (openDrawer) openOverlay('cart');
         else {
-          toast.success('Added to bag', {
+          toast.success(t('cart.toast.added'), {
             description: `${product.name} · ${chosenColor} · ${chosenSize}`,
             image: line.image,
-            action: { label: 'View bag', onClick: () => openOverlay('cart') },
+            action: { label: t('cart.drawer.viewBag'), onClick: () => openOverlay('cart') },
           });
         }
       }
@@ -108,7 +109,7 @@ export function useCart() {
       const item = selectCartItems(store.getState()).find((i) => i.id === id);
       if (!item) return;
       if (quantity > item.maxStock) {
-        toast.info(`Only ${item.maxStock} available`, { description: `We have ${item.maxStock} of this size in stock.` });
+        toast.info(t('cart.toast.onlyAvailable', { count: item.maxStock }), { description: t('cart.toast.onlyAvailableBody', { count: item.maxStock }) });
       }
       void store.getState().setQuantity(id, Math.min(quantity, Math.max(item.maxStock, 1)));
     },
@@ -120,10 +121,10 @@ export function useCart() {
       const item = selectCartItems(store.getState()).find((i) => i.id === id);
       if (!item) return;
       void store.getState().remove(id);
-      toast.info('Removed from bag', {
+      toast.info(t('cart.toast.removed'), {
         description: item.name,
         action: {
-          label: 'Undo',
+          label: t('cart.toast.undo'),
           onClick: () => void store.getState().add({ ...item, id: item.variantId }),
         },
       });

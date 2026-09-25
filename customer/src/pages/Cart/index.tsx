@@ -8,10 +8,11 @@ import { SITE } from '@/constants/site';
 import { useCart } from '@/hooks/useCart';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { useFeaturedProducts } from '@/hooks/useProducts';
-import { pluralize } from '@/utils/format';
+import { useT } from '@/i18n';
 
 export default function CartPage() {
-  usePageMeta({ title: 'Your Bag', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('cart.pageTitle'), noindex: true });
   const { items, totals, coupon, count, setQuantity, remove, applyCoupon, removeCoupon, isAccount, syncing, pending, issues, dismissIssues, syncError, refresh } = useCart();
   const blocked = items.some((i) => i.status && i.status !== 'OK');
   const navigate = useNavigate();
@@ -20,14 +21,14 @@ export default function CartPage() {
   return (
     <div className="bg-white">
       <div className="container-site pb-20 pt-8 sm:pt-10">
-        <Breadcrumbs items={[{ label: 'Bag' }]} />
+        <Breadcrumbs items={[{ label: t('cart.breadcrumb') }]} />
         <div className="mt-6 flex items-end justify-between gap-4">
-          <h1 className="heading-xl">Your bag</h1>
-          {count > 0 && <p className="pb-1 text-sm text-ink-500">{pluralize(count, 'item')}</p>}
+          <h1 className="heading-xl">{t('cart.title')}</h1>
+          {count > 0 && <p className="pb-1 text-sm text-ink-500">{t('common.labels.items', { count })}</p>}
         </div>
 
         {syncing && items.length === 0 ? (
-          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_400px]" aria-busy="true" aria-label="Loading your bag">
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_400px]" aria-busy="true" aria-label={t('cart.loading')}>
             <div className="space-y-6">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="flex gap-4">
@@ -47,22 +48,22 @@ export default function CartPage() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={<ShoppingBag />}
-            title="Your bag is empty"
-            description="Nothing here yet. Explore new arrivals and best sellers to gear up for your next session."
+            title={t('cart.empty.title')}
+            description={t('cart.empty.pageBody')}
             action={
               <>
                 <ButtonLink to={ROUTES.shop} variant="primary">
-                  Continue shopping
+                  {t('common.actions.continueShopping')}
                 </ButtonLink>
                 <ButtonLink to={ROUTES.wishlist} variant="outline">
-                  View wishlist
+                  {t('cart.empty.viewWishlist')}
                 </ButtonLink>
               </>
             }
           />
         ) : (
           <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_400px] lg:gap-14 xl:grid-cols-[1fr_440px]">
-            <section aria-label="Bag items">
+            <section aria-label={t('cart.itemsLabel')}>
               <div className="border-y border-paper-200 py-5">
                 <FreeShippingMeter remaining={totals.freeShippingRemaining} threshold={totals.freeShippingThreshold} />
               </div>
@@ -76,14 +77,14 @@ export default function CartPage() {
                 <div className="flex gap-3 bg-paper-100 p-5">
                   <Truck className="h-5 w-5 shrink-0" strokeWidth={1.5} aria-hidden />
                   <div>
-                    <p className="font-semibold">Delivery across Djibouti</p>
-                    <p className="mt-1 text-ink-500">Options and timings confirmed at checkout.</p>
+                    <p className="font-semibold">{t('cart.perks.deliveryTitle')}</p>
+                    <p className="mt-1 text-ink-500">{t('cart.perks.deliveryBody')}</p>
                   </div>
                 </div>
                 <div className="flex gap-3 bg-paper-100 p-5">
                   <Store className="h-5 w-5 shrink-0" strokeWidth={1.5} aria-hidden />
                   <div>
-                    <p className="font-semibold">Free store pickup</p>
+                    <p className="font-semibold">{t('cart.perks.pickupTitle')}</p>
                     <p className="mt-1 text-ink-500">{SITE.contact.addressLines.slice(0, 2).join(', ')}</p>
                   </div>
                 </div>
@@ -91,9 +92,9 @@ export default function CartPage() {
             </section>
 
             <aside aria-labelledby="summary-title" className="lg:sticky lg:top-24 lg:self-start">
-              <div className="border border-paper-200 bg-paper-50 p-6 sm:p-8">
+              <div className="border border-paper-200 bg-paper-50 p-5 sm:p-8">
                 <h2 id="summary-title" className="heading-md">
-                  Order summary
+                  {t('cart.summary.title')}
                 </h2>
                 <div className="mt-6">
                   <CouponForm coupon={coupon} onApply={applyCoupon} onRemove={removeCoupon} signedIn={isAccount} />
@@ -102,16 +103,16 @@ export default function CartPage() {
                   <TotalsList totals={totals} coupon={coupon} updating={pending} />
                 </div>
                 <div className="mt-8 space-y-3">
-                  {blocked && <p className="text-sm text-danger">Remove unavailable items to continue.</p>}
+                  {blocked && <p className="text-sm text-danger">{t('cart.summary.blocked')}</p>}
                   <Button variant="primary" size="lg" fullWidth disabled={blocked || pending} onClick={() => navigate(isAccount ? ROUTES.checkout : `${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.checkout)}`)} rightIcon={<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}>
-                    {isAccount ? 'Proceed to checkout' : 'Sign in to check out'}
+                    {isAccount ? t('cart.summary.checkout') : t('cart.summary.signInToCheckout')}
                   </Button>
                   <ButtonLink to={ROUTES.shop} variant="outline" size="lg" fullWidth>
-                    Continue shopping
+                    {t('common.actions.continueShopping')}
                   </ButtonLink>
                 </div>
                 <p className="mt-5 flex items-center justify-center gap-2 text-xs text-ink-500">
-                  <Lock className="h-3.5 w-3.5" aria-hidden /> Secure checkout
+                  <Lock className="h-3.5 w-3.5" aria-hidden /> {t('cart.summary.secure')}
                 </p>
               </div>
             </aside>
@@ -119,9 +120,9 @@ export default function CartPage() {
         )}
 
         <section className="mt-20 border-t border-paper-200 pt-16" aria-labelledby="recs-title">
-          <SectionHeading eyebrow="Complete your kit" title={<span id="recs-title">Popular right now</span>} />
+          <SectionHeading eyebrow={t('cart.recs.eyebrow')} title={<span id="recs-title">{t('cart.recs.title')}</span>} />
           <div className="mt-10">
-            <ProductCarousel label="Recommended products" products={recs.data} loading={recs.loading} error={recs.error} onRetry={recs.reload} />
+            <ProductCarousel label={t('cart.recs.label')} products={recs.data} loading={recs.loading} error={recs.error} onRetry={recs.reload} />
           </div>
         </section>
       </div>

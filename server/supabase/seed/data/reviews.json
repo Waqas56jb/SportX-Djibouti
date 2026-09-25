@@ -1,2272 +1,1652 @@
 [
-  {
-    "productLegacyId": "sx-fb-001",
-    "author": "Abdourahman S.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "39",
-    "createdAt": "2026-06-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-001",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-06-30T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-001",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-07-06T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-001",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-07-12T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-002",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-09-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-002",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-09-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-002",
-    "author": "Zahra N.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-09-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-002",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "43",
-    "createdAt": "2026-09-23T12:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-fb-002",
-    "author": "Samira H.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "44",
-    "createdAt": "2026-09-23T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-fb-003",
-    "author": "Moussa R.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": "Size 4",
-    "createdAt": "2026-03-18T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-003",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": "Size 5",
-    "createdAt": "2026-03-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-003",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": "Size 3",
-    "createdAt": "2026-03-30T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-003",
-    "author": "Amina Y.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": "Size 4",
-    "createdAt": "2026-04-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-003",
-    "author": "Omar B.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": "Size 5",
-    "createdAt": "2026-04-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-003",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": "Size 3",
-    "createdAt": "2026-04-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-09-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-09-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-09-15T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Ibrahim M.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "M",
-    "createdAt": "2026-09-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Hodan I.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-09-23T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Moussa R.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-09-22T12:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-fb-004",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-09-22T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-fb-005",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-07-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-005",
-    "author": "Zahra N.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-07-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-005",
-    "author": "Hassan D.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-07-19T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-005",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-07-25T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-006",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": "39-42",
-    "createdAt": "2026-04-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-006",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": "43-46",
-    "createdAt": "2026-05-04T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-006",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": "35-38",
-    "createdAt": "2026-05-10T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-006",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": "39-42",
-    "createdAt": "2026-05-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-006",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": "43-46",
-    "createdAt": "2026-05-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-007",
-    "author": "Daher W.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "32",
-    "createdAt": "2026-05-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-007",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "34",
-    "createdAt": "2026-05-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-007",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "35",
-    "createdAt": "2026-06-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-007",
-    "author": "Hodan I.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "36",
-    "createdAt": "2026-06-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-007",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "28",
-    "createdAt": "2026-06-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-fb-007",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "30",
-    "createdAt": "2026-06-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-001",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "43",
-    "createdAt": "2026-06-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-001",
-    "author": "Zahra N.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "44",
-    "createdAt": "2026-06-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-001",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "45",
-    "createdAt": "2026-06-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-001",
-    "author": "Samira H.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "46",
-    "createdAt": "2026-06-29T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-002",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "44",
-    "createdAt": "2026-04-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-002",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "45",
-    "createdAt": "2026-04-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-002",
-    "author": "Amina Y.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "46",
-    "createdAt": "2026-04-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-002",
-    "author": "Omar B.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "39",
-    "createdAt": "2026-05-04T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-002",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-05-10T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-003",
-    "author": "Daher W.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": "Size 5",
-    "createdAt": "2026-02-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-003",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": "Size 6",
-    "createdAt": "2026-03-04T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-003",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": "Size 7",
-    "createdAt": "2026-03-10T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-003",
-    "author": "Hodan I.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": "Size 5",
-    "createdAt": "2026-03-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-003",
-    "author": "Moussa R.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": "Size 6",
-    "createdAt": "2026-03-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-003",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": "Size 7",
-    "createdAt": "2026-03-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Zahra N.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-07-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-08-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "L",
-    "createdAt": "2026-08-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Abdourahman S.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-08-15T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-08-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-08-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-004",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-09-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-005",
-    "author": "Ahmed K.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "39",
-    "createdAt": "2026-06-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-005",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-06-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-005",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-06-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-bb-005",
-    "author": "Yasmin O.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-06-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-001",
-    "author": "Abdourahman S.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "39",
-    "createdAt": "2026-07-01T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-001",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-07-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-001",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-07-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-001",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-07-19T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-002",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-09-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-002",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "42",
-    "createdAt": "2026-09-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-002",
-    "author": "Zahra N.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "36",
-    "createdAt": "2026-09-24T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-rn-002",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "37",
-    "createdAt": "2026-09-23T12:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-rn-002",
-    "author": "Samira H.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "38",
-    "createdAt": "2026-09-23T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-rn-003",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-08-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-003",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-08-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-003",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "43",
-    "createdAt": "2026-09-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-003",
-    "author": "Amina Y.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "44",
-    "createdAt": "2026-09-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-003",
-    "author": "Omar B.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "45",
-    "createdAt": "2026-09-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-003",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "46",
-    "createdAt": "2026-09-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Nasra F.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-04-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "43",
-    "createdAt": "2026-04-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "44",
-    "createdAt": "2026-04-15T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Ibrahim M.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "45",
-    "createdAt": "2026-04-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Hodan I.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "46",
-    "createdAt": "2026-04-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "39",
-    "createdAt": "2026-05-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-004",
-    "author": "Ilhan G.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "40",
-    "createdAt": "2026-05-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-005",
-    "author": "Kadar E.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-05-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-005",
-    "author": "Zahra N.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-05-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-005",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-05-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-005",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "L",
-    "createdAt": "2026-05-29T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-006",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "44",
-    "createdAt": "2026-01-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-006",
-    "author": "Ahmed K.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "45",
-    "createdAt": "2026-01-30T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-006",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "46",
-    "createdAt": "2026-02-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-006",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "39",
-    "createdAt": "2026-02-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-rn-006",
-    "author": "Yasmin O.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "40",
-    "createdAt": "2026-02-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-001",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-02-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-001",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "L",
-    "createdAt": "2026-02-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-001",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-03-01T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-001",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-03-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-001",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-03-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-001",
-    "author": "Yasmin O.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-03-19T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "L",
-    "createdAt": "2026-03-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-03-15T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-03-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-03-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Hodan I.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-04-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Moussa R.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "M",
-    "createdAt": "2026-04-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-002",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-04-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-003",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-07-25T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-003",
-    "author": "Zahra N.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-07-31T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-003",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-08-06T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-003",
-    "author": "Samira H.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-08-12T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-004",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-06-18T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-004",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-06-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-004",
-    "author": "Amina Y.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-06-30T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-004",
-    "author": "Omar B.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "S",
-    "createdAt": "2026-07-06T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-004",
-    "author": "Yasmin O.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-07-12T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-005",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": "L",
-    "createdAt": "2026-04-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-005",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": "XL",
-    "createdAt": "2026-04-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-005",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": "S",
-    "createdAt": "2026-04-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-005",
-    "author": "Hodan I.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": "M",
-    "createdAt": "2026-04-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-005",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": "L",
-    "createdAt": "2026-05-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-005",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": "XL",
-    "createdAt": "2026-05-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Zahra N.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "46",
-    "createdAt": "2026-09-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Hassan D.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "39",
-    "createdAt": "2026-09-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-09-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Abdourahman S.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-09-23T12:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Nasra F.",
-    "rating": 5,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "42",
-    "createdAt": "2026-09-23T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "43",
-    "createdAt": "2026-09-22T12:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-tr-006",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "44",
-    "createdAt": "2026-09-22T00:20:33.731Z"
-  },
-  {
-    "productLegacyId": "sx-tr-007",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-02-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-007",
-    "author": "Amina Y.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-02-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-007",
-    "author": "Omar B.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-02-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-007",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-02-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-008",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": "2 × 10 kg",
-    "createdAt": "2026-03-04T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-008",
-    "author": "Ibrahim M.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": "2 × 15 kg",
-    "createdAt": "2026-03-10T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-008",
-    "author": "Hodan I.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": "2 × 20 kg",
-    "createdAt": "2026-03-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-008",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": "2 × 5 kg",
-    "createdAt": "2026-03-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-008",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": "2 × 10 kg",
-    "createdAt": "2026-03-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-009",
-    "author": "Hassan D.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-03-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-009",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-03-30T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-009",
-    "author": "Abdourahman S.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-04-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-009",
-    "author": "Nasra F.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-04-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-009",
-    "author": "Daher W.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-04-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-009",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-04-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-010",
-    "author": "Abdourahman S.",
-    "rating": 5,
-    "title": "Club quality",
-    "body": "We ordered these for our academy and the quality is consistent across the whole batch. Holds up to daily use.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-010",
-    "author": "Nasra F.",
-    "rating": 5,
-    "title": "Exactly what I needed",
-    "body": "Solid construction, great finish and arrived quickly. Would buy again.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-010",
-    "author": "Daher W.",
-    "rating": 4,
-    "title": "Very good value",
-    "body": "Well made and does the job perfectly. Only wish it came with a carry bag.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-19T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-tr-010",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Durable",
-    "body": "Months of use and still in excellent condition. Recommended for anyone training regularly.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-25T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Nasra F.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-01-18T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-01-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "S",
-    "createdAt": "2026-01-30T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-02-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Hodan I.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-02-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-02-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-001",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-02-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-002",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "XS",
-    "createdAt": "2026-02-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-002",
-    "author": "Zahra N.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "S",
-    "createdAt": "2026-02-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-002",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-02-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-002",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-02-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-003",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "S",
-    "createdAt": "2026-05-04T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-003",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-05-10T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-003",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-05-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-003",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-05-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-003",
-    "author": "Yasmin O.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-05-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-004",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "M",
-    "createdAt": "2026-05-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-004",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "L",
-    "createdAt": "2026-06-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-004",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "XL",
-    "createdAt": "2026-06-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-004",
-    "author": "Hodan I.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "XXL",
-    "createdAt": "2026-06-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-004",
-    "author": "Moussa R.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "XS",
-    "createdAt": "2026-06-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-004",
-    "author": "Ilhan G.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "S",
-    "createdAt": "2026-06-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Zahra N.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "10-11Y",
-    "createdAt": "2026-08-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "12-13Y",
-    "createdAt": "2026-09-01T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Samira H.",
-    "rating": 5,
-    "title": "Stays dry all session",
-    "body": "Fabric is light and wicks sweat fast, even outdoors in the afternoon heat. Fit is athletic without being tight.",
-    "fit": "true",
-    "size": "4-5Y",
-    "createdAt": "2026-09-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Abdourahman S.",
-    "rating": 4,
-    "title": "Premium feel",
-    "body": "Stitching and fabric quality are excellent. Washes well with no shrinking. I would order one size down for a slimmer fit.",
-    "fit": "large",
-    "size": "6-7Y",
-    "createdAt": "2026-09-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Nasra F.",
-    "rating": 5,
-    "title": "My new favourite",
-    "body": "Comfortable enough to wear all day and technical enough for training. Already ordered a second colour.",
-    "fit": "true",
-    "size": "8-9Y",
-    "createdAt": "2026-09-19T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Daher W.",
-    "rating": 4,
-    "title": "Great fit and colour",
-    "body": "Colour is exactly as pictured and the cut is flattering. Would love more colour options.",
-    "fit": "true",
-    "size": "10-11Y",
-    "createdAt": "2026-09-22T12:20:33.732Z"
-  },
-  {
-    "productLegacyId": "sx-ap-005",
-    "author": "Fatouma A.",
-    "rating": 5,
-    "title": "Top quality",
-    "body": "You can feel the difference compared to cheaper sportswear. Moves with you and does not cling.",
-    "fit": "true",
-    "size": "12-13Y",
-    "createdAt": "2026-09-22T00:20:33.732Z"
-  },
-  {
-    "productLegacyId": "sx-ap-006",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "35",
-    "createdAt": "2026-07-06T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-006",
-    "author": "Amina Y.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "36",
-    "createdAt": "2026-07-12T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-006",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "28",
-    "createdAt": "2026-07-18T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-006",
-    "author": "Yasmin O.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "30",
-    "createdAt": "2026-07-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-007",
-    "author": "Fatouma A.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "40",
-    "createdAt": "2026-03-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-007",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-03-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-007",
-    "author": "Hodan I.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "42",
-    "createdAt": "2026-03-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-007",
-    "author": "Moussa R.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "43",
-    "createdAt": "2026-04-01T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-007",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "44",
-    "createdAt": "2026-04-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-008",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Best pair I have owned",
-    "body": "Locked in from the first session. Cushioning feels responsive without being mushy, and they still look new after a month of heavy use.",
-    "fit": "true",
-    "size": "40",
-    "createdAt": "2026-07-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-008",
-    "author": "Samira H.",
-    "rating": 5,
-    "title": "Worth every franc",
-    "body": "Light, supportive and they breathe really well in the heat. I noticed the difference in my first session.",
-    "fit": "true",
-    "size": "41",
-    "createdAt": "2026-07-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-008",
-    "author": "Abdourahman S.",
-    "rating": 4,
-    "title": "Great, but size up half",
-    "body": "Performance is excellent. The fit is a little snug across the forefoot, so I would go half a size up if you have wider feet.",
-    "fit": "small",
-    "size": "42",
-    "createdAt": "2026-07-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-008",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Solid all-rounder",
-    "body": "Comfortable straight out of the box. Grip is strong and the upper holds its shape. Took a couple of sessions to fully break in.",
-    "fit": "true",
-    "size": "36",
-    "createdAt": "2026-08-01T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-008",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Game changer",
-    "body": "Quick, stable and the traction is unreal. Teammates keep asking where I got them.",
-    "fit": "true",
-    "size": "37",
-    "createdAt": "2026-08-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ap-008",
-    "author": "Fatouma A.",
-    "rating": 3,
-    "title": "Good quality, runs large",
-    "body": "Build quality is clearly premium but they run slightly big. Exchanged for a smaller size in store with no issues.",
-    "fit": "large",
-    "size": "38",
-    "createdAt": "2026-08-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-001",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-02-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-001",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-02-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-001",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-03-05T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-001",
-    "author": "Hodan I.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-03-11T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-001",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-03-17T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-001",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-03-23T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Zahra N.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-15T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Abdourahman S.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-09-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-002",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-09-08T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-003",
-    "author": "Ahmed K.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-05-16T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-003",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-05-22T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-003",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-05-28T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-003",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-06-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-004",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-04-21T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-004",
-    "author": "Ibrahim M.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-04-27T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-004",
-    "author": "Hodan I.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-05-03T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-004",
-    "author": "Moussa R.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-05-09T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-004",
-    "author": "Ilhan G.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-05-15T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-005",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-14T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-005",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-20T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-005",
-    "author": "Abdourahman S.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-08-26T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-005",
-    "author": "Nasra F.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-09-01T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-005",
-    "author": "Daher W.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-09-07T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-005",
-    "author": "Fatouma A.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": null,
-    "createdAt": "2026-09-13T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Amina Y.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": "35-38",
-    "createdAt": "2026-01-31T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Omar B.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": "39-42",
-    "createdAt": "2026-02-06T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Yasmin O.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": "43-46",
-    "createdAt": "2026-02-12T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Kadar E.",
-    "rating": 5,
-    "title": "Highly recommend",
-    "body": "Great quality for the price and it has become part of my daily kit.",
-    "fit": null,
-    "size": "35-38",
-    "createdAt": "2026-02-18T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Zahra N.",
-    "rating": 4,
-    "title": "Does the job",
-    "body": "Well made and practical. Delivery was quick too.",
-    "fit": null,
-    "size": "39-42",
-    "createdAt": "2026-02-24T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Hassan D.",
-    "rating": 5,
-    "title": "Built to last",
-    "body": "Materials feel premium and everything is thoughtfully designed. I use it every day.",
-    "fit": null,
-    "size": "43-46",
-    "createdAt": "2026-03-02T00:00:00.000Z"
-  },
-  {
-    "productLegacyId": "sx-ac-006",
-    "author": "Samira H.",
-    "rating": 4,
-    "title": "Great everyday piece",
-    "body": "Looks sharp and works well. Minor quibble on colour being slightly darker than photos.",
-    "fit": null,
-    "size": "35-38",
-    "createdAt": "2026-03-08T00:00:00.000Z"
-  }
+ {
+  "productLegacyId": "wf-fb-001",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "39",
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-001",
+  "author": "Nasra Y.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "40",
+  "createdAt": "2026-07-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-001",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "41",
+  "createdAt": "2026-08-11T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-002",
+  "author": "Kadra M.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "40",
+  "createdAt": "2026-07-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-002",
+  "author": "Hassan E.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "41",
+  "createdAt": "2026-08-09T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-002",
+  "author": "Hodan A.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "42",
+  "createdAt": "2026-06-14T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-002",
+  "author": "Omar B.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "43",
+  "createdAt": "2026-07-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-003",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "41",
+  "createdAt": "2026-08-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-003",
+  "author": "Deka S.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "42",
+  "createdAt": "2026-06-12T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-003",
+  "author": "Ibrahim H.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "43",
+  "createdAt": "2026-07-17T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-003",
+  "author": "Zahra R.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "44",
+  "createdAt": "2026-08-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-003",
+  "author": "Moussa D.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "45",
+  "createdAt": "2026-06-27T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-004",
+  "author": "Idil W.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "42",
+  "createdAt": "2026-06-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-004",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "43",
+  "createdAt": "2026-07-15T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-004",
+  "author": "Amina F.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "44",
+  "createdAt": "2026-08-20T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-004",
+  "author": "Abdourahman S.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "45",
+  "createdAt": "2026-06-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-004",
+  "author": "Nasra Y.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "39",
+  "createdAt": "2026-07-03T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-004",
+  "author": "Mohamed N.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "40",
+  "createdAt": "2026-08-08T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-005",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "43",
+  "createdAt": "2026-07-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-005",
+  "author": "Samira K.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "44",
+  "createdAt": "2026-08-18T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-005",
+  "author": "Ali G.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "45",
+  "createdAt": "2026-06-23T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-006",
+  "author": "Nasra Y.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "44",
+  "createdAt": "2026-08-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-006",
+  "author": "Mohamed N.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "45",
+  "createdAt": "2026-06-21T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-006",
+  "author": "Fatouma I.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "39",
+  "createdAt": "2026-07-26T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-006",
+  "author": "Youssouf A.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "40",
+  "createdAt": "2026-08-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-007",
+  "author": "Hassan E.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "45",
+  "createdAt": "2026-06-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-007",
+  "author": "Hodan A.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "39",
+  "createdAt": "2026-07-24T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-007",
+  "author": "Omar B.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "40",
+  "createdAt": "2026-08-02T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-007",
+  "author": "Idil W.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "41",
+  "createdAt": "2026-06-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-fb-007",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "42",
+  "createdAt": "2026-07-12T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-001",
+  "author": "Deka S.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "39",
+  "createdAt": "2026-07-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-001",
+  "author": "Ibrahim H.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "40",
+  "createdAt": "2026-08-27T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-001",
+  "author": "Zahra R.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "41",
+  "createdAt": "2026-06-05T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-001",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "42",
+  "createdAt": "2026-07-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-001",
+  "author": "Samira K.",
+  "rating": 4,
+  "title": "Size up half",
+  "body": "Excellent grip on our pitch. The fit is a little narrow so I went half a size up.",
+  "fit": "small",
+  "size": "43",
+  "createdAt": "2026-08-15T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-001",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Perfect for five-a-side",
+  "body": "Comfortable from the first game and the studs grip well on the artificial pitch.",
+  "fit": "true",
+  "size": "44",
+  "createdAt": "2026-06-20T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-002",
+  "author": "Ahmed O.",
+  "rating": 4,
+  "title": "Quality for the price",
+  "body": "Solid construction and looks great. Took a couple of sessions to break in.",
+  "fit": "true",
+  "size": "40",
+  "createdAt": "2026-08-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-002",
+  "author": "Amina F.",
+  "rating": 5,
+  "title": "Fast delivery",
+  "body": "Ordered on Monday and wore them on Wednesday. Exactly as pictured.",
+  "fit": "true",
+  "size": "41",
+  "createdAt": "2026-06-03T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tf-002",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "Best boots I have owned",
+  "body": "Great touch on the ball and very light. Played three matches already with no blisters.",
+  "fit": "true",
+  "size": "42",
+  "createdAt": "2026-07-08T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-001",
+  "author": "Samira K.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-001",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-07-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-001",
+  "author": "Kadra M.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-11T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-001",
+  "author": "Hassan E.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-002",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-07-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-002",
+  "author": "Fatouma I.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-09T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-002",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-14T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-002",
+  "author": "Deka S.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-002",
+  "author": "Ibrahim H.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-08-24T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-003",
+  "author": "Hodan A.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-003",
+  "author": "Omar B.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-12T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-003",
+  "author": "Idil W.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-17T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-003",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-08-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-003",
+  "author": "Amina F.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-06-27T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-003",
+  "author": "Abdourahman S.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-07-05T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-004",
+  "author": "Ibrahim H.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-004",
+  "author": "Zahra R.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-15T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-js-004",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-08-20T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-001",
+  "author": "Amina F.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-001",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-08-18T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-001",
+  "author": "Nasra Y.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-06-23T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-001",
+  "author": "Mohamed N.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-07-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-002",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-08-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-002",
+  "author": "Kadra M.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-06-21T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-002",
+  "author": "Hassan E.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-07-26T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-002",
+  "author": "Hodan A.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-08-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-002",
+  "author": "Omar B.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-06-09T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-003",
+  "author": "Fatouma I.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-06-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-003",
+  "author": "Youssouf A.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-07-24T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-003",
+  "author": "Deka S.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-08-02T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-003",
+  "author": "Ibrahim H.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-06-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-003",
+  "author": "Zahra R.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-07-12T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-kt-003",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-08-17T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-001",
+  "author": "Omar B.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-07-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-001",
+  "author": "Idil W.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-08-27T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-001",
+  "author": "Ahmed O.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-06-05T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-002",
+  "author": "Zahra R.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-08-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-002",
+  "author": "Moussa D.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-06-03T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-002",
+  "author": "Samira K.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-07-08T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-002",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-08-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-003",
+  "author": "Abdourahman S.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-003",
+  "author": "Nasra Y.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-07-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-003",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-08-11T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-003",
+  "author": "Fatouma I.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-06-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-003",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-07-21T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-004",
+  "author": "Kadra M.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-07-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-004",
+  "author": "Hassan E.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-08-09T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-004",
+  "author": "Hodan A.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-06-14T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-004",
+  "author": "Omar B.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-07-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-004",
+  "author": "Idil W.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-08-24T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-pl-004",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-06-02T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-001",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-08-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-001",
+  "author": "Deka S.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-06-12T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-001",
+  "author": "Ibrahim H.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-07-17T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-002",
+  "author": "Idil W.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-06-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-002",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-07-15T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-002",
+  "author": "Amina F.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-08-20T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-002",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-06-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-003",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-07-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-003",
+  "author": "Samira K.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-08-18T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-003",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-06-23T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-003",
+  "author": "Kadra M.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-07-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-003",
+  "author": "Hassan E.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-004",
+  "author": "Nasra Y.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-08-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-004",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-06-21T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-004",
+  "author": "Fatouma I.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-07-26T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-004",
+  "author": "Youssouf A.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-004",
+  "author": "Deka S.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-09T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-ts-004",
+  "author": "Ibrahim H.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-14T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sh-001",
+  "author": "Hassan E.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-06-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sh-001",
+  "author": "Hodan A.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-07-24T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sh-001",
+  "author": "Omar B.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-02T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-001",
+  "author": "Deka S.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-07-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-001",
+  "author": "Ibrahim H.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-27T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-001",
+  "author": "Zahra R.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-05T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-001",
+  "author": "Moussa D.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-002",
+  "author": "Ahmed O.",
+  "rating": 4,
+  "title": "Good fit",
+  "body": "Nice athletic cut. I am between sizes and the large fits well.",
+  "fit": "true",
+  "size": "M",
+  "createdAt": "2026-08-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-002",
+  "author": "Amina F.",
+  "rating": 5,
+  "title": "Very professional look",
+  "body": "Looks premium and the colours are strong. Staff love them.",
+  "fit": "true",
+  "size": "L",
+  "createdAt": "2026-06-03T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-002",
+  "author": "Abdourahman S.",
+  "rating": 4,
+  "title": "Runs slightly large",
+  "body": "Great quality, but it is a little roomy — size down if you like a tight fit.",
+  "fit": "large",
+  "size": "XL",
+  "createdAt": "2026-07-08T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-002",
+  "author": "Nasra Y.",
+  "rating": 5,
+  "title": "Washes well",
+  "body": "Several washes and still like new. Will order more for the academy.",
+  "fit": "true",
+  "size": "XXL",
+  "createdAt": "2026-08-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-tr-002",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Our whole team ordered",
+  "body": "The fabric stays cool even in the afternoon heat. Printing is clean and did not fade after washing.",
+  "fit": "true",
+  "size": "S",
+  "createdAt": "2026-06-18T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-001",
+  "author": "Samira K.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": "S (35-38)",
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-001",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": "M (39-42)",
+  "createdAt": "2026-07-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-001",
+  "author": "Kadra M.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": "L (43-46)",
+  "createdAt": "2026-08-11T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-001",
+  "author": "Hassan E.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": "S (35-38)",
+  "createdAt": "2026-06-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-001",
+  "author": "Hodan A.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": "M (39-42)",
+  "createdAt": "2026-07-21T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-001",
+  "author": "Omar B.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": "L (43-46)",
+  "createdAt": "2026-08-26T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-002",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": "M (39-42)",
+  "createdAt": "2026-07-04T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-002",
+  "author": "Fatouma I.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": "L (43-46)",
+  "createdAt": "2026-08-09T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-002",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": "S (35-38)",
+  "createdAt": "2026-06-14T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-003",
+  "author": "Hodan A.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": "L (43-46)",
+  "createdAt": "2026-08-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-003",
+  "author": "Omar B.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": "S (35-38)",
+  "createdAt": "2026-06-12T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-003",
+  "author": "Idil W.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": "M (39-42)",
+  "createdAt": "2026-07-17T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-sk-003",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": "L (43-46)",
+  "createdAt": "2026-08-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-001",
+  "author": "Ibrahim H.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-001",
+  "author": "Zahra R.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-15T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-001",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-20T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-001",
+  "author": "Samira K.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-001",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-03T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-002",
+  "author": "Amina F.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-002",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-18T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-002",
+  "author": "Nasra Y.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-23T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-002",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-002",
+  "author": "Fatouma I.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-002",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-11T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-003",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-16T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-003",
+  "author": "Kadra M.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-21T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bg-003",
+  "author": "Hassan E.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-26T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-gk-001",
+  "author": "Fatouma I.",
+  "rating": 4,
+  "title": "Solid",
+  "body": "Well made and good value. Would buy again.",
+  "fit": null,
+  "size": "10",
+  "createdAt": "2026-06-19T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-gk-001",
+  "author": "Youssouf A.",
+  "rating": 5,
+  "title": "Great for the team",
+  "body": "We ordered for all our players — everyone is happy.",
+  "fit": null,
+  "size": "11",
+  "createdAt": "2026-07-24T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-gk-001",
+  "author": "Deka S.",
+  "rating": 4,
+  "title": "Does the job",
+  "body": "Comfortable and durable after a month of use.",
+  "fit": null,
+  "size": "7",
+  "createdAt": "2026-08-02T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-gk-001",
+  "author": "Ibrahim H.",
+  "rating": 5,
+  "title": "Exactly what I needed",
+  "body": "Good quality and very practical for training days.",
+  "fit": null,
+  "size": "8",
+  "createdAt": "2026-06-07T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-001",
+  "author": "Omar B.",
+  "rating": 4,
+  "title": "Good training ball",
+  "body": "Survives hard courts and turf. Good value for the academy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-22T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-001",
+  "author": "Idil W.",
+  "rating": 5,
+  "title": "Very durable",
+  "body": "We use it every day and it still looks new.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-27T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-001",
+  "author": "Ahmed O.",
+  "rating": 5,
+  "title": "True flight",
+  "body": "Holds air well and the touch is consistent. Great for matches.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-05T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-001",
+  "author": "Amina F.",
+  "rating": 4,
+  "title": "Good training ball",
+  "body": "Survives hard courts and turf. Good value for the academy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-10T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-001",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "Very durable",
+  "body": "We use it every day and it still looks new.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-15T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-002",
+  "author": "Zahra R.",
+  "rating": 5,
+  "title": "Very durable",
+  "body": "We use it every day and it still looks new.",
+  "fit": null,
+  "size": "5",
+  "createdAt": "2026-08-25T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-002",
+  "author": "Moussa D.",
+  "rating": 5,
+  "title": "True flight",
+  "body": "Holds air well and the touch is consistent. Great for matches.",
+  "fit": null,
+  "size": "4",
+  "createdAt": "2026-06-03T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-002",
+  "author": "Samira K.",
+  "rating": 4,
+  "title": "Good training ball",
+  "body": "Survives hard courts and turf. Good value for the academy.",
+  "fit": null,
+  "size": "5",
+  "createdAt": "2026-07-08T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-002",
+  "author": "Ali G.",
+  "rating": 5,
+  "title": "Very durable",
+  "body": "We use it every day and it still looks new.",
+  "fit": null,
+  "size": "4",
+  "createdAt": "2026-08-13T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-002",
+  "author": "Kadra M.",
+  "rating": 5,
+  "title": "True flight",
+  "body": "Holds air well and the touch is consistent. Great for matches.",
+  "fit": null,
+  "size": "5",
+  "createdAt": "2026-06-18T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-002",
+  "author": "Hassan E.",
+  "rating": 4,
+  "title": "Good training ball",
+  "body": "Survives hard courts and turf. Good value for the academy.",
+  "fit": null,
+  "size": "4",
+  "createdAt": "2026-07-23T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-003",
+  "author": "Abdourahman S.",
+  "rating": 5,
+  "title": "True flight",
+  "body": "Holds air well and the touch is consistent. Great for matches.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-003",
+  "author": "Nasra Y.",
+  "rating": 4,
+  "title": "Good training ball",
+  "body": "Survives hard courts and turf. Good value for the academy.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-07-06T00:00:00.000Z"
+ },
+ {
+  "productLegacyId": "wf-bl-003",
+  "author": "Mohamed N.",
+  "rating": 5,
+  "title": "Very durable",
+  "body": "We use it every day and it still looks new.",
+  "fit": null,
+  "size": null,
+  "createdAt": "2026-08-11T00:00:00.000Z"
+ }
 ]

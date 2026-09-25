@@ -12,7 +12,8 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { categoryLabel } from '@/services/productService';
 import { useUiStore } from '@/store/uiStore';
 import type { Product } from '@/types';
-import { formatDate, pluralize } from '@/utils/format';
+import { formatDate } from '@/utils/format';
+import { t } from '@/i18n';
 import { firstAvailableColor, requiresSizeSelection, stockState } from '@/utils/product';
 
 function WishlistItem({ product, addedAt }: { product: Product; addedAt?: string }) {
@@ -34,8 +35,8 @@ function WishlistItem({ product, addedAt }: { product: Product; addedAt?: string
       <button
         type="button"
         onClick={() => remove(product.id)}
-        className="-mt-12 mr-2 flex h-10 w-10 items-center justify-center self-end rounded-full bg-white/90 text-ink hover:text-danger"
-        aria-label={`Remove ${product.name} from wishlist`}
+        className="-mt-12 me-2 flex h-10 w-10 items-center justify-center self-end rounded-full bg-white/90 text-ink hover:text-danger"
+        aria-label={t('product.wishlist.remove', { name: product.name })}
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -46,11 +47,11 @@ function WishlistItem({ product, addedAt }: { product: Product; addedAt?: string
         </Link>
         <Price price={product.price} compareAtPrice={product.compareAtPrice} className="mt-2" />
         <p className={state === 'out-of-stock' ? 'mt-1 text-xs text-danger' : state === 'low-stock' ? 'mt-1 text-xs text-warning' : 'mt-1 text-xs text-success'}>
-          {state === 'out-of-stock' ? 'Out of stock' : state === 'low-stock' ? `Only ${product.stock} left` : 'In stock'}
+          {state === 'out-of-stock' ? t('common.states.outOfStock') : state === 'low-stock' ? t('common.states.lowStock', { count: product.stock }) : t('common.states.inStock')}
         </p>
-        {addedAt && <p className="mt-0.5 text-xs text-ink-500">Saved {formatDate(addedAt)}</p>}
+        {addedAt && <p className="mt-0.5 text-xs text-ink-500">{t('product.wishlist.savedOn', { date: formatDate(addedAt) })}</p>}
         <Button variant={state === 'out-of-stock' ? 'outline' : 'primary'} size="sm" className="mt-4" onClick={add} disabled={state === 'out-of-stock'} leftIcon={<ShoppingBag className="h-4 w-4" />}>
-          {state === 'out-of-stock' ? 'Sold out' : 'Add to bag'}
+          {state === 'out-of-stock' ? t('product.page.soldOut') : t('common.actions.addToBag')}
         </Button>
       </div>
     </li>
@@ -67,11 +68,11 @@ function WishlistContent() {
     return (
       <EmptyState
         icon={<Heart />}
-        title="Your wishlist is empty"
-        description="Tap the heart on any product to save it here for later."
+        title={t('product.wishlist.emptyTitle')}
+        description={t('product.wishlist.emptyBody')}
         action={
           <ButtonLink to={ROUTES.newArrivals} variant="primary">
-            Discover new arrivals
+            {t('product.wishlist.discover')}
           </ButtonLink>
         }
       />
@@ -82,9 +83,9 @@ function WishlistContent() {
     <>
       {!isAuthenticated && (
         <InlineAlert className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span>Your wishlist is saved on this device. Sign in to keep it across devices.</span>
+          <span>{t('product.wishlist.guestNotice')}</span>
           <Link to={`${ROUTES.login}?redirect=${encodeURIComponent(location.pathname)}`} className="shrink-0 font-semibold underline underline-offset-4">
-            Sign in
+            {t('common.actions.signIn')}
           </Link>
         </InlineAlert>
       )}
@@ -105,14 +106,14 @@ function WishlistContent() {
 
 /** Public wishlist route (/wishlist). */
 export default function WishlistPage() {
-  usePageMeta({ title: 'Wishlist', noindex: true });
+  usePageMeta({ title: t('product.wishlist.title'), noindex: true });
   const { count } = useWishlist();
   return (
     <div className="container-site pb-24 pt-8 sm:pt-10">
-      <Breadcrumbs items={[{ label: 'Wishlist' }]} />
+      <Breadcrumbs items={[{ label: t('product.wishlist.title') }]} />
       <div className="mb-10 mt-6 flex items-end justify-between gap-4">
-        <h1 className="heading-xl">Wishlist</h1>
-        {count > 0 && <p className="pb-1 text-sm text-ink-500">{pluralize(count, 'item')}</p>}
+        <h1 className="heading-xl">{t('product.wishlist.title')}</h1>
+        {count > 0 && <p className="pb-1 text-sm text-ink-500">{t('common.labels.items', { count })}</p>}
       </div>
       <WishlistContent />
     </div>
@@ -121,10 +122,10 @@ export default function WishlistPage() {
 
 /** Account wishlist route (/account/wishlist). */
 export function AccountWishlistPage() {
-  usePageMeta({ title: 'Wishlist', noindex: true });
+  usePageMeta({ title: t('product.wishlist.title'), noindex: true });
   const { count } = useWishlist();
   return (
-    <AccountSection title="Wishlist" description={count ? `${pluralize(count, 'saved item')}` : undefined}>
+    <AccountSection title={t('product.wishlist.title')} description={count ? t('product.wishlist.savedItems', { count }) : undefined}>
       <WishlistContent />
     </AccountSection>
   );

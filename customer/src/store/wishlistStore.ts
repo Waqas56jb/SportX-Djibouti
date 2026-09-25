@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { t } from '@/i18n';
 import { STORAGE_KEYS } from '@/constants/storage';
 import { friendlyError } from '@/services/authService';
 import { wishlistService, type ServerWishlist } from '@/services/wishlistService';
@@ -47,7 +48,7 @@ export const useWishlistStore = create<WishlistState>()(
           .catch((err) => {
             if (v !== version || get().mode !== 'account') return;
             set({ items: previous });
-            toast.error('Could not update your wishlist', { description: friendlyError(err) });
+            toast.error(t('account.wishlist.updateError'), { description: friendlyError(err) });
           });
       };
 

@@ -54,6 +54,7 @@ export function toOrderSummary(o: OrderRow & { first_item_image?: string | null 
     grandTotal: o.grand_total,
     refundedTotal: o.refunded_total,
     shippingMethod: o.shipping_method_name,
+    shippingMethodCode: o.shipping_method_code ?? null,
     image: o.first_item_image ?? null,
     placedAt: iso(o.placed_at)!,
     updatedAt: iso(o.updated_at)!,

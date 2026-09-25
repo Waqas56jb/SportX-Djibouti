@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import type { CardDetails, Order, PaymentMethodOption, PaymentMethodType } from '@/types';
 import { ApiError, api, newIdempotencyKey } from './api';
 import { orderService, toPaymentMethodOption } from './orderService';
@@ -90,9 +91,9 @@ const stripeGateway: PaymentGateway = {
   usesStorefrontForm: false,
   async confirm(session) {
     const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
-    if (!key) throw new PaymentConfigError('Stripe is not configured on this storefront. Please choose another payment method or contact us.');
-    if (!session.clientSecret) throw new PaymentConfigError('The payment could not be started. Please try again.');
-    throw new PaymentConfigError('Stripe is not configured on this storefront (Stripe.js is not installed). Please choose another payment method.');
+    if (!key) throw new PaymentConfigError(t('checkout.errors.stripeMissing'));
+    if (!session.clientSecret) throw new PaymentConfigError(t('checkout.errors.startFailed'));
+    throw new PaymentConfigError(t('checkout.errors.stripeNotInstalled'));
   },
 };
 
@@ -101,7 +102,7 @@ const redirectGateway: PaymentGateway = {
   id: 'redirect',
   usesStorefrontForm: false,
   async confirm(session) {
-    if (!session.redirectUrl) throw new PaymentConfigError('This payment provider is not supported by the storefront yet.');
+    if (!session.redirectUrl) throw new PaymentConfigError(t('checkout.errors.providerUnsupported'));
     window.location.assign(session.redirectUrl);
     return 'pending';
   },
@@ -166,13 +167,13 @@ export const paymentService = {
     // Watch THIS attempt: the order keeps the previous attempt's FAILED status until the new one settles.
     const payment = outcome === 'pending' ? session.payment : await paymentService.waitForPayment(session.payment.id);
     const order = await orderService.getById(orderId);
-    if (!order) throw new ApiError('We could not find your order. Please check your account.', 404);
+    if (!order) throw new ApiError(t('checkout.errors.orderNotFound'), 404);
     if (payment.status === 'PAID' || order.paymentStatus === 'paid') return order.paymentStatus === 'paid' ? order : ((await paymentService.waitForSettlement(orderId, { timeoutMs: 5_000 })) ?? order);
     if (payment.status === 'FAILED' || payment.status === 'CANCELLED' || outcome === 'failed') {
       throw new ApiError(
         payment.failureReason && !/test/i.test(payment.failureReason)
-          ? `Your payment was declined: ${payment.failureReason}.`
-          : 'Your payment was declined. Please check your details or try another card.',
+          ? t('checkout.errors.declinedReason', { reason: payment.failureReason })
+          : t('checkout.errors.declined'),
         402,
         'PAYMENT_FAILED',
       );

@@ -14,8 +14,7 @@ import {
   type ProductSelection,
 } from '@/components/product';
 import { ProductReviews } from '@/components/review/Reviews';
-import { SPORT_LABELS } from '@/constants/labels';
-import { ROUTES } from '@/constants/routes';
+import { ROUTES, categoryPath } from '@/constants/routes';
 import { SITE } from '@/constants/site';
 import { useAsync } from '@/hooks/useAsync';
 import { usePageMeta } from '@/hooks/usePageMeta';
@@ -29,12 +28,11 @@ import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/format';
 import { discountPercent } from '@/utils/product';
 import { ProductDetails } from './ProductDetails';
-
-const BADGE_LABEL = { new: 'New', bestseller: 'Best Seller', limited: 'Limited', exclusive: 'Exclusive' } as const;
+import { t } from '@/i18n';
 
 function ProductSkeleton() {
   return (
-    <div className="container-site grid grid-cols-1 gap-10 py-8 lg:grid-cols-[1.25fr_1fr] lg:gap-16" aria-busy="true" aria-label="Loading product">
+    <div className="container-site grid grid-cols-1 gap-10 py-8 lg:grid-cols-[1.25fr_1fr] lg:gap-16" aria-busy="true" aria-label={t('product.page.loading')}>
       <Skeleton className="aspect-[4/5] w-full" />
       <div className="space-y-5 pt-6">
         <Skeleton className="h-3 w-24" />
@@ -84,7 +82,7 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
         </a>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Price price={product.price} compareAtPrice={product.compareAtPrice} size="xl" />
-          {pct > 0 && <Badge tone="sale">Save {pct}%</Badge>}
+          {pct > 0 && <Badge tone="sale">{t('product.badge.save', { pct })}</Badge>}
         </div>
         <p className="mt-5 text-[15px] leading-relaxed text-ink-600">{product.shortDescription}</p>
 
@@ -101,12 +99,12 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
             <div className="flex gap-3">
               <QuantitySelector value={sel.quantity} onChange={sel.setQuantity} max={sel.maxQuantity} disabled={disabled} className="h-14" />
               <Button variant="primary" size="lg" className="h-14 min-w-0 flex-1 px-4 sm:px-8" onClick={addToBag} loading={sel.adding} disabled={disabled}>
-                {sel.soldOut ? 'Out of stock' : sel.variantSoldOut ? 'Size sold out' : 'Add to bag'}
+                {sel.soldOut ? t('common.states.outOfStock') : sel.variantSoldOut ? t('product.page.sizeSoldOut') : t('common.actions.addToBag')}
               </Button>
             </div>
             <div className="flex gap-3">
               <Button variant="outline" size="lg" className="h-14 min-w-0 flex-1" onClick={buyNow} disabled={disabled} leftIcon={<Zap className="h-4 w-4" />}>
-                Buy now
+                {t('product.page.buyNow')}
               </Button>
               <WishlistButton product={product} variant="outline" />
             </div>
@@ -115,9 +113,9 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
 
         <ul className="mt-8 grid gap-px border border-paper-200 bg-paper-200 text-sm sm:grid-cols-3">
           {[
-            { icon: Truck, title: 'Delivery', text: freeFrom ? `Free over ${formatPrice(freeFrom)}` : 'Across Djibouti' },
-            { icon: Store, title: 'Store pickup', text: pickup ? (pickup.price === 0 ? 'Free · Place Menelik' : formatPrice(pickup.price)) : 'Place Menelik' },
-            { icon: RotateCcw, title: 'Easy returns', text: 'Unworn items' },
+            { icon: Truck, title: t('product.page.delivery'), text: freeFrom ? t('product.page.freeOver', { price: formatPrice(freeFrom) }) : t('product.page.acrossDjibouti') },
+            { icon: Store, title: t('product.page.storePickup'), text: pickup ? (pickup.price === 0 ? t('product.page.pickupFree') : formatPrice(pickup.price)) : 'Place Menelik' },
+            { icon: RotateCcw, title: t('product.page.easyReturns'), text: t('product.page.unworn') },
           ].map(({ icon: Icon, title, text }) => (
             <li key={title} className="flex items-center gap-3 bg-white p-4 sm:flex-col sm:items-start sm:gap-2">
               <Icon className="h-5 w-5 shrink-0" strokeWidth={1.5} aria-hidden />
@@ -128,8 +126,11 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
             </li>
           ))}
         </ul>
-        <p className="mt-4 flex items-center gap-2 text-xs text-ink-500">
-          <ShieldCheck className="h-4 w-4" aria-hidden /> Secure checkout · Questions? Call {SITE.contact.phone}
+        <p className="mt-4 flex items-start gap-2 text-xs text-ink-500">
+          <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            {t('product.page.secure')} <span className="ltr-text whitespace-nowrap">{SITE.contact.phone}</span>
+          </span>
         </p>
       </div>
 
@@ -156,12 +157,12 @@ function PurchasePanel({ product, sel }: { product: Product; sel: ProductSelecti
             disabled={sel.soldOut}
             tabIndex={ctaVisible ? -1 : 0}
           >
-            {sel.soldOut ? 'Sold out' : sel.size || product.sizes.length <= 1 ? 'Add to bag' : 'Select size'}
+            {sel.soldOut ? t('product.page.soldOut') : sel.size || product.sizes.length <= 1 ? t('common.actions.addToBag') : t('product.page.selectSize')}
           </Button>
         </div>
       </div>
 
-      <SizeGuideModal open={guide} onClose={() => setGuide(false)} type={product.sizeGuide} />
+      <SizeGuideModal open={guide} onClose={() => setGuide(false)} type={product.sizeGuide} category={product.category} />
     </>
   );
 }
@@ -176,23 +177,23 @@ function ProductRails({ product }: { product: Product }) {
     <>
       {(look.loading || (look.data && look.data.length > 0)) && (
         <section className="border-t border-paper-200 py-16 sm:py-20" aria-labelledby="look-title">
-          <SectionHeading eyebrow="Style it with" title={<span id="look-title">Complete the look</span>} />
+          <SectionHeading eyebrow={t('product.page.styleWith')} title={<span id="look-title">{t('product.page.completeLook')}</span>} />
           <div className="mt-10">
-            <ProductCarousel label="Complete the look" products={look.data} loading={look.loading} error={look.error} onRetry={look.reload} />
+            <ProductCarousel label={t('product.page.completeLook')} products={look.data} loading={look.loading} error={look.error} onRetry={look.reload} />
           </div>
         </section>
       )}
       <section className="border-t border-paper-200 py-16 sm:py-20" aria-labelledby="related-title">
-        <SectionHeading eyebrow={`More ${SPORT_LABELS[product.sport]}`} title={<span id="related-title">You may also like</span>} />
+        <SectionHeading eyebrow={t('product.page.moreOf', { name: categoryLabel(product) })} title={<span id="related-title">{t('product.page.alsoLike')}</span>} />
         <div className="mt-10">
-          <ProductCarousel label="Related products" products={related.data} loading={related.loading} error={related.error} onRetry={related.reload} />
+          <ProductCarousel label={t('product.page.related')} products={related.data} loading={related.loading} error={related.error} onRetry={related.reload} />
         </div>
       </section>
       {recentSlugs.length > 0 && recent.data && recent.data.length > 0 && (
         <section className="border-t border-paper-200 py-16 sm:py-20" aria-labelledby="recent-title">
-          <SectionHeading eyebrow="Your history" title={<span id="recent-title">Recently viewed</span>} />
+          <SectionHeading eyebrow={t('product.page.history')} title={<span id="recent-title">{t('product.page.recent')}</span>} />
           <div className="mt-10">
-            <ProductCarousel label="Recently viewed" products={recent.data} />
+            <ProductCarousel label={t('product.page.recent')} products={recent.data} />
           </div>
         </section>
       )}
@@ -211,7 +212,7 @@ export default function ProductPage() {
   }, [product, addRecent]);
 
   usePageMeta({
-    title: product?.name ?? (loading ? 'Loading' : 'Product'),
+    title: product?.name ?? (loading ? t('common.states.loading') : t('product.page.metaFallback')),
     description: product?.shortDescription,
     path: slug ? `/product/${slug}` : undefined,
     image: product?.images[0]?.url,
@@ -239,12 +240,12 @@ export default function ProductPage() {
   if (error) {
     return (
       <div className="container-site">
-        <ErrorState title="We couldn’t load this product" message={error} onRetry={reload} className="py-24" />
+        <ErrorState title={t('product.page.loadError')} message={error} onRetry={reload} className="py-24" />
       </div>
     );
   }
   if (!product) {
-    return <NotFoundPage title="This product has left the field." message="The product you’re looking for is no longer available or the link is incorrect. Explore the latest gear instead." />;
+    return <NotFoundPage title={t('product.page.notFoundTitle')} message={t('product.page.notFoundBody')} />;
   }
 
   const pct = discountPercent(product.price, product.compareAtPrice);
@@ -254,8 +255,8 @@ export default function ProductPage() {
       <div className="container-site pt-5 sm:pt-6">
         <Breadcrumbs
           items={[
-            { label: 'Shop', href: '/shop' },
-            { label: SPORT_LABELS[product.sport], href: product.sport === 'lifestyle' ? '/shop?sport=lifestyle' : `/${product.sport}` },
+            { label: t('catalog.crumbs.shop'), href: '/shop' },
+            ...(product.category ? [{ label: categoryLabel(product), href: categoryPath(product.category) }] : []),
             { label: product.name },
           ]}
         />
@@ -267,9 +268,9 @@ export default function ProductPage() {
             activeIndex={sel.colorImageIndex ?? 0}
             badges={
               <>
-                {sel.soldOut && <Badge tone="neutral">Sold Out</Badge>}
+                {sel.soldOut && <Badge tone="neutral">{t('product.badge.soldOut')}</Badge>}
                 {pct > 0 && <Badge tone="sale">−{pct}%</Badge>}
-                {product.badge && <Badge tone="dark">{BADGE_LABEL[product.badge]}</Badge>}
+                {product.badge && <Badge tone="dark">{t(`common.badge.${product.badge}`)}</Badge>}
               </>
             }
           />

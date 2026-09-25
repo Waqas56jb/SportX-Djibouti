@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MAX_QUANTITY_PER_LINE } from '@/constants/commerce';
 import { STORAGE_KEYS } from '@/constants/storage';
+import { t } from '@/i18n';
 import { errorMessage } from '@/services';
 import { ApiError } from '@/services/api';
 import { cartService, type ServerCart } from '@/services/cartService';
@@ -92,18 +93,18 @@ export const useCartStore = create<CartState>()(
               const after = next.items.find((i) => i.variantId === incoming.variantId)?.quantity ?? 0;
               if (after <= before) {
                 const issue = next.issues.find((i) => i.variantId === incoming.variantId);
-                return { ok: false, reason: issue?.message ?? 'You already have the maximum available in your bag.' };
+                return { ok: false, reason: issue?.message ?? t('cart.errors.maxInBag') };
               }
               return { ok: true, quantity: after - before };
             } catch (err) {
-              return { ok: false, reason: errorMessage(err, 'We couldn’t add this item. Please try again.') };
+              return { ok: false, reason: errorMessage(err, t('cart.errors.addFailed')) };
             }
           }
           const existing = get().local.find((i) => i.id === incoming.id);
           const limit = lineLimit(incoming);
           const current = existing?.quantity ?? 0;
-          if (limit <= 0) return { ok: false, reason: 'This item is out of stock.' };
-          if (current >= limit) return { ok: false, reason: `You already have the maximum available (${limit}) in your bag.` };
+          if (limit <= 0) return { ok: false, reason: t('cart.errors.outOfStock') };
+          if (current >= limit) return { ok: false, reason: t('cart.errors.maxInBagCount', { count: limit }) };
           const quantity = Math.min(current + incoming.quantity, limit);
           set((s) => ({
             local: existing
@@ -119,7 +120,7 @@ export const useCartStore = create<CartState>()(
             await apply(
               () => cartService.updateItem(id, q),
               (s) => ({ ...s, items: s.items.map((i) => (i.id === id ? { ...i, quantity: q } : i)) }),
-            ).catch((err) => toast.error('Couldn’t update quantity', { description: errorMessage(err) }));
+            ).catch((err) => toast.error(t('cart.toast.updateFailed'), { description: errorMessage(err) }));
             return;
           }
           set((s) => ({ local: s.local.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, Math.min(quantity, lineLimit(i))) } : i)) }));
@@ -130,7 +131,7 @@ export const useCartStore = create<CartState>()(
             await apply(
               () => cartService.removeItem(id),
               (s) => ({ ...s, items: s.items.filter((i) => i.id !== id) }),
-            ).catch((err) => toast.error('Couldn’t remove item', { description: errorMessage(err) }));
+            ).catch((err) => toast.error(t('cart.toast.removeFailed'), { description: errorMessage(err) }));
             return;
           }
           set((s) => ({ local: s.local.filter((i) => i.id !== id) }));
@@ -144,13 +145,13 @@ export const useCartStore = create<CartState>()(
         clearLocal: () => set({ local: [] }),
 
         applyCoupon: async (code) => {
-          if (get().mode !== 'account') throw new ApiError('Sign in to use a promo code — it is applied to your account bag.', 401, 'AUTH_REQUIRED');
+          if (get().mode !== 'account') throw new ApiError(t('cart.errors.couponSignIn'), 401, 'AUTH_REQUIRED');
           await apply(() => cartService.applyCoupon(code));
         },
 
         removeCoupon: async () => {
           if (get().mode !== 'account') return;
-          await apply(() => cartService.removeCoupon()).catch((err) => toast.error('Couldn’t remove the code', { description: errorMessage(err) }));
+          await apply(() => cartService.removeCoupon()).catch((err) => toast.error(t('cart.toast.couponRemoveFailed'), { description: errorMessage(err) }));
         },
 
         refresh: async () => {
@@ -177,7 +178,7 @@ export const useCartStore = create<CartState>()(
             set({ server: next, issues: next.issues, local: [] });
           } catch (err) {
             // Keep the guest bag so nothing is lost; the next attach / refresh retries.
-            set({ syncError: errorMessage(err, 'We couldn’t load your bag.') });
+            set({ syncError: errorMessage(err, t('cart.errors.loadFailed')) });
           } finally {
             set({ syncing: false });
           }

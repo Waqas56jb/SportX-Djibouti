@@ -1,15 +1,19 @@
 import { CategoryShowcase } from '@/components/marketing/CategoryShowcase';
-import { BestSellers, BasketballSpotlight, CampaignBanner, FootballSpotlight, TrainingCollection } from '@/components/marketing/Editorial';
+import { CeoMessage } from '@/components/marketing/CeoMessage';
+import { BestSellers, CampaignBanner, FootballSpotlight, TeamwearSpotlight, TrainingCollection } from '@/components/marketing/Editorial';
 import { FlashSale } from '@/components/marketing/FlashSale';
 import { Hero } from '@/components/marketing/Hero';
 import { NewArrivals } from '@/components/marketing/ProductShelf';
 import { NewsletterSection, WhySportx } from '@/components/marketing/Benefits';
 import { SITE } from '@/constants/site';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { useT } from '@/i18n';
 
 export default function HomePage() {
+  const { t } = useT();
   usePageMeta({
-    description: SITE.description,
+    title: t('home.meta.title'),
+    description: t('common.site.description'),
     path: '/',
     jsonLd: {
       '@context': 'https://schema.org',
@@ -34,7 +38,8 @@ export default function HomePage() {
       <NewArrivals />
       <CampaignBanner />
       <FootballSpotlight />
-      <BasketballSpotlight />
+      <TeamwearSpotlight />
+      <CeoMessage />
       <TrainingCollection />
       <FlashSale />
       <BestSellers />

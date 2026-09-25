@@ -3,6 +3,7 @@ import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
 import { isSizeAvailable, stockFor } from '@/utils/product';
 import { LOW_STOCK_THRESHOLD } from '@/constants/commerce';
+import { t } from '@/i18n';
 
 interface ColorSelectorProps {
   product: Product;
@@ -16,9 +17,9 @@ export function ColorSelector({ product, value, onChange, error }: ColorSelector
   return (
     <fieldset>
       <legend className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
-        Colour <span className="font-normal normal-case tracking-normal text-ink-500">— {value ?? 'Select'}</span>
+        {t('common.labels.colour')} <span className="font-normal normal-case tracking-normal text-ink-500">— {value ?? t('product.selectors.select')}</span>
       </legend>
-      <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Colour">
+      <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label={t('common.labels.colour')}>
         {product.colors.map((c) => {
           const out = stockFor(product, c.name) === 0;
           const selected = value === c.name;
@@ -28,7 +29,7 @@ export function ColorSelector({ product, value, onChange, error }: ColorSelector
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={`${c.name}${out ? ' (sold out)' : ''}`}
+              aria-label={out ? t('product.selectors.colourSoldOut', { name: c.name }) : c.name}
               onClick={() => onChange(c.name)}
               className={cn(
                 'relative h-11 w-11 rounded-full border-2 p-[3px] transition-all duration-200',
@@ -62,16 +63,16 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
     <fieldset>
       <div className="mb-3 flex items-center justify-between">
         <legend className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
-          Size {value && <span className="font-normal normal-case tracking-normal text-ink-500">— {value}</span>}
+          {t('common.labels.size')} {value && <span className="font-normal normal-case tracking-normal text-ink-500">— {value}</span>}
         </legend>
         {onOpenGuide && product.sizeGuide !== 'none' && (
           <button type="button" onClick={onOpenGuide} className="inline-flex items-center gap-1.5 text-xs font-medium text-ink underline underline-offset-4 hover:text-accent-dark">
             <Ruler className="h-3.5 w-3.5" aria-hidden />
-            Size guide
+            {t('product.selectors.sizeGuide')}
           </button>
         )}
       </div>
-      <div className={cn('grid gap-2', wide ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-4 sm:grid-cols-5')} role="radiogroup" aria-label="Size" aria-invalid={error || undefined}>
+      <div className={cn('grid gap-2', wide ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-4 sm:grid-cols-5')} role="radiogroup" aria-label={t('common.labels.size')} aria-invalid={error || undefined}>
         {product.sizes.map((s) => {
           const available = color ? isSizeAvailable(product, color, s) : false;
           const v = color ? product.variants.find((x) => x.color === color && x.size === s) : undefined;
@@ -85,7 +86,7 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
               role="radio"
               aria-checked={selected}
               aria-disabled={!available}
-              aria-label={`${s}${!available ? ' — sold out' : isLow ? ` — only ${low} left` : ''}`}
+              aria-label={!available ? t('product.selectors.sizeSoldOut', { size: s }) : isLow ? t('product.selectors.sizeLow', { size: s, count: low }) : s}
               onClick={() => available && onChange(s)}
               className={cn(
                 'relative flex h-12 items-center justify-center border text-sm font-medium transition-all duration-150',
@@ -98,14 +99,14 @@ export function SizeSelector({ product, color, value, onChange, error, onOpenGui
               )}
             >
               {s}
-              {available && isLow && !selected && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
+              {available && isLow && !selected && <span className="absolute end-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
             </button>
           );
         })}
       </div>
       {error && !value && (
         <p className="field-error" role="alert">
-          <AlertCircle className="h-3.5 w-3.5" aria-hidden /> Please select a size
+          <AlertCircle className="h-3.5 w-3.5" aria-hidden /> {t('product.selectors.selectSize')}
         </p>
       )}
     </fieldset>
@@ -116,20 +117,20 @@ export function StockIndicator({ stock, sizeChosen, status }: { stock: number; s
   if (stock <= 0) {
     return (
       <p className="flex items-center gap-2 text-sm font-medium text-danger">
-        <span className="h-2 w-2 rounded-full bg-danger" aria-hidden /> Out of stock
+        <span className="h-2 w-2 rounded-full bg-danger" aria-hidden /> {t('common.states.outOfStock')}
       </p>
     );
   }
   if (status ? status === 'LOW_STOCK' : stock <= LOW_STOCK_THRESHOLD) {
     return (
       <p className="flex items-center gap-2 text-sm font-medium text-warning">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden /> Only {stock} left{sizeChosen ? ' in this size' : ''}
+        <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden /> {sizeChosen ? t('product.selectors.lowInSize', { count: stock }) : t('common.states.lowStock', { count: stock })}
       </p>
     );
   }
   return (
     <p className="flex items-center gap-2 text-sm font-medium text-success">
-      <span className="h-2 w-2 rounded-full bg-success" aria-hidden /> In stock{sizeChosen ? '' : ' — select your size'}
+      <span className="h-2 w-2 rounded-full bg-success" aria-hidden /> {sizeChosen ? t('common.states.inStock') : t('product.selectors.inStockSelect')}
     </p>
   );
 }

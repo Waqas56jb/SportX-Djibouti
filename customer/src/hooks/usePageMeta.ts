@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { SITE } from '@/constants/site';
+import { t } from '@/i18n';
 
 interface PageMeta {
   title?: string;
@@ -39,8 +40,8 @@ export function usePageMeta({ title, description, path, image, noindex, jsonLd }
   const jsonLdKey = jsonLd ? JSON.stringify(jsonLd) : '';
 
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
-    const desc = description ?? SITE.description;
+    const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${t('common.site.tagline')}`;
+    const desc = description ?? t('common.site.description');
     const canonical = `${SITE.url}${path ?? window.location.pathname}`;
 
     document.title = fullTitle;

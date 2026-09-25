@@ -14,3 +14,4 @@ export { AccordionItem } from './Accordion';
 export { Breadcrumbs, type Crumb } from './Breadcrumbs';
 export { QuantitySelector } from './QuantitySelector';
 export { SectionHeading, Reveal } from './Section';
+export { LanguageSwitcher } from './LanguageSwitcher';

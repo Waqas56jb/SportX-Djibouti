@@ -2,15 +2,16 @@ import { ShoppingBag } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ButtonLink, EmptyState, ErrorState, InlineAlert, PageLoader } from '@/components/common';
-import { CartIssuesAlert } from '@/components/cart';
+import { CartIssuesAlert, RichText } from '@/components/cart';
 import { CheckoutSteps, InformationStep, MobileOrderSummary, OrderSummaryPanel, PaymentStep, ShippingStep } from '@/components/checkout';
 import { ROUTES, confirmationPath } from '@/constants/routes';
 import { useAsync } from '@/hooks/useAsync';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { useT } from '@/i18n';
 import { errorMessage } from '@/services';
-import { ApiError, api, newIdempotencyKey } from '@/services/api';
+import { ApiError, api, localizeServerMessage, newIdempotencyKey } from '@/services/api';
 import { orderService, toApiPaymentMethod, type CheckoutValidateInput } from '@/services/orderService';
 import { paymentService } from '@/services/paymentService';
 import { useAuthStore } from '@/store/authStore';
@@ -23,7 +24,8 @@ const isOnline = (m: string | null | undefined) => m === 'card' || m === 'mobile
 
 /** Checkout requires an account: the order is placed from the signed-in customer's server cart. */
 export default function CheckoutPage() {
-  usePageMeta({ title: 'Checkout', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('checkout.pageTitle'), noindex: true });
   const { user } = useAuth();
   const authStatus = useAuthStore((s) => s.status);
   if (authStatus === 'restoring') return <PageLoader />;
@@ -33,13 +35,14 @@ export default function CheckoutPage() {
 
 function CheckoutFlow({ user }: { user: User }) {
   const navigate = useNavigate();
+  const { t } = useT();
   const cart = useCart();
   const checkout = useCheckoutStore();
   const [validation, setValidation] = useState<CheckoutValidation | null>(null);
   const [validating, setValidating] = useState(false);
   const [validateError, setValidateError] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
-  const [placingText, setPlacingText] = useState('Placing order…');
+  const [placingText, setPlacingText] = useState(() => t('checkout.payment.placing'));
   const [placeError, setPlaceError] = useState<string | null>(null);
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
   const [restoringPending, setRestoringPending] = useState(Boolean(checkout.pendingOrderId));
@@ -138,7 +141,7 @@ function CheckoutFlow({ user }: { user: User }) {
       setValidateError(null);
     } catch (err) {
       if (id !== validateReq.current) return;
-      setValidateError(errorMessage(err, 'We couldn’t check your order. Please try again.'));
+      setValidateError(errorMessage(err, t('checkout.page.validateFailed')));
     } finally {
       if (id === validateReq.current) setValidating(false);
     }
@@ -147,8 +150,8 @@ function CheckoutFlow({ user }: { user: User }) {
 
   useEffect(() => {
     if (!server || cart.syncing) return;
-    const t = window.setTimeout(() => void runValidation(), 250);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => void runValidation(), 250);
+    return () => window.clearTimeout(timer);
   }, [runValidation, server, cart.syncing]);
 
   // Default / fix the shipping method from the server's options.
@@ -207,7 +210,7 @@ function CheckoutFlow({ user }: { user: User }) {
     try {
       let order = pendingOrder;
       if (!order) {
-        setPlacingText('Placing order…');
+        setPlacingText(t('checkout.payment.placing'));
         // Same key for retries / double clicks of this attempt → the API returns the same order.
         order = await orderService.create(buildOrderInput(), checkout.ensureAttemptKey());
         if (isOnline(order.payment.method) && order.paymentStatus !== 'paid') {
@@ -216,7 +219,7 @@ function CheckoutFlow({ user }: { user: User }) {
         }
       }
       if (isOnline(order.payment.method) && order.paymentStatus !== 'paid') {
-        setPlacingText('Processing payment…');
+        setPlacingText(t('checkout.payment.processing'));
         payKeyRef.current ??= newIdempotencyKey();
         try {
           order = await paymentService.payOrder(order.id, { method: order.payment.method, card: details.card, phone: details.phone }, payKeyRef.current);
@@ -226,9 +229,9 @@ function CheckoutFlow({ user }: { user: User }) {
       }
       finish(order);
     } catch (err) {
-      const message = errorMessage(err, 'We couldn’t place your order. Please try again.');
+      const message = errorMessage(err, t('checkout.page.placeFailed'));
       if (checkout.pendingOrderId) {
-        setPlaceError(`${message} Your order is saved — you can retry the payment now.`);
+        setPlaceError(t('checkout.page.savedRetry', { message }));
       } else {
         setPlaceError(message);
         // Stock / price / coupon changed since the last check → show the server's view.
@@ -259,11 +262,11 @@ function CheckoutFlow({ user }: { user: User }) {
       <div className="container-site py-10">
         <EmptyState
           icon={<ShoppingBag />}
-          title="Your bag is empty"
-          description={cart.issues.length ? 'The items in your bag are no longer available.' : 'Add products to your bag to check out.'}
+          title={t('cart.empty.title')}
+          description={cart.issues.length ? t('checkout.page.emptyUnavailable') : t('checkout.page.emptyBody')}
           action={
             <ButtonLink to={ROUTES.shop} variant="primary">
-              Continue shopping
+              {t('common.actions.continueShopping')}
             </ButtonLink>
           }
         />
@@ -288,11 +291,11 @@ function CheckoutFlow({ user }: { user: User }) {
     : (validation?.totals ?? cart.totals);
   const coupon = pendingOrder ? (pendingOrder.couponCode ? { code: pendingOrder.couponCode, description: '', type: 'fixed', value: 0 } : null) : (validation?.coupon ?? cart.coupon);
   const shippingKnown = Boolean(pendingOrder || validation?.shipping);
-  const shippingLabel = pendingOrder?.shipping.method.name ?? validation?.shipping?.name ?? 'Shipping';
+  const shippingLabel = pendingOrder?.shipping.method.name ?? validation?.shipping?.name ?? t('cart.totals.shipping');
   const issues = pendingOrder ? [] : [...(validation?.issues ?? []), ...cart.issues];
   const blockingProblems = (validation?.problems ?? []).filter((p) => p.field !== 'shippingMethod' || checkout.step !== 'information');
-  const stepProblems = blockingProblems.filter((p) => p.field === 'address' || p.field === 'shippingMethod').map((p) => p.message);
-  const otherProblems = blockingProblems.filter((p) => p.field !== 'address' && p.field !== 'shippingMethod').map((p) => p.message);
+  const stepProblems = blockingProblems.filter((p) => p.field === 'address' || p.field === 'shippingMethod').map((p) => localizeServerMessage(p.message));
+  const otherProblems = blockingProblems.filter((p) => p.field !== 'address' && p.field !== 'shippingMethod').map((p) => localizeServerMessage(p.message));
 
   const summaryProps = {
     items: summaryItems,
@@ -310,7 +313,7 @@ function CheckoutFlow({ user }: { user: User }) {
     <>
       <MobileOrderSummary {...summaryProps} />
       <div className="container-site py-8 sm:py-12">
-        <h1 className="sr-only">Checkout</h1>
+        <h1 className="sr-only">{t('checkout.pageTitle')}</h1>
         <div className="grid gap-10 lg:grid-cols-[1fr_420px] lg:gap-12 xl:grid-cols-[1fr_460px] xl:gap-16">
           <div className="min-w-0">
             <div className="mb-8">
@@ -320,14 +323,14 @@ function CheckoutFlow({ user }: { user: User }) {
             <CartIssuesAlert issues={issues} className="mb-6" />
             {pendingOrder && (
               <InlineAlert tone="warning" className="mb-6">
-                Order <strong className="font-semibold">{pendingOrder.number}</strong> is reserved and awaiting payment. Complete the payment below to confirm it.
+                <RichText text={t('checkout.page.reserved')} parts={{ number: <strong className="ltr-text font-semibold">{pendingOrder.number}</strong> }} />
               </InlineAlert>
             )}
             {validateError && (
               <InlineAlert tone="error" className="mb-6">
                 {validateError}{' '}
                 <button type="button" className="font-semibold underline" onClick={() => void runValidation()}>
-                  Retry
+                  {t('common.actions.retry')}
                 </button>
               </InlineAlert>
             )}

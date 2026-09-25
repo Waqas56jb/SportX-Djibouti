@@ -1,86 +1,114 @@
 [
-  {
-    "slug": "football",
-    "name": "Football",
-    "description": "Boots, balls & match kit",
-    "image": "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?auto=format&fit=crop&q=80",
-    "href": "/football"
-  },
-  {
-    "slug": "basketball",
-    "name": "Basketball",
-    "description": "Court shoes & game balls",
-    "image": "https://images.unsplash.com/photo-1608245449230-4ac19066d2d0?auto=format&fit=crop&q=80",
-    "href": "/basketball"
-  },
-  {
-    "slug": "running",
-    "name": "Running",
-    "description": "Road, trail & race day",
-    "image": "https://images.unsplash.com/photo-1594882645126-14020914d58d?auto=format&fit=crop&q=80",
-    "href": "/running"
-  },
-  {
-    "slug": "training",
-    "name": "Training",
-    "description": "Strength, HIIT & conditioning",
-    "image": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80",
-    "href": "/training"
-  },
-  {
-    "slug": "apparel",
-    "name": "Apparel",
-    "description": "Tees, tracksuits & layers",
-    "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80",
-    "href": "/categories/apparel"
-  },
-  {
-    "slug": "equipment",
-    "name": "Equipment",
-    "description": "Balls, bags & gym gear",
-    "image": "https://images.unsplash.com/photo-1590239926044-4131f5d0654d?auto=format&fit=crop&q=80",
-    "href": "/equipment"
-  },
-  {
-    "slug": "footwear",
-    "name": "Footwear",
-    "description": "Every sport, every surface",
-    "image": "https://images.unsplash.com/photo-1579338559194-a162d19bf842?auto=format&fit=crop&q=80",
-    "href": "/categories/footwear"
-  },
-  {
-    "slug": "accessories",
-    "name": "Accessories",
-    "description": "Caps, socks & wearables",
-    "image": "https://images.unsplash.com/photo-1622445275576-721325763afe?auto=format&fit=crop&q=80",
-    "href": "/categories/accessories"
-  },
-  {
-    "slug": "bags",
-    "name": "Bags",
-    "description": "Backpacks & packs",
-    "image": "https://images.unsplash.com/photo-1546938576-6e6a64f317cc?auto=format&fit=crop&q=80",
-    "href": "/categories/bags"
-  },
-  {
-    "slug": "balls",
-    "name": "Balls",
-    "description": "Match & training balls",
-    "image": "https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?auto=format&fit=crop&q=80",
-    "href": "/categories/balls"
-  },
-  {
-    "slug": "gym-equipment",
-    "name": "Gym Equipment",
-    "description": "Home & club training",
-    "image": "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&q=80",
-    "href": "/categories/gym-equipment"
-  },
-  {
-    "slug": "kids",
-    "name": "Kids",
-    "description": "For young athletes",
-    "image": "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&q=80",
-    "href": "/kids"
-  }
+ {
+  "slug": "football-boots",
+  "name": "Football Boots",
+  "description": "Firm-ground match boots",
+  "image": "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&q=80",
+  "href": "/categories/football-boots"
+ },
+ {
+  "slug": "turf-shoes",
+  "name": "Turf & Indoor",
+  "description": "Five-a-side and futsal",
+  "image": "https://images.unsplash.com/photo-1768696082264-44f14594ca2c?auto=format&fit=crop&q=80",
+  "href": "/categories/turf-shoes"
+ },
+ {
+  "slug": "jerseys",
+  "name": "Jerseys",
+  "description": "Club, match and goalkeeper jerseys",
+  "image": "https://images.unsplash.com/photo-1689624291789-7b402a15915a?auto=format&fit=crop&q=80",
+  "href": "/categories/jerseys"
+ },
+ {
+  "slug": "team-kits",
+  "name": "Team Kits",
+  "description": "Jersey and shorts sets for squads",
+  "image": "https://images.unsplash.com/photo-1598881034666-6d3443d4b1bc?auto=format&fit=crop&q=80",
+  "href": "/categories/team-kits"
+ },
+ {
+  "slug": "polo-shirts",
+  "name": "Polo Shirts",
+  "description": "Coach, staff and club polos",
+  "image": "https://images.unsplash.com/photo-1625910513520-bed0389ce32f?auto=format&fit=crop&q=80",
+  "href": "/categories/polo-shirts"
+ },
+ {
+  "slug": "t-shirts",
+  "name": "T-Shirts",
+  "description": "Training and cotton tees",
+  "image": "https://images.unsplash.com/photo-1610502778270-c5c6f4c7d575?auto=format&fit=crop&q=80",
+  "href": "/categories/t-shirts"
+ },
+ {
+  "slug": "shorts",
+  "name": "Shorts",
+  "description": "Match and training shorts",
+  "image": "https://images.unsplash.com/photo-1779659821784-5498b5ff84dd?auto=format&fit=crop&q=80",
+  "href": "/categories/shorts"
+ },
+ {
+  "slug": "tracksuits",
+  "name": "Tracksuits",
+  "description": "Travel and warm-up suits",
+  "image": "https://images.unsplash.com/photo-1760736699270-d1bc09a6509f?auto=format&fit=crop&q=80",
+  "href": "/categories/tracksuits"
+ },
+ {
+  "slug": "socks",
+  "name": "Socks",
+  "description": "Grip, match and crew socks",
+  "image": "https://images.unsplash.com/photo-1757656557239-48500ba4fd20?auto=format&fit=crop&q=80",
+  "href": "/categories/socks"
+ },
+ {
+  "slug": "bags",
+  "name": "Bags",
+  "description": "Duffels and backpacks",
+  "image": "https://images.unsplash.com/photo-1616066753769-b46d9d825331?auto=format&fit=crop&q=80",
+  "href": "/categories/bags"
+ },
+ {
+  "slug": "goalkeeper-gloves",
+  "name": "Goalkeeper Gloves",
+  "description": "Grip for every save",
+  "image": "https://images.unsplash.com/photo-1760177379284-b68471fdd217?auto=format&fit=crop&q=80",
+  "href": "/categories/goalkeeper-gloves"
+ },
+ {
+  "slug": "balls",
+  "name": "Balls",
+  "description": "Match and training balls",
+  "image": "https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&q=80",
+  "href": "/categories/balls"
+ },
+ {
+  "slug": "footwear",
+  "name": "Footwear",
+  "description": "Boots and turf shoes",
+  "image": "https://images.unsplash.com/photo-1774344191089-0b6c9da56830?auto=format&fit=crop&q=80",
+  "href": "/categories/footwear"
+ },
+ {
+  "slug": "apparel",
+  "name": "Apparel",
+  "description": "Jerseys, kits, polos and tees",
+  "image": "https://images.unsplash.com/photo-1641280173256-0ac1b2f4cd78?auto=format&fit=crop&q=80",
+  "href": "/categories/apparel"
+ },
+ {
+  "slug": "accessories",
+  "name": "Accessories",
+  "description": "Socks, bags and gloves",
+  "image": "https://images.unsplash.com/photo-1774346865420-ac98ef6cb531?auto=format&fit=crop&q=80",
+  "href": "/categories/accessories"
+ },
+ {
+  "slug": "equipment",
+  "name": "Equipment",
+  "description": "Match and training balls",
+  "image": "https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&q=80",
+  "href": "/categories/equipment"
+ }
 ]

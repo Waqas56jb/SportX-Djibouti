@@ -5,6 +5,7 @@ import { AccountSection } from '@/components/account/AccountLayout';
 import { Button, EmptyState, ErrorState, SkeletonLoader } from '@/components/common';
 import { useAsync } from '@/hooks/useAsync';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { useT } from '@/i18n';
 import { friendlyError } from '@/services/authService';
 import { notificationService } from '@/services/notificationService';
 import { useAuthStore } from '@/store/authStore';
@@ -30,7 +31,8 @@ const ICONS: Record<string, typeof Bell> = {
 const safeLink = (link: string | null) => (link && link.startsWith('/') && !link.startsWith('//') ? link : null);
 
 export default function NotificationsPage() {
-  usePageMeta({ title: 'Notifications', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('account.notifications.title'), noindex: true });
   const setUnread = useAuthStore((s) => s.setUnread);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [page, setPage] = useState(1);
@@ -56,7 +58,7 @@ export default function NotificationsPage() {
     try {
       await action();
     } catch (err) {
-      toast.error('Could not update notifications', { description: friendlyError(err) });
+      toast.error(t('account.notifications.updateError'), { description: friendlyError(err) });
     } finally {
       setBusy(null);
     }
@@ -84,7 +86,7 @@ export default function NotificationsPage() {
         const now = new Date().toISOString();
         patch((items) => items.map((i) => (i.read ? i : { ...i, read: true, readAt: now })), 0);
       }
-      toast.success('All notifications marked as read');
+      toast.success(t('account.notifications.allMarked'));
     });
 
   /** Opening a notification marks it read (fire-and-forget). */
@@ -101,18 +103,18 @@ export default function NotificationsPage() {
 
   return (
     <AccountSection
-      title="Notifications"
-      description="Order, delivery and support updates for your account."
+      title={t('account.notifications.title')}
+      description={t('account.notifications.description')}
       action={
         <Button variant="outline" size="sm" onClick={markAll} disabled={unread === 0} loading={busy === 'all'} leftIcon={<CheckCheck className="h-4 w-4" />}>
-          Mark all as read
+          {t('account.notifications.markAll')}
         </Button>
       }
     >
-      <div className="mb-6 flex gap-2" role="tablist" aria-label="Filter notifications">
+      <div className="mb-6 flex gap-2" role="tablist" aria-label={t('account.notifications.filterLabel')}>
         {[
-          { key: false, label: 'All' },
-          { key: true, label: 'Unread', count: unread },
+          { key: false, label: t('account.notifications.all') },
+          { key: true, label: t('account.notifications.unread'), count: unread },
         ].map((f) => (
           <button
             key={f.label}
@@ -129,7 +131,7 @@ export default function NotificationsPage() {
             )}
           >
             {f.label}
-            {f.count !== undefined && data && <span className="ml-1.5 opacity-60">{f.count}</span>}
+            {f.count !== undefined && data && <span className="ms-1.5 opacity-60">{f.count}</span>}
           </button>
         ))}
       </div>
@@ -143,8 +145,8 @@ export default function NotificationsPage() {
           <EmptyState
             compact
             icon={unreadOnly ? <CheckCheck /> : <BellOff />}
-            title={unreadOnly ? 'You’re all caught up' : 'No notifications yet'}
-            description={unreadOnly ? 'There are no unread notifications.' : 'Updates about your orders and support requests will appear here.'}
+            title={unreadOnly ? t('account.notifications.caughtUp') : t('account.notifications.emptyTitle')}
+            description={unreadOnly ? t('account.notifications.noUnread') : t('account.notifications.emptyBody')}
           />
         </div>
       ) : (
@@ -160,7 +162,7 @@ export default function NotificationsPage() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}
+                      {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-label={t('account.notifications.unread')} />}
                       <span className={cn('truncate text-[15px]', n.read ? 'font-medium text-ink-700' : 'font-semibold text-ink')}>{n.title}</span>
                     </span>
                     <span className="mt-1 block text-sm text-ink-600">{n.message}</span>
@@ -186,21 +188,21 @@ export default function NotificationsPage() {
                       size="sm"
                       disabled={busy === n.id}
                       onClick={() => toggleRead(n)}
-                      aria-label={n.read ? `Mark “${n.title}” as unread` : `Mark “${n.title}” as read`}
+                      aria-label={n.read ? t('account.notifications.markUnread', { title: n.title }) : t('account.notifications.markRead', { title: n.title })}
                       leftIcon={n.read ? <Mail className="h-3.5 w-3.5" /> : <MailOpen className="h-3.5 w-3.5" />}
                     >
-                      <span className="hidden sm:inline">{n.read ? 'Unread' : 'Read'}</span>
+                      <span className="hidden sm:inline">{n.read ? t('account.notifications.unread') : t('account.notifications.read')}</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       disabled={busy === n.id}
                       onClick={() => remove(n)}
-                      aria-label={`Delete “${n.title}”`}
+                      aria-label={t('account.notifications.deleteItem', { title: n.title })}
                       className="hover:text-danger"
                       leftIcon={<Trash2 className="h-3.5 w-3.5" />}
                     >
-                      <span className="hidden sm:inline">Delete</span>
+                      <span className="hidden sm:inline">{t('common.actions.delete')}</span>
                     </Button>
                   </div>
                 </li>
@@ -208,15 +210,15 @@ export default function NotificationsPage() {
             })}
           </ul>
           {data && data.totalPages > 1 && (
-            <nav className="mt-6 flex items-center justify-between gap-4" aria-label="Notification pages">
+            <nav className="mt-6 flex items-center justify-between gap-4" aria-label={t('account.notifications.pagesLabel')}>
               <Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)}>
-                Previous
+                {t('common.actions.previous')}
               </Button>
               <p className="text-xs text-ink-500">
-                Page {data.page} of {data.totalPages}
+                {t('account.notifications.pageOf', { page: data.page, total: data.totalPages })}
               </p>
               <Button variant="outline" size="sm" disabled={!data.hasNext || loading} onClick={() => setPage((p) => p + 1)}>
-                Next
+                {t('common.actions.next')}
               </Button>
             </nav>
           )}

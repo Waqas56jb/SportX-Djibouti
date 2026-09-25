@@ -6,6 +6,8 @@ export interface MegaMenu {
 }
 
 export interface NavLink {
+  /** Stable, language-independent identifier. */
+  key?: string;
   label: string;
   href: string;
   highlight?: boolean;

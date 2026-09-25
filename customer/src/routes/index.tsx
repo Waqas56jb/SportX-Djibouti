@@ -1,9 +1,10 @@
 import { lazy } from 'react';
-import { createBrowserRouter, isRouteErrorResponse, useRouteError, type RouteObject } from 'react-router-dom';
+import { createBrowserRouter, isRouteErrorResponse, Navigate, useRouteError, type RouteObject } from 'react-router-dom';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { ErrorState } from '@/components/common';
 import { CheckoutLayout, GuestOnly, MainLayout, RequireAuth } from '@/components/layout/Layouts';
-import { COLLECTIONS } from '@/data/collections';
+import { getCollections } from '@/data/collections';
+import { useT } from '@/i18n';
 
 // Route-level code splitting: each page ships as its own chunk.
 const HomePage = lazy(() => import('@/pages/Home'));
@@ -40,12 +41,13 @@ const NotFoundPage = lazy(() => import('@/pages/NotFound'));
 
 function RouteError() {
   const error = useRouteError();
+  const { t } = useT();
   const message = isRouteErrorResponse(error) ? `${error.status} — ${error.statusText}` : error instanceof Error ? error.message : undefined;
   return (
     <div className="container-site">
       <ErrorState
-        title="Something went wrong"
-        message={import.meta.env.DEV ? message : 'An unexpected error occurred. Please refresh the page or try again shortly.'}
+        title={t('pages.routeError.title')}
+        message={import.meta.env.DEV ? message : t('pages.routeError.message')}
         onRetry={() => window.location.reload()}
         className="min-h-[60vh] justify-center"
       />
@@ -53,8 +55,8 @@ function RouteError() {
   );
 }
 
-/** /shop, /men, /women, /kids, /football, /basketball, /running, /training, /equipment, /new-arrivals, /sale */
-const collectionRoutes: RouteObject[] = COLLECTIONS.map((c) => ({
+/** /shop, /men, /women, /football, /training, /equipment, /new-arrivals, /sale */
+const collectionRoutes: RouteObject[] = getCollections().map((c) => ({
   path: c.path,
   element: <ShopPage key={c.key} collectionKey={c.key} />,
 }));
@@ -66,6 +68,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       ...collectionRoutes,
+      // Retired collections from the earlier multi-sport catalogue.
+      ...['/kids', '/basketball', '/running'].map((path) => ({ path, element: <Navigate to="/shop" replace /> })),
       { path: '/categories', element: <CategoriesIndexPage /> },
       { path: '/categories/:slug', element: <CategoryPage /> },
       { path: '/search', element: <SearchPage /> },

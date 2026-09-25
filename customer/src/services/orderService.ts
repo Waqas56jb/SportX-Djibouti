@@ -1,3 +1,4 @@
+import { shippingMethodDescription, shippingMethodName } from './shippingService';
 import type {
   ApiPaymentMethod,
   CartIssue,
@@ -30,6 +31,7 @@ interface ApiOrderSummary {
   grandTotal: number;
   refundedTotal: number;
   shippingMethod: string;
+  shippingMethodCode?: string | null;
   image: string | null;
   placedAt: string;
   updatedAt: string;
@@ -138,8 +140,8 @@ export function toShippingOption(q: ApiShippingQuote): ShippingOption {
   return {
     methodId: q.methodId,
     code: q.code,
-    name: q.name,
-    description: q.description ?? '',
+    name: shippingMethodName(q.code, q.name),
+    description: shippingMethodDescription(q.code, q.description ?? ''),
     fee: q.fee,
     isFree: q.isFree,
     requiresAddress: q.requiresAddress ?? true,
@@ -167,7 +169,7 @@ function baseOrder(o: ApiOrderSummary): Order {
     itemsCount: o.itemsCount,
     image: o.image,
     shipping: {
-      method: { id: '', name: o.shippingMethod, description: '', price: 0, eta: [0, 0] },
+      method: { id: o.shippingMethodCode ?? '', name: shippingMethodName(o.shippingMethodCode, o.shippingMethod), description: '', price: 0, eta: [0, 0] },
       address: null,
       expectedDelivery: null,
       status: o.shippingStatus,
@@ -226,7 +228,7 @@ export function toOrder(o: ApiOrderDetail): Order {
     shipping: {
       method: {
         id: o.shipping?.methodCode ?? '',
-        name: o.shipping?.methodName ?? o.shippingMethod,
+        name: shippingMethodName(o.shipping?.methodCode, o.shipping?.methodName ?? o.shippingMethod),
         description: '',
         price: o.shipping?.cost ?? 0,
         eta: [0, 0],
@@ -294,7 +296,7 @@ export function toCheckoutValidation(v: ApiValidation): CheckoutValidation {
     issues,
     totals: toCartTotals(v.totals),
     coupon: toCoupon(v.coupon),
-    shipping: v.shipping ? { code: v.shipping.code, name: v.shipping.name, fee: v.shipping.fee, isFree: v.shipping.isFree } : null,
+    shipping: v.shipping ? { code: v.shipping.code, name: shippingMethodName(v.shipping.code, v.shipping.name), fee: v.shipping.fee, isFree: v.shipping.isFree } : null,
     shippingOptions: (v.shippingOptions ?? []).map(toShippingOption),
     paymentMethods: (v.paymentMethods ?? []).map(toPaymentMethodOption),
   };

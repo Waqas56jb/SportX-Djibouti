@@ -32,7 +32,7 @@ export function SectionHeading({ eyebrow, title, description, action, align = 'l
           )}
         >
           <span className="link-underline">{action.label}</span>
-          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 rtl:group-hover:-translate-x-1" aria-hidden />
         </Link>
       )}
     </div>

@@ -1,50 +1,42 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SITE } from '@/constants/site';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 interface LogoProps {
-  tone?: 'dark' | 'light';
-  className?: string;
-  /** Visual height of the mark; the image keeps its aspect ratio. */
+  /**
+   * `mark`: wolf + WOLF wordmark (header, drawers, checkout) — legible at small sizes.
+   * `full`: the complete lockup with the "100% SPORTSWEARS" strapline (footer, large placements).
+   */
+  variant?: 'mark' | 'full';
+  /** Background the logo sits on. On light surfaces the gold artwork gets a dark badge to keep its contrast. */
+  surface?: 'dark' | 'light';
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
   asLink?: boolean;
   onClick?: () => void;
 }
 
-const HEIGHTS = { sm: 'h-7', md: 'h-8 lg:h-9', lg: 'h-12' } as const;
-const EMBLEM = { sm: 'h-9 w-9', md: 'h-10 w-10 lg:h-11 lg:w-11', lg: 'h-20 w-20' } as const;
-const TEXT = { sm: 'text-[1.6rem]', md: 'text-[1.85rem] lg:text-[2.1rem]', lg: 'text-5xl' } as const;
+const MARK_HEIGHT = { sm: 'h-10', md: 'h-12 xl:h-[54px]', lg: 'h-16 sm:h-20' } as const;
+const FULL_HEIGHT = { sm: 'h-16', md: 'h-20', lg: 'h-24 sm:h-28' } as const;
 
-/**
- * Renders /public/logo.png.
- * - Horizontal / square artwork renders at a fixed height.
- * - Portrait artwork (e.g. a logo photographed on a background) is shown as a
- *   centred square emblem so it stays legible at header sizes.
- * - If the file is missing, a typographic wordmark keeps the layout intact.
- */
-export function Logo({ tone = 'dark', className, size = 'md', asLink = true, onClick }: LogoProps) {
-  const [failed, setFailed] = useState(false);
-  const [portrait, setPortrait] = useState(false);
-
-  const mark = failed ? (
-    <span className={cn('font-display font-extrabold italic leading-none tracking-[-0.03em]', TEXT[size], tone === 'light' ? 'text-white' : 'text-ink')}>
-      SPORT<span className="text-accent">X</span>
-    </span>
-  ) : (
+/** WOLF brand logo (gold artwork with transparent background, generated from /public/logo.png). */
+export function Logo({ variant = 'mark', surface = 'dark', size = 'md', className, asLink = true, onClick }: LogoProps) {
+  const img = (
     <img
-      src={SITE.logo}
+      src={variant === 'full' ? SITE.logo : SITE.logoMark}
       alt={SITE.name}
-      className={cn(portrait ? cn(EMBLEM[size], 'object-cover object-center') : cn(HEIGHTS[size], 'w-auto object-contain'))}
-      onLoad={(e) => setPortrait(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth * 1.15)}
-      onError={() => setFailed(true)}
+      width={variant === 'full' ? 405 : 290}
+      height={variant === 'full' ? 320 : 192}
+      className={cn('w-auto select-none object-contain', variant === 'full' ? FULL_HEIGHT[size] : MARK_HEIGHT[size])}
+      draggable={false}
     />
   );
+  const mark = surface === 'dark' ? img : <span className="inline-flex items-center rounded-sm bg-ink px-2.5 py-1.5">{img}</span>;
 
-  if (!asLink) return <span className={cn('inline-flex items-center', className)}>{mark}</span>;
-
+  if (!asLink) return <span className={cn('inline-flex shrink-0 items-center', className)}>{mark}</span>;
   return (
-    <Link to="/" onClick={onClick} className={cn('inline-flex items-center', className)} aria-label={`${SITE.name} home`}>
+    <Link to="/" onClick={onClick} className={cn('inline-flex shrink-0 items-center', className)} aria-label={t('common.a11y.home', { name: SITE.name })}>
       {mark}
     </Link>
   );

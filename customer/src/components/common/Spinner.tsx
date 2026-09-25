@@ -1,3 +1,5 @@
+import { SITE } from '@/constants/site';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 export function Spinner({ className, label }: { className?: string; label?: string }) {
@@ -16,13 +18,13 @@ export function PageLoader() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-4">
-        <span className="font-display text-3xl font-extrabold italic tracking-tight text-ink/80">
-          SPORT<span className="text-accent">X</span>
+        <span className="flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-ink shadow-lift" aria-hidden>
+          <img src={SITE.logoMark} alt="" className="h-9 w-auto" />
         </span>
         <span className="relative block h-[2px] w-24 overflow-hidden bg-paper-200">
-          <span className="absolute inset-y-0 left-0 w-1/3 animate-[shimmer_1.1s_ease-in-out_infinite] bg-ink" style={{ transform: 'translateX(-100%)' }} />
+          <span className="absolute inset-y-0 start-0 w-1/3 animate-[shimmer_1.1s_ease-in-out_infinite] bg-ink" style={{ transform: 'translateX(-100%)' }} />
         </span>
-        <span className="sr-only">Loading</span>
+        <span className="sr-only">{t('common.ui.loading')}</span>
       </div>
     </div>
   );

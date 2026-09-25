@@ -6,15 +6,17 @@ import { ROUTES } from '@/constants/routes';
 import { IMG } from '@/data/images';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { useT } from '@/i18n';
 import { ApiError } from '@/services/api';
 import { apiFieldErrors, authService, friendlyError } from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { cn } from '@/utils/cn';
 import { email, password as passwordRule, passwordStrength, phone, required, validate } from '@/utils/validation';
+import { authLinkToken } from '@/utils/authLink';
+import { AuthShell } from './AuthShell';
 
 export const VERIFY_EMAIL_PATH = '/verify-email';
-import { AuthShell } from './AuthShell';
 
 const safeRedirect = (value: string | null) => (value && value.startsWith('/') && !value.startsWith('//') ? value : ROUTES.account);
 
@@ -35,7 +37,8 @@ function useForm<T extends Record<string, string>>(initial: T) {
 // ───────────────────────────── Login ─────────────────────────────
 
 export function LoginPage() {
-  usePageMeta({ title: 'Sign in', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('auth.meta.signIn'), noindex: true });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -47,7 +50,7 @@ export function LoginPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const errs = validate(form.values, { email, password: required('Enter your password') });
+    const errs = validate(form.values, { email, password: required(t('auth.validation.enterPassword')) });
     form.setErrors(errs);
     if (Object.keys(errs).length) return;
     setLoading(true);
@@ -55,7 +58,7 @@ export function LoginPage() {
     setUnverified(false);
     try {
       const user = await login({ ...form.values, remember });
-      toast.success(`Welcome back, ${user.firstName}`);
+      toast.success(t('auth.login.welcome', { name: user.firstName }));
       navigate(safeRedirect(params.get('redirect')), { replace: true });
     } catch (err) {
       const fields = apiFieldErrors(err);
@@ -68,13 +71,13 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="Sign in"
-      subtitle="Welcome back to SPORTX."
+      title={t('auth.login.title')}
+      subtitle={t('auth.login.subtitle')}
       footer={
         <p>
-          New to SPORTX?{' '}
+          {t('auth.login.newHere')}{' '}
           <Link to={`${ROUTES.register}${params.get('redirect') ? `?redirect=${encodeURIComponent(params.get('redirect') as string)}` : ''}`} className="font-semibold text-ink underline underline-offset-4">
-            Create an account
+            {t('auth.login.createAccount')}
           </Link>
         </p>
       }
@@ -87,22 +90,22 @@ export function LoginPage() {
               <>
                 {' '}
                 <Link to={`${VERIFY_EMAIL_PATH}?email=${encodeURIComponent(form.values.email.trim())}`} className="font-semibold underline underline-offset-2">
-                  Resend the verification email
+                  {t('auth.login.resendVerification')}
                 </Link>
               </>
             )}
           </InlineAlert>
         )}
-        <TextField label="Email" type="email" inputMode="email" autoComplete="email" {...form.bind('email')} />
-        <TextField label="Password" type="password" autoComplete="current-password" {...form.bind('password')} />
-        <div className="flex items-center justify-between gap-4">
-          <Checkbox label="Remember me" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+        <TextField label={t('auth.fields.email')} type="email" dir="ltr" inputMode="email" autoComplete="email" {...form.bind('email')} />
+        <TextField label={t('auth.fields.password')} type="password" dir="ltr" autoComplete="current-password" {...form.bind('password')} />
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <Checkbox label={t('auth.login.remember')} checked={remember} onChange={(e) => setRemember(e.target.checked)} />
           <Link to={ROUTES.forgotPassword} className="text-sm font-medium underline underline-offset-4 hover:text-accent-dark">
-            Forgot password?
+            {t('auth.login.forgot')}
           </Link>
         </div>
-        <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} loadingText="Signing in…">
-          Sign in
+        <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} loadingText={t('auth.login.submitting')}>
+          {t('common.actions.signIn')}
         </Button>
       </form>
     </AuthShell>
@@ -112,11 +115,12 @@ export function LoginPage() {
 // ───────────────────────────── Register ─────────────────────────────
 
 function PasswordMeter({ value }: { value: string }) {
+  const { t } = useT();
   const { score, label } = passwordStrength(value);
   const rules = [
-    { ok: value.length >= 8, text: 'At least 8 characters' },
-    { ok: /[A-Za-z]/.test(value) && /\d/.test(value), text: 'Letters and numbers' },
-    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), text: 'Upper and lower case' },
+    { ok: value.length >= 8, text: t('auth.password.ruleLength') },
+    { ok: /[A-Za-z]/.test(value) && /\d/.test(value), text: t('auth.password.ruleLettersNumbers') },
+    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), text: t('auth.password.ruleCase') },
   ];
   if (!value) return null;
   return (
@@ -127,7 +131,7 @@ function PasswordMeter({ value }: { value: string }) {
         ))}
       </div>
       <p className="mt-1.5 text-xs text-ink-500">
-        Strength: <span className="font-semibold text-ink">{label}</span>
+        {t('auth.password.strength')} <span className="font-semibold text-ink">{label}</span>
       </p>
       <ul className="mt-2 space-y-1">
         {rules.map((r) => (
@@ -141,7 +145,8 @@ function PasswordMeter({ value }: { value: string }) {
 }
 
 export function RegisterPage() {
-  usePageMeta({ title: 'Create account', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('auth.meta.register'), noindex: true });
   const { register } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -156,15 +161,15 @@ export function RegisterPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs = validate(form.values, {
-      firstName: required('Enter your first name'),
-      lastName: required('Enter your last name'),
+      firstName: required(t('auth.validation.enterFirstName')),
+      lastName: required(t('auth.validation.enterLastName')),
       email,
       phone: (v) => (v.trim() ? phone(v) : undefined),
       password: passwordRule,
-      confirm: (v) => (!v ? 'Confirm your password' : v !== form.values.password ? 'Passwords do not match' : undefined),
+      confirm: (v) => (!v ? t('auth.validation.confirmPassword') : v !== form.values.password ? t('auth.validation.passwordMismatch') : undefined),
     });
     form.setErrors(errs);
-    setTermsError(terms ? null : 'Please accept the terms to continue');
+    setTermsError(terms ? null : t('auth.register.acceptTerms'));
     if (Object.keys(errs).length || !terms) return;
     setLoading(true);
     setError(null);
@@ -175,11 +180,11 @@ export function RegisterPage() {
         setVerifyEmailFor(result.user.email);
         return;
       }
-      toast.success(`Welcome to SPORTX, ${result.user.firstName}`, { description: 'Your account is ready.' });
+      toast.success(t('auth.register.welcome', { name: result.user.firstName }), { description: t('auth.register.ready') });
       navigate(safeRedirect(params.get('redirect')), { replace: true });
     } catch (err) {
       const fields = apiFieldErrors(err);
-      if (err instanceof ApiError && err.code === 'CONFLICT') fields.email = 'An account with this email already exists.';
+      if (err instanceof ApiError && err.code === 'CONFLICT') fields.email = t('auth.register.emailExists');
       form.setErrors(fields);
       setError(friendlyError(err));
     } finally {
@@ -189,16 +194,15 @@ export function RegisterPage() {
 
   if (verifyEmailFor) {
     return (
-      <AuthShell title="Verify your email">
+      <AuthShell title={t('auth.register.verifyTitle')}>
         <div className="flex gap-4">
           <MailCheck className="h-8 w-8 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
-          <p className="text-ink-600">
-            Your account has been created. We sent a verification link to <strong className="font-semibold text-ink">{verifyEmailFor}</strong> — open it to activate your
-            account, then sign in.
+          <p className="min-w-0 text-ink-600">
+            {t('auth.register.verifyBodyBefore')} <strong className="ltr-text break-all font-semibold text-ink">{verifyEmailFor}</strong> {t('auth.register.verifyBodyAfter')}
           </p>
         </div>
         <ButtonLink to={ROUTES.login} variant="primary" size="lg" fullWidth className="mt-8">
-          Go to sign in
+          {t('auth.register.goToSignIn')}
         </ButtonLink>
         <ResendVerification email={verifyEmailFor} className="mt-4" />
       </AuthShell>
@@ -207,14 +211,14 @@ export function RegisterPage() {
 
   return (
     <AuthShell
-      title="Join SPORTX"
-      subtitle="Create your account in under a minute."
-      image={IMG.runBlocks}
+      title={t('auth.register.title')}
+      subtitle={t('auth.register.subtitle')}
+      image={IMG.stadiumNight}
       footer={
         <p>
-          Already have an account?{' '}
+          {t('auth.register.haveAccount')}{' '}
           <Link to={ROUTES.login} className="font-semibold text-ink underline underline-offset-4">
-            Sign in
+            {t('common.actions.signIn')}
           </Link>
         </p>
       }
@@ -222,16 +226,25 @@ export function RegisterPage() {
       <form onSubmit={submit} noValidate className="space-y-5">
         {error && <InlineAlert tone="error">{error}</InlineAlert>}
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextField label="First name" autoComplete="given-name" {...form.bind('firstName')} />
-          <TextField label="Last name" autoComplete="family-name" {...form.bind('lastName')} />
+          <TextField label={t('auth.fields.firstName')} autoComplete="given-name" {...form.bind('firstName')} />
+          <TextField label={t('auth.fields.lastName')} autoComplete="family-name" {...form.bind('lastName')} />
         </div>
-        <TextField label="Email" type="email" inputMode="email" autoComplete="email" {...form.bind('email')} />
-        <TextField label="Phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+253" optional {...form.bind('phone')} />
+        <TextField label={t('auth.fields.email')} type="email" dir="ltr" inputMode="email" autoComplete="email" {...form.bind('email')} />
+        <TextField
+          label={t('auth.fields.phone')}
+          type="tel"
+          dir="ltr"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder={t('auth.fields.phonePlaceholder')}
+          optional
+          {...form.bind('phone')}
+        />
         <div>
-          <TextField label="Password" type="password" autoComplete="new-password" {...form.bind('password')} />
+          <TextField label={t('auth.fields.password')} type="password" dir="ltr" autoComplete="new-password" {...form.bind('password')} />
           <PasswordMeter value={form.values.password} />
         </div>
-        <TextField label="Confirm password" type="password" autoComplete="new-password" {...form.bind('confirm')} />
+        <TextField label={t('auth.fields.confirmPassword')} type="password" dir="ltr" autoComplete="new-password" {...form.bind('confirm')} />
         <div>
           <Checkbox
             checked={terms}
@@ -241,22 +254,22 @@ export function RegisterPage() {
             }}
             label={
               <>
-                I agree to the{' '}
+                {t('auth.register.agreeBefore')}{' '}
                 <Link to={ROUTES.terms} className="underline underline-offset-2">
-                  Terms
+                  {t('auth.register.agreeTerms')}
                 </Link>{' '}
-                and{' '}
+                {t('auth.register.agreeAnd')}{' '}
                 <Link to={ROUTES.privacy} className="underline underline-offset-2">
-                  Privacy Policy
+                  {t('auth.register.agreePrivacy')}
                 </Link>
               </>
             }
           />
           {termsError && <p className="field-error">{termsError}</p>}
         </div>
-        <Checkbox checked={marketing} onChange={(e) => setMarketing(e.target.checked)} label="Email me new releases, drops and member offers" />
-        <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} loadingText="Creating account…">
-          Create account
+        <Checkbox checked={marketing} onChange={(e) => setMarketing(e.target.checked)} label={t('auth.register.marketing')} />
+        <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} loadingText={t('auth.register.submitting')}>
+          {t('common.actions.createAccount')}
         </Button>
       </form>
     </AuthShell>
@@ -266,7 +279,8 @@ export function RegisterPage() {
 // ───────────────────────────── Forgot / Reset ─────────────────────────────
 
 export function ForgotPasswordPage() {
-  usePageMeta({ title: 'Reset your password', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('auth.meta.forgot'), noindex: true });
   const form = useForm({ email: '' });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -289,29 +303,30 @@ export function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <AuthShell title="Check your inbox">
+      <AuthShell title={t('auth.forgot.sentTitle')}>
         <div className="flex gap-4">
           <MailCheck className="h-8 w-8 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
-          <p className="text-ink-600">
-            If an account exists for <strong className="font-semibold text-ink">{form.values.email}</strong>, you’ll receive a link to reset your password within a few minutes.
+          <p className="min-w-0 text-ink-600">
+            {t('auth.forgot.sentBefore')} <strong className="ltr-text break-all font-semibold text-ink">{form.values.email}</strong>
+            {t('auth.forgot.sentAfter')}
           </p>
         </div>
         <ButtonLink to={ROUTES.login} variant="outline" size="lg" fullWidth className="mt-8" leftIcon={<ArrowLeft className="h-4 w-4" />}>
-          Back to sign in
+          {t('auth.forgot.backToSignIn')}
         </ButtonLink>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="Forgot password" subtitle="Enter your email and we’ll send you a link to reset your password.">
+    <AuthShell title={t('auth.forgot.title')} subtitle={t('auth.forgot.subtitle')}>
       <form onSubmit={submit} noValidate className="space-y-5">
-        <TextField label="Email" type="email" inputMode="email" autoComplete="email" {...form.bind('email')} />
+        <TextField label={t('auth.fields.email')} type="email" dir="ltr" inputMode="email" autoComplete="email" {...form.bind('email')} />
         <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
-          Send reset link
+          {t('auth.forgot.submit')}
         </Button>
         <Link to={ROUTES.login} className="flex items-center justify-center gap-2 text-sm font-medium hover:underline">
-          <ArrowLeft className="h-4 w-4" aria-hidden /> Back to sign in
+          <ArrowLeft className="h-4 w-4" aria-hidden /> {t('auth.forgot.backToSignIn')}
         </Link>
       </form>
     </AuthShell>
@@ -319,19 +334,21 @@ export function ForgotPasswordPage() {
 }
 
 export function ResetPasswordPage() {
-  usePageMeta({ title: 'Choose a new password', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('auth.meta.reset'), noindex: true });
   const [params] = useSearchParams();
-  const token = params.get('token') ?? '';
+  const token = authLinkToken(params);
   const form = useForm({ password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(token ? null : 'This reset link is invalid or has expired. Request a new one below.');
+  const [error, setError] = useState<string | null>(token ? null : t('auth.reset.invalidLink'));
+  const [linkInvalid, setLinkInvalid] = useState(!token);
   const [done, setDone] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs = validate(form.values, {
       password: passwordRule,
-      confirm: (v) => (v !== form.values.password ? 'Passwords do not match' : undefined),
+      confirm: (v) => (v !== form.values.password ? t('auth.validation.passwordMismatch') : undefined),
     });
     form.setErrors(errs);
     if (Object.keys(errs).length) return;
@@ -343,11 +360,9 @@ export function ResetPasswordPage() {
     } catch (err) {
       const fields = apiFieldErrors(err);
       if (fields.password) form.setErrors({ password: fields.password });
-      setError(
-        err instanceof ApiError && !fields.password && (fields.token || err.status === 400 || err.status === 401 || err.status === 404)
-          ? 'This reset link is invalid or has expired. Request a new one below.'
-          : friendlyError(err),
-      );
+      const invalid = err instanceof ApiError && !fields.password && Boolean(fields.token || err.status === 400 || err.status === 401 || err.status === 404);
+      setLinkInvalid(invalid);
+      setError(invalid ? t('auth.reset.invalidLink') : friendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -355,35 +370,35 @@ export function ResetPasswordPage() {
 
   if (done) {
     return (
-      <AuthShell title="Password updated">
-        <p className="text-ink-600">Your password has been changed. You can now sign in with your new password.</p>
+      <AuthShell title={t('auth.reset.doneTitle')}>
+        <p className="text-ink-600">{t('auth.reset.doneBody')}</p>
         <ButtonLink to={ROUTES.login} variant="primary" size="lg" fullWidth className="mt-8">
-          Sign in
+          {t('common.actions.signIn')}
         </ButtonLink>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="New password" subtitle="Choose a strong password you haven’t used before.">
+    <AuthShell title={t('auth.reset.title')} subtitle={t('auth.reset.subtitle')}>
       <form onSubmit={submit} noValidate className="space-y-5">
         {error && (
           <InlineAlert tone="error">
             {error}{' '}
-            {(!token || /expired|invalid/i.test(error)) && (
+            {(!token || linkInvalid) && (
               <Link to={ROUTES.forgotPassword} className="font-semibold underline">
-                Request a new link
+                {t('auth.reset.requestNew')}
               </Link>
             )}
           </InlineAlert>
         )}
         <div>
-          <TextField label="New password" type="password" autoComplete="new-password" {...form.bind('password')} disabled={!token} />
+          <TextField label={t('auth.fields.newPassword')} type="password" dir="ltr" autoComplete="new-password" {...form.bind('password')} disabled={!token} />
           <PasswordMeter value={form.values.password} />
         </div>
-        <TextField label="Confirm new password" type="password" autoComplete="new-password" {...form.bind('confirm')} disabled={!token} />
+        <TextField label={t('auth.fields.confirmNewPassword')} type="password" dir="ltr" autoComplete="new-password" {...form.bind('confirm')} disabled={!token} />
         <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} disabled={!token}>
-          Update password
+          {t('auth.reset.submit')}
         </Button>
       </form>
     </AuthShell>
@@ -394,6 +409,7 @@ export function ResetPasswordPage() {
 
 /** "Resend the email" helper shared by the register success state and the verify page. */
 function ResendVerification({ email: initialEmail, className }: { email?: string; className?: string }) {
+  const { t } = useT();
   const [value, setValue] = useState(initialEmail ?? '');
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState<string | undefined>();
@@ -416,7 +432,7 @@ function ResendVerification({ email: initialEmail, className }: { email?: string
   if (state === 'sent') {
     return (
       <InlineAlert tone="success" className={className}>
-        If <strong className="font-semibold">{value}</strong> still needs verification, a new link is on its way.
+        {t('auth.verify.resentBefore')} <strong className="ltr-text break-all font-semibold">{value}</strong> {t('auth.verify.resentAfter')}
       </InlineAlert>
     );
   }
@@ -424,20 +440,30 @@ function ResendVerification({ email: initialEmail, className }: { email?: string
   return (
     <form onSubmit={send} noValidate className={cn('space-y-3', className)}>
       {!initialEmail && (
-        <TextField label="Email" type="email" inputMode="email" autoComplete="email" value={value} error={error} onChange={(e) => (setValue(e.target.value), setError(undefined))} />
+        <TextField
+          label={t('auth.fields.email')}
+          type="email"
+          dir="ltr"
+          inputMode="email"
+          autoComplete="email"
+          value={value}
+          error={error}
+          onChange={(e) => (setValue(e.target.value), setError(undefined))}
+        />
       )}
       {initialEmail && error && <p className="field-error">{error}</p>}
       <Button type="submit" variant="outline" size="lg" fullWidth loading={state === 'sending'}>
-        Resend verification email
+        {t('auth.verify.resend')}
       </Button>
     </form>
   );
 }
 
 export function VerifyEmailPage() {
-  usePageMeta({ title: 'Verify your email', noindex: true });
+  const { t } = useT();
+  usePageMeta({ title: t('auth.meta.verify'), noindex: true });
   const [params] = useSearchParams();
-  const token = params.get('token') ?? '';
+  const token = authLinkToken(params);
   const [state, setState] = useState<'verifying' | 'done' | 'error'>(token ? 'verifying' : 'error');
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -453,14 +479,14 @@ export function VerifyEmailPage() {
         setState('done');
       })
       .catch((err) => {
-        setError(err instanceof ApiError && err.code !== 'RATE_LIMITED' && err.code !== 'NETWORK_ERROR' ? 'This verification link is invalid or has expired.' : friendlyError(err));
+        setError(err instanceof ApiError && err.code !== 'RATE_LIMITED' && err.code !== 'NETWORK_ERROR' ? t('auth.verify.invalidLink') : friendlyError(err));
         setState('error');
       });
-  }, [token]);
+  }, [token, t]);
 
   if (state === 'verifying') {
     return (
-      <AuthShell title="Verifying…" subtitle="Hold on while we confirm your email address.">
+      <AuthShell title={t('auth.verify.verifyingTitle')} subtitle={t('auth.verify.verifyingSubtitle')}>
         <div className="h-1 w-full overflow-hidden bg-paper-200">
           <div className="h-full w-1/3 animate-pulse bg-ink" />
         </div>
@@ -471,30 +497,35 @@ export function VerifyEmailPage() {
   if (state === 'done') {
     const signedIn = Boolean(useAuthStore.getState().session);
     return (
-      <AuthShell title="Email verified">
+      <AuthShell title={t('auth.verify.doneTitle')}>
         <div className="flex gap-4">
           <MailCheck className="h-8 w-8 shrink-0 text-success" strokeWidth={1.5} aria-hidden />
-          <p className="text-ink-600">Thanks — your email address is confirmed. {signedIn ? 'You’re all set.' : 'You can now sign in to your SPORTX account.'}</p>
+          <p className="text-ink-600">
+            {t('auth.verify.doneBody')} {signedIn ? t('auth.verify.doneSignedIn') : t('auth.verify.doneSignedOut')}
+          </p>
         </div>
         <ButtonLink to={signedIn ? ROUTES.account : ROUTES.login} variant="primary" size="lg" fullWidth className="mt-8">
-          {signedIn ? 'Go to my account' : 'Sign in'}
+          {signedIn ? t('auth.verify.goToAccount') : t('common.actions.signIn')}
         </ButtonLink>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="Verify your email" subtitle={token ? undefined : 'Enter your email and we’ll send you a new verification link.'}>
+    <AuthShell title={t('auth.verify.title')} subtitle={token ? undefined : t('auth.verify.subtitle')}>
       {error && (
         <InlineAlert tone="error" className="mb-6">
           <span className="flex items-start gap-2">
-            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {error} Request a new link below.
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              {error} {t('auth.verify.requestBelow')}
+            </span>
           </span>
         </InlineAlert>
       )}
       <ResendVerification email={params.get('email') ?? undefined} />
       <Link to={ROUTES.login} className="mt-6 flex items-center justify-center gap-2 text-sm font-medium hover:underline">
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to sign in
+        <ArrowLeft className="h-4 w-4" aria-hidden /> {t('auth.forgot.backToSignIn')}
       </Link>
     </AuthShell>
   );

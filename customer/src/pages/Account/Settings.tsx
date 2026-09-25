@@ -6,9 +6,10 @@ import { Button, InlineAlert, Modal, Switch, TextField } from '@/components/comm
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { t, useT } from '@/i18n';
 import { accountService } from '@/services/accountService';
 import { ApiError } from '@/services/api';
-import { apiFieldErrors, friendlyError } from '@/services/authService';
+import { apiFieldErrors, friendlyError, localizeApiMessage } from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import type { ProfileUpdate } from '@/types';
@@ -33,7 +34,7 @@ function Card({ title, description, children, tone }: { title: string; descripti
 const passwordError = (err: unknown, field: string) => {
   const fields = apiFieldErrors(err);
   if (fields[field]) return fields[field];
-  if (err instanceof ApiError && (err.code === 'UNAUTHORIZED' || err.code === 'VALIDATION_ERROR') && /password/i.test(err.message)) return err.message;
+  if (err instanceof ApiError && (err.code === 'UNAUTHORIZED' || err.code === 'VALIDATION_ERROR') && /password/i.test(err.message)) return localizeApiMessage(err.message);
   return undefined;
 };
 
@@ -46,14 +47,14 @@ function AvatarCard() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) return toast.error('Choose an image file', { description: 'JPG, PNG or WebP work best.' });
-    if (file.size > MAX_AVATAR_MB * 1024 * 1024) return toast.error('Image is too large', { description: `Choose a photo under ${MAX_AVATAR_MB} MB.` });
+    if (!file.type.startsWith('image/')) return toast.error(t('account.settings.notImage'), { description: t('account.settings.notImageBody') });
+    if (file.size > MAX_AVATAR_MB * 1024 * 1024) return toast.error(t('account.settings.tooLarge'), { description: t('account.settings.tooLargeBody', { size: MAX_AVATAR_MB }) });
     setBusy('upload');
     try {
       setUser(await accountService.uploadAvatar(file));
-      toast.success('Profile photo updated');
+      toast.success(t('account.settings.photoUpdated'));
     } catch (err) {
-      toast.error('Could not upload photo', { description: friendlyError(err) });
+      toast.error(t('account.settings.photoUploadError'), { description: friendlyError(err) });
     } finally {
       setBusy(null);
     }
@@ -63,9 +64,9 @@ function AvatarCard() {
     setBusy('remove');
     try {
       setUser(await accountService.removeAvatar());
-      toast.success('Profile photo removed');
+      toast.success(t('account.settings.photoRemoved'));
     } catch (err) {
-      toast.error('Could not remove photo', { description: friendlyError(err) });
+      toast.error(t('account.settings.photoRemoveError'), { description: friendlyError(err) });
     } finally {
       setBusy(null);
     }
@@ -74,7 +75,7 @@ function AvatarCard() {
   return (
     <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
       {user!.avatarUrl ? (
-        <img src={user!.avatarUrl} alt="Your profile photo" className="h-20 w-20 shrink-0 rounded-full object-cover" />
+        <img src={user!.avatarUrl} alt={t('account.settings.avatarAlt')} className="h-20 w-20 shrink-0 rounded-full object-cover" />
       ) : (
         <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-ink font-display text-2xl font-bold text-white" aria-hidden>
           {initials(user!.firstName, user!.lastName)}
@@ -83,11 +84,11 @@ function AvatarCard() {
       <div className="flex flex-wrap gap-2">
         <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={upload} tabIndex={-1} aria-hidden />
         <Button variant="outline" size="sm" loading={busy === 'upload'} disabled={busy !== null} onClick={() => input.current?.click()} leftIcon={<Camera className="h-4 w-4" />}>
-          {user!.avatarUrl ? 'Change photo' : 'Upload photo'}
+          {user!.avatarUrl ? t('account.settings.changePhoto') : t('account.settings.uploadPhoto')}
         </Button>
         {user!.avatarUrl && (
           <Button variant="ghost" size="sm" loading={busy === 'remove'} disabled={busy !== null} onClick={remove} leftIcon={<Trash2 className="h-4 w-4" />} className="hover:text-danger">
-            Remove
+            {t('common.actions.remove')}
           </Button>
         )}
       </div>
@@ -117,12 +118,12 @@ function ProfileForm() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: typeof errors = validate(values, {
-      firstName: required('Enter your first name'),
-      lastName: required('Enter your last name'),
+      firstName: required(t('auth.validation.enterFirstName')),
+      lastName: required(t('auth.validation.enterLastName')),
       email,
       phone: (v) => (v.trim() ? phone(v) : undefined),
     });
-    if (emailChanged && !currentPassword) errs.currentPassword = 'Enter your current password to change your email';
+    if (emailChanged && !currentPassword) errs.currentPassword = t('account.settings.currentPasswordForEmail');
     setErrors(errs);
     if (Object.keys(errs).length) return;
     const patch: ProfileUpdate = {};
@@ -136,13 +137,13 @@ function ProfileForm() {
       setUser(updated);
       setValues({ firstName: updated.firstName, lastName: updated.lastName, email: updated.email, phone: updated.phone ?? '' });
       setCurrentPassword('');
-      toast.success('Profile updated', emailChanged && updated.emailVerified === false ? { description: 'Check your inbox to verify your new email address.' } : undefined);
+      toast.success(t('account.settings.profileUpdated'), emailChanged && updated.emailVerified === false ? { description: t('account.settings.verifyNewEmail') } : undefined);
     } catch (err) {
       const fields = apiFieldErrors(err);
       const pwd = passwordError(err, 'currentPassword');
-      if (err instanceof ApiError && err.code === 'CONFLICT') fields.email = 'That email is already used by another account.';
+      if (err instanceof ApiError && err.code === 'CONFLICT') fields.email = t('account.settings.emailTaken');
       setErrors({ ...fields, ...(pwd ? { currentPassword: pwd } : {}) });
-      if (!Object.keys(fields).length && !pwd) toast.error('Could not update profile', { description: friendlyError(err) });
+      if (!Object.keys(fields).length && !pwd) toast.error(t('account.settings.profileError'), { description: friendlyError(err) });
     } finally {
       setSaving(false);
     }
@@ -150,14 +151,15 @@ function ProfileForm() {
 
   return (
     <form onSubmit={submit} noValidate className="grid gap-5 sm:grid-cols-2">
-      <TextField label="First name" autoComplete="given-name" {...bind('firstName')} />
-      <TextField label="Last name" autoComplete="family-name" {...bind('lastName')} />
-      <TextField label="Email" type="email" autoComplete="email" {...bind('email')} />
-      <TextField label="Phone" type="tel" autoComplete="tel" optional {...bind('phone')} />
+      <TextField label={t('auth.fields.firstName')} autoComplete="given-name" {...bind('firstName')} />
+      <TextField label={t('auth.fields.lastName')} autoComplete="family-name" {...bind('lastName')} />
+      <TextField label={t('auth.fields.email')} type="email" dir="ltr" autoComplete="email" {...bind('email')} />
+      <TextField label={t('auth.fields.phone')} type="tel" dir="ltr" autoComplete="tel" optional {...bind('phone')} />
       {emailChanged && (
         <TextField
-          label="Current password"
+          label={t('auth.fields.currentPassword')}
           type="password"
+          dir="ltr"
           autoComplete="current-password"
           value={currentPassword}
           onChange={(e) => {
@@ -165,13 +167,13 @@ function ProfileForm() {
             setErrors((x) => ({ ...x, currentPassword: undefined }));
           }}
           error={errors.currentPassword}
-          hint="Required to change the email on your account."
+          hint={t('account.settings.currentPasswordHint')}
           containerClassName="sm:col-span-2 sm:max-w-sm"
         />
       )}
       <div className="sm:col-span-2">
         <Button type="submit" variant="primary" loading={saving} disabled={!dirty}>
-          Save changes
+          {t('common.actions.saveChanges')}
         </Button>
       </div>
     </form>
@@ -186,16 +188,16 @@ function PasswordForm() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const errs = validate(values, {
-      current: required('Enter your current password'),
-      next: (v) => passwordRule(v) ?? (v === values.current ? 'Choose a password different from the current one' : undefined),
-      confirm: (v) => (v !== values.next ? 'Passwords do not match' : undefined),
+      current: required(t('auth.validation.enterCurrentPassword')),
+      next: (v) => passwordRule(v) ?? (v === values.current ? t('account.settings.passwordDifferent') : undefined),
+      confirm: (v) => (v !== values.next ? t('auth.validation.passwordMismatch') : undefined),
     });
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setSaving(true);
     try {
       await accountService.changePassword(values.current, values.next);
-      toast.success('Password changed', { description: 'Other devices have been signed out.' });
+      toast.success(t('account.settings.passwordChanged'), { description: t('account.settings.otherDevices') });
       setValues({ current: '', next: '', confirm: '' });
     } catch (err) {
       const fields = apiFieldErrors(err);
@@ -212,13 +214,22 @@ function PasswordForm() {
   };
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-5 sm:max-w-md">
-      <TextField label="Current password" type="password" autoComplete="current-password" value={values.current} onChange={set('current')} error={errors.current} />
-      <TextField label="New password" type="password" autoComplete="new-password" value={values.next} onChange={set('next')} error={errors.next} hint="At least 8 characters, including a letter and a number." />
-      <TextField label="Confirm new password" type="password" autoComplete="new-password" value={values.confirm} onChange={set('confirm')} error={errors.confirm} />
+    <form onSubmit={submit} noValidate className="grid w-full gap-5 sm:max-w-md">
+      <TextField label={t('auth.fields.currentPassword')} type="password" dir="ltr" autoComplete="current-password" value={values.current} onChange={set('current')} error={errors.current} />
+      <TextField
+        label={t('auth.fields.newPassword')}
+        type="password"
+        dir="ltr"
+        autoComplete="new-password"
+        value={values.next}
+        onChange={set('next')}
+        error={errors.next}
+        hint={t('account.settings.passwordHint')}
+      />
+      <TextField label={t('auth.fields.confirmNewPassword')} type="password" dir="ltr" autoComplete="new-password" value={values.confirm} onChange={set('confirm')} error={errors.confirm} />
       <div>
         <Button type="submit" variant="primary" loading={saving}>
-          Update password
+          {t('account.settings.updatePassword')}
         </Button>
       </div>
     </form>
@@ -236,10 +247,10 @@ function Preferences() {
     setSaving(true);
     try {
       setUser(await accountService.updateProfile({ marketingOptIn: next }));
-      toast.success(next ? 'Subscribed to SPORTX news' : 'Unsubscribed from marketing emails');
+      toast.success(next ? t('account.settings.subscribed') : t('account.settings.unsubscribed'));
     } catch (err) {
       setMarketing(!next);
-      toast.error('Could not update preferences', { description: friendlyError(err) });
+      toast.error(t('account.settings.preferencesError'), { description: friendlyError(err) });
     } finally {
       setSaving(false);
     }
@@ -247,8 +258,8 @@ function Preferences() {
 
   return (
     <div className="space-y-4">
-      <Switch checked={marketing} onChange={toggleMarketing} label="News & offers" description="New releases, limited drops and member-only offers by email." />
-      <p className="text-xs text-ink-500">Order, delivery and support updates are always sent and appear in your notifications.</p>
+      <Switch checked={marketing} onChange={toggleMarketing} label={t('account.settings.newsLabel')} description={t('account.settings.newsDescription')} />
+      <p className="text-xs text-ink-500">{t('account.settings.transactional')}</p>
     </div>
   );
 }
@@ -261,6 +272,10 @@ function DeleteAccount() {
   const [confirmText, setConfirmText] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
+  const confirmWord = t('account.settings.deleteConfirmWord');
+  // English "DELETE" is always accepted too.
+  const typed = confirmText.trim().toLocaleUpperCase();
+  const confirmed = typed === confirmWord.toLocaleUpperCase() || typed === 'DELETE';
 
   const close = () => {
     if (busy) return;
@@ -272,12 +287,12 @@ function DeleteAccount() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!password) return setError('Enter your password');
+    if (!password) return setError(t('auth.validation.enterPassword'));
     setBusy(true);
     try {
       await accountService.deleteAccount(password);
       clear();
-      toast.success('Your account has been deleted', { description: 'We’re sorry to see you go.' });
+      toast.success(t('account.settings.deleted'), { description: t('account.settings.deletedBody') });
       navigate(ROUTES.home, { replace: true });
     } catch (err) {
       setError(passwordError(err, 'password') ?? friendlyError(err));
@@ -288,22 +303,23 @@ function DeleteAccount() {
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="max-w-lg text-sm text-ink-600">Permanently delete your SPORTX account, saved addresses, wishlist and preferences. Order records are kept as required for accounting.</p>
+        <p className="max-w-lg text-sm text-ink-600">{t('account.settings.deleteBody')}</p>
         <Button variant="outline" onClick={() => setOpen(true)} className="shrink-0 !border-danger !text-danger hover:!bg-danger hover:!text-white" leftIcon={<Trash2 className="h-4 w-4" />}>
-          Delete account
+          {t('account.settings.deleteButton')}
         </Button>
       </div>
-      <Modal open={open} onClose={close} title="Delete your account?" size="sm">
+      <Modal open={open} onClose={close} title={t('account.settings.deleteModalTitle')} size="sm">
         <form onSubmit={submit} noValidate>
           <div className="space-y-5 px-5 py-6 sm:px-6">
             <InlineAlert tone="error">
               <span className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> This can’t be undone. You will be signed out on every device.
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> <span>{t('account.settings.deleteWarning')}</span>
               </span>
             </InlineAlert>
             <TextField
-              label="Password"
+              label={t('auth.fields.password')}
               type="password"
+              dir="ltr"
               autoComplete="current-password"
               value={password}
               onChange={(e) => {
@@ -312,14 +328,14 @@ function DeleteAccount() {
               }}
               error={error}
             />
-            <TextField label='Type "DELETE" to confirm' value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoComplete="off" />
+            <TextField label={t('account.settings.deleteConfirmLabel', { word: confirmWord })} value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoComplete="off" />
           </div>
           <div className="flex flex-col-reverse gap-3 border-t border-paper-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             <Button variant="ghost" onClick={close} disabled={busy}>
-              Cancel
+              {t('common.actions.cancel')}
             </Button>
-            <Button type="submit" variant="primary" loading={busy} disabled={confirmText.trim().toUpperCase() !== 'DELETE'} className="!bg-danger !border-danger">
-              Delete permanently
+            <Button type="submit" variant="primary" loading={busy} disabled={!confirmed} className="!bg-danger !border-danger">
+              {t('account.settings.deletePermanently')}
             </Button>
           </div>
         </form>
@@ -329,27 +345,28 @@ function DeleteAccount() {
 }
 
 export default function SettingsPage() {
-  usePageMeta({ title: 'Profile Settings', noindex: true });
+  useT();
+  usePageMeta({ title: t('account.settings.meta'), noindex: true });
   const { user } = useAuth();
   return (
-    <AccountSection title="Profile settings" description="Manage your personal details, password and communication preferences.">
+    <AccountSection title={t('account.settings.title')} description={t('account.settings.description')}>
       <div className="space-y-6">
         {user?.emailVerified === false && (
-          <InlineAlert tone="warning">Your email address is not verified yet. Check your inbox for the verification link.</InlineAlert>
+          <InlineAlert tone="warning">{t('account.settings.unverified')}</InlineAlert>
         )}
-        <Card title="Profile photo">
+        <Card title={t('account.settings.photoTitle')}>
           <AvatarCard />
         </Card>
-        <Card title="Personal details">
+        <Card title={t('account.settings.personalTitle')}>
           <ProfileForm />
         </Card>
-        <Card title="Password" description="Use a strong password you don’t use elsewhere.">
+        <Card title={t('account.settings.passwordTitle')} description={t('account.settings.passwordDescription')}>
           <PasswordForm />
         </Card>
-        <Card title="Communication preferences">
+        <Card title={t('account.settings.preferencesTitle')}>
           <Preferences />
         </Card>
-        <Card title="Delete account" tone="danger">
+        <Card title={t('account.settings.deleteTitle')} tone="danger">
           <DeleteAccount />
         </Card>
       </div>

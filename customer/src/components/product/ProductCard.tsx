@@ -11,12 +11,7 @@ import { cn } from '@/utils/cn';
 import { availableSizes, discountPercent, firstAvailableColor, requiresSizeSelection, stockFor, stockState } from '@/utils/product';
 import { WishlistButton } from './WishlistButton';
 
-const BADGE_LABEL: Record<NonNullable<Product['badge']>, string> = {
-  new: 'New',
-  bestseller: 'Best Seller',
-  limited: 'Limited',
-  exclusive: 'Exclusive',
-};
+import { useT } from '@/i18n';
 
 interface ProductCardProps {
   product: Product;
@@ -32,6 +27,7 @@ interface ProductCardProps {
  * finger-sized actions instead of hover-only controls.
  */
 export const ProductCard = memo(function ProductCard({ product, priority, sizes = '(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw', className, tone = 'light' }: ProductCardProps) {
+  const { t } = useT();
   const openQuickView = useUiStore((s) => s.openQuickView);
   const { addProduct } = useCart();
   const [activeColor, setActiveColor] = useState<string | undefined>(undefined);
@@ -84,31 +80,31 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
         </Link>
 
         {/* Badges */}
-        <div className="pointer-events-none absolute left-3 top-3 flex flex-col items-start gap-1.5">
+        <div className="pointer-events-none absolute start-3 top-3 flex flex-col items-start gap-1.5">
           {soldOut ? (
-            <Badge tone="neutral">Sold Out</Badge>
+            <Badge tone="neutral">{t('product.badge.soldOut')}</Badge>
           ) : (
             <>
               {pct > 0 && <Badge tone="sale">−{pct}%</Badge>}
-              {product.badge && <Badge tone={product.badge === 'limited' || product.badge === 'exclusive' ? 'dark' : 'light'}>{BADGE_LABEL[product.badge]}</Badge>}
+              {product.badge && <Badge tone={product.badge === 'limited' || product.badge === 'exclusive' ? 'dark' : 'light'}>{t(`common.badge.${product.badge}`)}</Badge>}
             </>
           )}
         </div>
 
-        <WishlistButton product={product} className="absolute right-3 top-3 z-10" />
+        <WishlistButton product={product} className="absolute end-3 top-3 z-10" />
 
         {/* Quick actions — hover on desktop, always reachable on touch */}
         {!soldOut && (
           <div className="absolute inset-x-3 bottom-3 z-10 hidden gap-2 [@media(hover:hover)]:flex [@media(hover:hover)]:translate-y-3 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:transition-all [@media(hover:hover)]:duration-300 [@media(hover:hover)]:ease-premium [@media(hover:hover)]:group-hover/card:translate-y-0 [@media(hover:hover)]:group-hover/card:opacity-100 [@media(hover:hover)]:group-focus-within/card:translate-y-0 [@media(hover:hover)]:group-focus-within/card:opacity-100">
             <button type="button" onClick={handleQuickAdd} className="btn btn-sm btn-primary flex-1 min-h-[44px]">
               <ShoppingBag className="h-4 w-4" aria-hidden />
-              <span>{requiresSizeSelection(product) ? 'Choose size' : 'Add to bag'}</span>
+              <span>{requiresSizeSelection(product) ? t('product.card.chooseSize') : t('common.actions.addToBag')}</span>
             </button>
             <button
               type="button"
               onClick={() => openQuickView(product.slug)}
               className="btn btn-sm btn-light min-h-[44px] px-3"
-              aria-label={`Quick view ${product.name}`}
+              aria-label={t('product.card.quickView', { name: product.name })}
             >
               <Eye className="h-4 w-4" aria-hidden />
             </button>
@@ -118,8 +114,8 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
           <button
             type="button"
             onClick={handleQuickAdd}
-            className="absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-card [@media(hover:hover)]:hidden"
-            aria-label={`Add ${product.name} to bag`}
+            className="absolute bottom-3 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-card [@media(hover:hover)]:hidden"
+            aria-label={t('product.card.addNamed', { name: product.name })}
           >
             <ShoppingBag className="h-[18px] w-[18px]" />
           </button>
@@ -132,7 +128,7 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
             {categoryLabel(product)}
           </p>
           {product.colors.length > 1 && (
-            <div className="relative z-10 flex items-center gap-1" aria-label={`${product.colors.length} colours available`}>
+            <div className="relative z-10 flex items-center gap-1" aria-label={t('product.card.colours', { count: product.colors.length })}>
               {product.colors.slice(0, 4).map((c) => (
                 <button
                   key={c.name}
@@ -140,7 +136,7 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
                   onMouseEnter={() => setActiveColor(c.name)}
                   onFocus={() => setActiveColor(c.name)}
                   onClick={() => setActiveColor(c.name)}
-                  aria-label={`Preview ${c.name}`}
+                  aria-label={t('product.card.preview', { name: c.name })}
                   className={cn(
                     'relative h-3.5 w-3.5 rounded-full border transition-transform after:absolute after:-inset-2 hover:scale-125',
                     dark ? 'border-white/30' : 'border-ink/15',
@@ -165,14 +161,14 @@ export const ProductCard = memo(function ProductCard({ product, priority, sizes 
         </div>
         <p className={cn('mt-1.5 text-xs', soldOut ? 'text-danger' : state === 'low-stock' ? 'text-warning' : dark ? 'text-white/50' : 'text-ink-500')}>
           {soldOut
-            ? 'Out of stock'
+            ? t('common.states.outOfStock')
             : state === 'low-stock'
-              ? `Only ${product.stock} left`
+              ? t('common.states.lowStock', { count: product.stock })
               : requiresSizeSelection(product)
                 ? hasVariants
-                  ? `${sizesInStock.length} of ${product.sizes.length} sizes available`
-                  : `${product.sizes.length} sizes`
-                : 'In stock'}
+                  ? t('product.card.sizesAvailable', { available: sizesInStock.length, total: product.sizes.length })
+                  : t('common.labels.sizes', { count: product.sizes.length })
+                : t('common.states.inStock')}
         </p>
       </div>
     </article>

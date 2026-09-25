@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useToastStore, type Toast } from '@/store/toastStore';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 const ICONS = {
@@ -16,8 +17,8 @@ function ToastItem({ toast }: { toast: Toast }) {
 
   useEffect(() => {
     if (paused) return;
-    const t = setTimeout(() => dismiss(toast.id), toast.duration);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => dismiss(toast.id), toast.duration);
+    return () => clearTimeout(timer);
   }, [paused, toast.id, toast.duration, dismiss]);
 
   return (
@@ -48,11 +49,11 @@ function ToastItem({ toast }: { toast: Toast }) {
           </button>
         )}
       </div>
-      <button type="button" onClick={() => dismiss(toast.id)} className="-m-1 p-1 text-ink-500 hover:text-ink" aria-label="Dismiss notification">
+      <button type="button" onClick={() => dismiss(toast.id)} className="-m-1 p-1 text-ink-500 hover:text-ink" aria-label={t('common.ui.dismissNotification')}>
         <X className="h-4 w-4" />
       </button>
       <span
-        className={cn('absolute bottom-0 left-0 h-[2px] w-full origin-left bg-ink/80', paused && '[animation-play-state:paused]')}
+        className={cn('absolute bottom-0 start-0 h-[2px] w-full origin-left bg-ink/80 rtl:origin-right', paused && '[animation-play-state:paused]')}
         style={{ animation: `progress ${toast.duration}ms linear forwards` }}
         aria-hidden
       />
@@ -65,10 +66,10 @@ export function Toaster() {
   return createPortal(
     <ol
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex flex-col items-center gap-2 p-4 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[380px] sm:items-end sm:p-0"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex flex-col items-center gap-2 p-4 sm:bottom-6 sm:start-auto sm:end-6 sm:w-[380px] sm:items-end sm:p-0"
     >
-      {toasts.map((t) => (
-        <ToastItem key={t.id} toast={t} />
+      {toasts.map((item) => (
+        <ToastItem key={item.id} toast={item} />
       ))}
     </ol>,
     document.body,

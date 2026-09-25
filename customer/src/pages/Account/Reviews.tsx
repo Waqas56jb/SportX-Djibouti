@@ -7,21 +7,23 @@ import { ROUTES, productPath } from '@/constants/routes';
 import { useAsync } from '@/hooks/useAsync';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { t, useT, type TKey } from '@/i18n';
 import { friendlyError } from '@/services/authService';
 import { reviewService } from '@/services/reviewService';
 import { toast } from '@/store/toastStore';
 import type { Review } from '@/types';
 import { formatDate } from '@/utils/format';
 
-const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
-  PENDING: { label: 'Awaiting moderation', tone: 'warning' },
-  APPROVED: { label: 'Published', tone: 'success' },
-  REJECTED: { label: 'Not published', tone: 'danger' },
-  HIDDEN: { label: 'Hidden', tone: 'neutral' },
+const STATUS: Record<string, { label: TKey; tone: BadgeTone }> = {
+  PENDING: { label: 'account.reviews.pending', tone: 'warning' },
+  APPROVED: { label: 'account.reviews.approved', tone: 'success' },
+  REJECTED: { label: 'account.reviews.rejected', tone: 'danger' },
+  HIDDEN: { label: 'account.reviews.hidden', tone: 'neutral' },
 };
 
 export default function AccountReviewsPage() {
-  usePageMeta({ title: 'My Reviews', noindex: true });
+  useT();
+  usePageMeta({ title: t('account.reviews.meta'), noindex: true });
   const { user } = useAuth();
   const { data, loading, error, reload, setData } = useAsync(() => reviewService.forUser(user!.id), [user?.id]);
   const [deleting, setDeleting] = useState<Review | null>(null);
@@ -33,10 +35,10 @@ export default function AccountReviewsPage() {
     try {
       await reviewService.remove(user!.id, deleting.id);
       setData((prev) => (prev ?? []).filter((r) => r.id !== deleting.id));
-      toast.success('Review deleted');
+      toast.success(t('account.reviews.deleted'));
       setDeleting(null);
     } catch (err) {
-      toast.error('Could not delete review', { description: friendlyError(err) });
+      toast.error(t('account.reviews.deleteError'), { description: friendlyError(err) });
     } finally {
       setBusy(false);
     }
@@ -45,7 +47,7 @@ export default function AccountReviewsPage() {
   const reviews = data ?? [];
 
   return (
-    <AccountSection title="Reviews" description="Your product reviews help other athletes choose the right gear.">
+    <AccountSection title={t('account.reviews.title')} description={t('account.reviews.description')}>
       {error ? (
         <ErrorState message={error} onRetry={reload} />
       ) : loading || !data ? (
@@ -55,9 +57,9 @@ export default function AccountReviewsPage() {
           <EmptyState
             compact
             icon={<Star />}
-            title="No reviews yet"
-            description="Once you’ve tried your gear, share your thoughts from the product page."
-            action={<ButtonLink to={ROUTES.accountOrders}>View orders</ButtonLink>}
+            title={t('account.reviews.emptyTitle')}
+            description={t('account.reviews.emptyBody')}
+            action={<ButtonLink to={ROUTES.accountOrders}>{t('account.reviews.viewOrders')}</ButtonLink>}
           />
         </div>
       ) : (
@@ -67,7 +69,7 @@ export default function AccountReviewsPage() {
             const href = p?.slug ? productPath(p.slug) : null;
             const status = r.status ? STATUS[r.status] : undefined;
             const thumb = (
-              <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-paper-100">
+              <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-paper-100 sm:h-28 sm:w-24">
                 {p?.image ? (
                   <SmartImage src={p.image} alt={p.name} sizes="96px" maxWidth={320} wrapperClassName="absolute inset-0" />
                 ) : (
@@ -88,20 +90,20 @@ export default function AccountReviewsPage() {
                       ) : (
                         <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">{p.name}</span>
                       ))}
-                    {status && <Badge tone={status.tone}>{status.label}</Badge>}
+                    {status && <Badge tone={status.tone}>{t(status.label)}</Badge>}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <Rating value={r.rating} />
                     <time className="text-xs text-ink-500" dateTime={r.createdAt}>
                       {formatDate(r.createdAt)}
                     </time>
-                    {r.verified && <span className="text-xs font-medium text-success">Verified purchase</span>}
+                    {r.verified && <span className="text-xs font-medium text-success">{t('account.reviews.verified')}</span>}
                   </div>
                   {r.title && <h3 className="mt-3 font-sans text-base font-semibold normal-case">{r.title}</h3>}
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{r.body}</p>
+                  <p className="mt-1.5 break-words text-sm leading-relaxed text-ink-600">{r.body}</p>
                 </div>
                 <Button variant="ghost" size="sm" className="self-start hover:text-danger" onClick={() => setDeleting(r)} leftIcon={<Trash2 className="h-3.5 w-3.5" />}>
-                  Delete
+                  {t('common.actions.delete')}
                 </Button>
               </li>
             );
@@ -110,9 +112,9 @@ export default function AccountReviewsPage() {
       )}
       <ConfirmDialog
         open={deleting !== null}
-        title="Delete review?"
-        description="Your review will be removed from the product page. This can’t be undone."
-        confirmLabel="Delete"
+        title={t('account.reviews.deleteTitle')}
+        description={t('account.reviews.deleteBody')}
+        confirmLabel={t('common.actions.delete')}
         destructive
         loading={busy}
         onConfirm={remove}

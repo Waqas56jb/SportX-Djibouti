@@ -35,6 +35,8 @@ export default {
           dark: '#C73A0A',
           50: '#FFF1EB',
         },
+        /** WOLF brand gold (logo artwork). */
+        gold: { DEFAULT: '#C9A14A', light: '#E4C98A', dark: '#8F6E28', 50: '#FBF6EA' },
         success: { DEFAULT: '#0E7C47', 50: '#E8F5EE' },
         warning: { DEFAULT: '#A15C00', 50: '#FFF6E5' },
         danger: { DEFAULT: '#C8102E', 50: '#FDECEF' },

@@ -1,5 +1,6 @@
 import { AlertCircle, Check, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { forwardRef, useId, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { t } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 interface FieldShellProps {
@@ -18,7 +19,7 @@ function FieldShell({ id, label, error, hint, optional, className, children }: F
       {label && (
         <label htmlFor={id} className="label">
           {label}
-          {optional && <span className="ml-1 font-normal normal-case tracking-normal text-ink-500">(optional)</span>}
+          {optional && <span className="ms-1 font-normal normal-case tracking-normal text-ink-500">{t('common.ui.optional')}</span>}
         </label>
       )}
       {children}
@@ -65,20 +66,20 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
           type={isPassword && reveal ? 'text' : type}
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={describedBy(id, error, hint)}
-          className={cn('input', error && 'input-error', (isPassword || rightSlot) && 'pr-12', className)}
+          className={cn('input', error && 'input-error', (isPassword || rightSlot) && 'pe-12', className)}
           {...rest}
         />
         {isPassword ? (
           <button
             type="button"
             onClick={() => setReveal((v) => !v)}
-            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-ink-500 hover:text-ink"
-            aria-label={reveal ? 'Hide password' : 'Show password'}
+            className="absolute inset-y-0 end-0 flex w-12 items-center justify-center text-ink-500 hover:text-ink"
+            aria-label={reveal ? t('common.ui.hidePassword') : t('common.ui.showPassword')}
           >
             {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         ) : (
-          rightSlot && <div className="absolute inset-y-0 right-0 flex items-center pr-3">{rightSlot}</div>
+          rightSlot && <div className="absolute inset-y-0 end-0 flex items-center pe-3">{rightSlot}</div>
         )}
       </div>
     </FieldShell>
@@ -109,7 +110,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
           id={id}
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={describedBy(id, error, hint)}
-          className={cn('input cursor-pointer appearance-none pr-10', error && 'input-error', className)}
+          className={cn('input cursor-pointer appearance-none pe-10', error && 'input-error', className)}
           {...rest}
         >
           {placeholder && (
@@ -123,7 +124,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" aria-hidden />
+        <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" aria-hidden />
       </div>
     </FieldShell>
   );
@@ -205,7 +206,7 @@ export function Switch({ checked, onChange, label, description }: SwitchProps) {
         onClick={() => onChange(!checked)}
         className={cn('relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200', checked ? 'bg-ink' : 'bg-paper-300')}
       >
-        <span className={cn('absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-premium', checked ? 'translate-x-6' : 'translate-x-1')} />
+        <span className={cn('absolute start-0 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-premium', checked ? 'translate-x-6 rtl:-translate-x-6' : 'translate-x-1 rtl:-translate-x-1')} />
       </button>
     </div>
   );

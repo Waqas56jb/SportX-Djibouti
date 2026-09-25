@@ -2,6 +2,7 @@ import { Skeleton } from '@/components/common';
 import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
 import { ProductCard } from './ProductCard';
+import { t } from '@/i18n';
 
 const COLS = {
   3: 'grid-cols-2 lg:grid-cols-3',
@@ -43,7 +44,7 @@ export function ProductCardSkeleton() {
 
 export function ProductGridSkeleton({ count = 8, columns = 4 }: { count?: number; columns?: keyof typeof COLS }) {
   return (
-    <div className={cn('grid gap-x-3 gap-y-10 sm:gap-x-5 sm:gap-y-12', COLS[columns])} role="status" aria-label="Loading products">
+    <div className={cn('grid gap-x-3 gap-y-10 sm:gap-x-5 sm:gap-y-12', COLS[columns])} role="status" aria-label={t('product.carousel.loading')}>
       {Array.from({ length: count }, (_, i) => (
         <ProductCardSkeleton key={i} />
       ))}

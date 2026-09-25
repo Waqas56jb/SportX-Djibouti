@@ -1,57 +1,31 @@
+import { t } from '@/i18n';
 import type { Category } from '@/types';
 import { IMG } from './images';
 
-/** Featured categories on the homepage and /categories. */
-export const FEATURED_CATEGORIES: Category[] = [
-  {
-    slug: 'football',
-    name: 'Football',
-    description: 'Boots, balls & match kit',
-    image: IMG.fbKickSky,
-    href: '/football',
-  },
-  {
-    slug: 'basketball',
-    name: 'Basketball',
-    description: 'Court shoes & game balls',
-    image: IMG.bbDunk,
-    href: '/basketball',
-  },
-  {
-    slug: 'running',
-    name: 'Running',
-    description: 'Road, trail & race day',
-    image: IMG.runSunset,
-    href: '/running',
-  },
-  {
-    slug: 'training',
-    name: 'Training',
-    description: 'Strength, HIIT & conditioning',
-    image: IMG.trBarbell,
-    href: '/training',
-  },
-  {
-    slug: 'apparel',
-    name: 'Apparel',
-    description: 'Tees, tracksuits & layers',
-    image: IMG.apTracksuit,
-    href: '/categories/apparel',
-  },
-  {
-    slug: 'equipment',
-    name: 'Equipment',
-    description: 'Balls, bags & gym gear',
-    image: IMG.trDumbbellsMono,
-    href: '/equipment',
-  },
+/** Category tiles. Functions (not constants) so names follow the selected language. */
+const tile = (slug: 'football-boots' | 'team-kits' | 'jerseys' | 'polo-shirts' | 'socks' | 'bags' | 'turf-shoes' | 't-shirts' | 'tracksuits' | 'balls' | 'goalkeeper-gloves' | 'shorts', image: string): Category => ({
+  slug,
+  name: t(`common.category.${slug}`),
+  description: t(`collections.tiles.${slug}`),
+  image,
+  href: `/categories/${slug}`,
+});
+
+/** Featured categories on the homepage and /categories (two feature tiles first). */
+export const getFeaturedCategories = (): Category[] => [
+  tile('football-boots', IMG.kickOrangeBoot),
+  tile('team-kits', IMG.teamWalkout),
+  tile('jerseys', IMG.jerseyBlackGold),
+  tile('polo-shirts', IMG.poloCoach),
+  tile('socks', IMG.socksGrip),
+  tile('bags', IMG.backpackPitch),
 ];
 
-export const MORE_CATEGORIES: Category[] = [
-  { slug: 'footwear', name: 'Footwear', description: 'Every sport, every surface', image: IMG.shoeWhiteAir, href: '/categories/footwear' },
-  { slug: 'accessories', name: 'Accessories', description: 'Caps, socks & wearables', image: IMG.acCapModel, href: '/categories/accessories' },
-  { slug: 'bags', name: 'Bags', description: 'Backpacks & packs', image: IMG.acBackpackGrey, href: '/categories/bags' },
-  { slug: 'balls', name: 'Balls', description: 'Match & training balls', image: IMG.bbBallsPile, href: '/categories/balls' },
-  { slug: 'gym-equipment', name: 'Gym Equipment', description: 'Home & club training', image: IMG.trBands, href: '/categories/gym-equipment' },
-  { slug: 'kids', name: 'Kids', description: 'For young athletes', image: IMG.kidsJacket, href: '/kids' },
+export const getMoreCategories = (): Category[] => [
+  tile('turf-shoes', IMG.turfShoes),
+  tile('t-shirts', IMG.teeBlack),
+  tile('shorts', IMG.shortsAction),
+  tile('tracksuits', IMG.tracksuitTeam),
+  tile('balls', IMG.ballsTrio),
+  tile('goalkeeper-gloves', IMG.gkGloves),
 ];

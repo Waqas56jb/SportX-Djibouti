@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useWishlist } from '@/hooks/useWishlist';
 import type { Product } from '@/types';
 import { cn } from '@/utils/cn';
+import { useT } from '@/i18n';
 
 interface WishlistButtonProps {
   product: Pick<Product, 'id' | 'name' | 'images'>;
@@ -11,6 +12,7 @@ interface WishlistButtonProps {
 }
 
 export function WishlistButton({ product, variant = 'floating', className }: WishlistButtonProps) {
+  const { t } = useT();
   const { has, toggle } = useWishlist();
   const active = has(product.id);
   const [pop, setPop] = useState(false);
@@ -25,7 +27,7 @@ export function WishlistButton({ product, variant = 'floating', className }: Wis
         if (added) setPop(true);
       }}
       aria-pressed={active}
-      aria-label={active ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
+      aria-label={active ? t('product.wishlist.remove', { name: product.name }) : t('product.wishlist.add', { name: product.name })}
       className={cn(
         'flex shrink-0 items-center justify-center transition-colors duration-200',
         variant === 'floating'
