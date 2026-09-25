@@ -4,6 +4,7 @@ import { pool, warmPool } from './config/database.js';
 import { logger } from './utils/logger.js';
 import { jobs } from './services/jobs.js';
 import { registerScheduledJobs } from './jobs/index.js';
+import { migrate } from '../scripts/migrate.js';
 
 const app = createApp();
 const bindHost = /^(0\.0\.0\.0|::|127\.0\.0\.1|localhost)$/i.test(env.HOST) ? env.HOST : '0.0.0.0';
@@ -15,8 +16,16 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
-void warmPool().catch((err) => logger.warn({ err }, 'database warm-up failed'));
-if (env.JOBS_ENABLED) registerScheduledJobs();
+void (async () => {
+  try {
+    const ssl = env.DATABASE_SSL || /supabase\.com|pooler\.supabase/i.test(env.DATABASE_URL);
+    await migrate(env.DATABASE_URL, { ssl, log: (m) => logger.info(m) });
+  } catch (err) {
+    logger.error({ err }, 'startup migrations failed — API is up, schema may be incomplete');
+  }
+  void warmPool().catch((err) => logger.warn({ err }, 'database warm-up failed'));
+  if (env.JOBS_ENABLED) registerScheduledJobs();
+})();
 
 async function shutdown(signal: string) {
   logger.info({ signal }, 'shutting down');

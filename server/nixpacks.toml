@@ -1,2 +1,6 @@
+[variables]
+NPM_CONFIG_PRODUCTION = "false"
+NIXPACKS_NODE_VERSION = "22"
+
 [start]
-cmd = "node dist/scripts/migrate.js && node dist/src/server.js"
+cmd = "node dist/src/server.js"
